@@ -14,7 +14,7 @@ export function HeroSection() {
     return (
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-secondary via-white to-secondary-dark">
             {/* 3D Background */}
-            <div className="absolute inset-0 z-0">
+            {/* <div className="absolute inset-0 z-0">
                 <Canvas camera={{ position: [0, 0, 5] }}>
                     <Suspense fallback={null}>
                         <FloatingParticles />
@@ -22,7 +22,7 @@ export function HeroSection() {
                         <pointLight position={[10, 10, 10]} />
                     </Suspense>
                 </Canvas>
-            </div>
+            </div> */}
 
             <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                 <motion.div
