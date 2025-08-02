@@ -14,7 +14,7 @@ import {
     SignedIn,
     SignedOut
 } from '@clerk/nextjs';
-import { AnimatedLogo } from '../ui/AnimatedLogo';
+import Image from 'next/image';
 
 const navItems = [
     { name: 'Home', href: '/' },
@@ -42,14 +42,27 @@ export function Header() {
             transition={{ duration: 0.8, ease: "easeOut" }}
         >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-16">
+                <div className="flex justify-between items-center h-20">
                     <motion.div
                         className="flex items-center space-x-3 cursor-pointer"
                         whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                     >
-                        <AnimatedLogo />
+                        <motion.div
+                            className="relative"
+                            whileHover={{ rotate: 360 }}
+                            transition={{ duration: 0.6 }}
+                        >
+                            <Image
+                                src={isScrolled ? "/assets/logo/logo.png" : "/assets/logo/logo_white.png"}
+                                alt="Vunalet Logo"
+                                width={40}
+                                height={40}
+                                className="rounded-lg"
+                            />
+                        </motion.div>
                         <motion.h1
-                            className="text-2xl font-bold text-primary"
+                            className={`text-2xl font-bold ${isScrolled ? 'text-green-600' : 'text-white'}`}
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.2 }}
@@ -64,7 +77,10 @@ export function Header() {
                             <motion.a
                                 key={item.name}
                                 href={item.href}
-                                className="px-3 py-2 text-sm font-medium transition-colors text-gray-700 hover:text-primary"
+                                className={`px-3 py-2 text-sm font-medium transition-colors ${isScrolled
+                                    ? 'text-gray-700 hover:text-green-600'
+                                    : 'text-white/90 hover:text-white'
+                                    }`}
                                 initial={{ opacity: 0, y: -20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.3 + index * 0.1 }}
@@ -77,7 +93,10 @@ export function Header() {
 
                     <div className="hidden md:flex items-center space-x-4">
                         <motion.button
-                            className="text-gray-700 hover:text-primary p-2"
+                            className={`p-2 rounded-full transition-all duration-300 ${isScrolled
+                                ? 'text-gray-700 hover:text-green-600 hover:bg-green-50'
+                                : 'text-white/90 hover:text-white hover:bg-white/10'
+                                }`}
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
                         >
@@ -88,7 +107,10 @@ export function Header() {
                             <motion.div className="flex items-center space-x-2">
                                 <SignInButton mode="modal">
                                     <motion.button
-                                        className="text-gray-700 hover:text-primary px-4 py-2 rounded-lg transition-colors"
+                                        className={`px-4 py-2 rounded-lg transition-all duration-300 ${isScrolled
+                                            ? 'text-gray-700 hover:text-green-600'
+                                            : 'text-white/90 hover:text-white'
+                                            }`}
                                         whileHover={{ scale: 1.05 }}
                                         whileTap={{ scale: 0.95 }}
                                     >
@@ -97,7 +119,7 @@ export function Header() {
                                 </SignInButton>
                                 <SignUpButton mode="modal">
                                     <motion.button
-                                        className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition-colors"
+                                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
                                         whileHover={{ scale: 1.05 }}
                                         whileTap={{ scale: 0.95 }}
                                     >
@@ -120,7 +142,10 @@ export function Header() {
 
                     {/* Mobile menu button */}
                     <motion.button
-                        className="md:hidden p-2"
+                        className={`md:hidden p-2 rounded-lg transition-all duration-300 ${isScrolled
+                            ? 'text-gray-700 hover:bg-green-50'
+                            : 'text-white hover:bg-white/10'
+                            }`}
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
                         whileTap={{ scale: 0.9 }}
                     >
@@ -143,7 +168,7 @@ export function Header() {
                                     <motion.a
                                         key={item.name}
                                         href={item.href}
-                                        className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-primary w-full text-left"
+                                        className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600 w-full text-left rounded-lg hover:bg-green-50 transition-all duration-300"
                                         onClick={() => setIsMenuOpen(false)}
                                         whileHover={{ x: 10 }}
                                     >
@@ -154,12 +179,12 @@ export function Header() {
                                 <SignedOut>
                                     <div className="pt-4 space-y-2">
                                         <SignInButton mode="modal">
-                                            <button className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-primary">
+                                            <button className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600 rounded-lg hover:bg-green-50 transition-all duration-300">
                                                 Sign In
                                             </button>
                                         </SignInButton>
                                         <SignUpButton mode="modal">
-                                            <button className="block w-full text-left px-3 py-2 text-base font-medium bg-primary text-white rounded-lg">
+                                            <button className="block w-full text-left px-3 py-2 text-base font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-300">
                                                 Sign Up
                                             </button>
                                         </SignUpButton>
