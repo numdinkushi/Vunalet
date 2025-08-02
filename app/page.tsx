@@ -11,7 +11,7 @@ export default function Home() {
       <main>
         <HeroSection />
         <FeaturesSection />
-        <StatsSection />
+        {/* <StatsSection /> */}
       </main>
       <Footer />
     </div>
