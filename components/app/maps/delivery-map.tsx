@@ -200,7 +200,7 @@ export function DeliveryMap({
 }: DeliveryMapProps) {
     const [farmerCoords, setFarmerCoords] = useState<Coordinates | null>(null);
     const [customerCoords, setCustomerCoords] = useState<Coordinates | null>(null);
-    const [mapCenter, setMapCenter] = useState<[number, number]>([9.8965, 8.8583]); // Default coordinates
+    const [mapCenter, setMapCenter] = useState<[number, number]>([-33.9249, 18.4241]); // Cape Town coordinates (better default for SA)
     const [mapZoom, setMapZoom] = useState<number>(12);
 
     // Calculate ETA based on distance
@@ -215,10 +215,50 @@ export function DeliveryMap({
 
     // Geocoding function
     const geocodeLocation = async (address: string): Promise<Coordinates | null> => {
+        // Fallback coordinates for common South African locations
+        const fallbackCoords: { [key: string]: Coordinates; } = {
+            'stellenbosch': { lat: -33.9321, lng: 18.8602 },
+            'paarl': { lat: -33.7312, lng: 18.9754 },
+            'robertson': { lat: -33.8034, lng: 19.8854 },
+            'ceres': { lat: -33.3689, lng: 19.3100 },
+            'wellington': { lat: -33.6400, lng: 19.0100 },
+            'somerset west': { lat: -34.0833, lng: 18.8500 },
+            'citrusdal': { lat: -32.5833, lng: 19.0167 },
+            'elgin': { lat: -34.1500, lng: 19.0333 },
+            'western cape': { lat: -33.9249, lng: 18.4241 }, // Cape Town
+            'free state': { lat: -28.2278, lng: 28.4097 }, // Bloemfontein
+            'kwaZulu-Natal': { lat: -29.8587, lng: 31.0218 }, // Durban
+            'eastern cape': { lat: -33.7139, lng: 25.5207 }, // Port Elizabeth
+            'mpumalanga': { lat: -25.4753, lng: 30.9694 }, // Nelspruit
+            'northern cape': { lat: -28.7282, lng: 24.7499 }, // Kimberley
+            'limpopo': { lat: -23.9045, lng: 29.4688 }, // Polokwane
+        };
+
+        // First, try to match with fallback coordinates
+        const addressLower = address.toLowerCase();
+        for (const [location, coords] of Object.entries(fallbackCoords)) {
+            if (addressLower.includes(location)) {
+                console.log(`Using fallback coordinates for ${location}`);
+                return coords;
+            }
+        }
+
+        // If no fallback match, try external API
         try {
             const response = await fetch(
-                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`
+                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&countrycodes=za`,
+                {
+                    headers: {
+                        'Accept': 'application/json',
+                        'User-Agent': 'VunaletApp/1.0'
+                    }
+                }
             );
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const data = await response.json();
             if (data.length > 0) {
                 return {
@@ -226,34 +266,47 @@ export function DeliveryMap({
                     lng: parseFloat(data[0].lon),
                 };
             }
-            return null;
         } catch (error) {
-            console.error('Geocoding error:', error);
-            return null;
+            console.error('Geocoding API error:', error);
         }
+
+        // If no fallback found and API failed, return Cape Town coordinates
+        console.log('No coordinates found, using Cape Town as default');
+        return { lat: -33.9249, lng: 18.4241 };
     };
 
     // Update coordinates when locations change
     useEffect(() => {
         const updateCoordinates = async () => {
+            let newFarmerCoords = null;
+            let newCustomerCoords = null;
+
+            // Geocode farmer location first
             if (farmerLocation) {
-                const coords = await geocodeLocation(farmerLocation);
-                setFarmerCoords(coords);
+                newFarmerCoords = await geocodeLocation(farmerLocation);
+                setFarmerCoords(newFarmerCoords);
             }
 
+            // Geocode customer address
             if (customerAddress) {
-                const coords = await geocodeLocation(customerAddress);
-                setCustomerCoords(coords);
+                newCustomerCoords = await geocodeLocation(customerAddress);
+                setCustomerCoords(newCustomerCoords);
             }
 
             // Update map center and zoom based on coordinates
-            if (farmerCoords && customerCoords) {
-                const centerLat = (farmerCoords.lat + customerCoords.lat) / 2;
-                const centerLng = (farmerCoords.lng + customerCoords.lng) / 2;
+            if (newFarmerCoords && newCustomerCoords) {
+                // Both locations available - center between them
+                const centerLat = (newFarmerCoords.lat + newCustomerCoords.lat) / 2;
+                const centerLng = (newFarmerCoords.lng + newCustomerCoords.lng) / 2;
                 setMapCenter([centerLat, centerLng]);
                 setMapZoom(deliveryDistance < 5 ? 13 : deliveryDistance < 20 ? 11 : deliveryDistance < 50 ? 9 : 8);
-            } else if (farmerCoords) {
-                setMapCenter([farmerCoords.lat, farmerCoords.lng]);
+            } else if (newFarmerCoords) {
+                // Only farmer location available - center on farmer
+                setMapCenter([newFarmerCoords.lat, newFarmerCoords.lng]);
+                setMapZoom(12);
+            } else if (newCustomerCoords) {
+                // Only customer location available - center on customer
+                setMapCenter([newCustomerCoords.lat, newCustomerCoords.lng]);
                 setMapZoom(12);
             }
         };
@@ -274,30 +327,7 @@ export function DeliveryMap({
                     <MapMarkers farmerCoords={farmerCoords} customerCoords={customerCoords} />
                 </MapContainer>
 
-                {/* Route Info Overlay */}
-                {(farmerCoords || customerCoords) && (
-                    <div className="absolute bottom-4 left-4 right-4 bg-black/60 backdrop-blur-sm rounded-lg p-4">
-                        <div className="grid grid-cols-3 gap-4 text-center">
-                            <div>
-                                <Navigation className="w-5 h-5 text-green-400 mx-auto mb-1" />
-                                <p className="text-xs text-gray-300">Distance</p>
-                                <p className="text-sm font-bold text-white">{deliveryDistance || 0} km</p>
-                            </div>
-                            <div>
-                                <Truck className="w-5 h-5 text-blue-400 mx-auto mb-1" />
-                                <p className="text-xs text-gray-300">Delivery</p>
-                                <p className="text-sm font-bold text-white">R{(deliveryCost || 0).toFixed(2)}</p>
-                            </div>
-                            <div>
-                                <Clock className="w-5 h-5 text-yellow-400 mx-auto mb-1" />
-                                <p className="text-xs text-gray-300">ETA</p>
-                                <p className="text-sm font-bold text-white">~{eta} min</p>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Map Legend */}
+                {/* Map Legend - Only show when coordinates are available */}
                 {(farmerCoords || customerCoords) && (
                     <div className="absolute top-4 left-4 bg-black/90 text-white p-3 rounded-lg text-sm max-w-xs z-[1000] shadow-lg">
                         {farmerCoords && (
@@ -323,6 +353,29 @@ export function DeliveryMap({
                     </div>
                 )}
             </div>
+
+            {/* Route Info - Moved outside map container */}
+            {(farmerCoords || customerCoords) && (
+                <div className="mt-4 bg-black/60 backdrop-blur-sm rounded-lg p-4 border border-white/20">
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                        <div>
+                            <Navigation className="w-5 h-5 text-green-400 mx-auto mb-1" />
+                            <p className="text-xs text-gray-300">Distance</p>
+                            <p className="text-sm font-bold text-white">{deliveryDistance || 0} km</p>
+                        </div>
+                        <div>
+                            <Truck className="w-5 h-5 text-blue-400 mx-auto mb-1" />
+                            <p className="text-xs text-gray-300">Delivery</p>
+                            <p className="text-sm font-bold text-white">R{(deliveryCost || 0).toFixed(2)}</p>
+                        </div>
+                        <div>
+                            <Clock className="w-5 h-5 text-yellow-400 mx-auto mb-1" />
+                            <p className="text-xs text-gray-300">ETA</p>
+                            <p className="text-sm font-bold text-white">~{eta} min</p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Location Details */}
             <div className="mt-6 space-y-4">
