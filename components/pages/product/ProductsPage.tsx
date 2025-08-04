@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
     Search,
     MapPin,
@@ -11,7 +11,7 @@ import {
     ShoppingCart
 } from 'lucide-react';
 import Image from 'next/image';
-import { VideoBackground } from '../../components/ui/VideoBackground';
+import { VideoBackground } from '../../ui/VideoBackground';
 
 const categories = [
     { id: 'all', name: 'All Products' },
@@ -39,7 +39,6 @@ const products = [
         rating: 4.8,
         images: [
             '/assets/products/tomatoes/image.jpg',
-            '/assets/products/tomatoes/image (7).jpg'
         ],
         quantity: 50,
         harvestDate: '2024-08-01',
@@ -149,7 +148,7 @@ export function ProductsPage() {
                 });
                 return newIndexes;
             });
-        }, 5000); // Change image every 5 seconds
+        }, 3000); // Change image every 3 seconds
 
         return () => clearInterval(interval);
     }, []);
@@ -214,6 +213,7 @@ export function ProductsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {products.map((product, index) => {
                         const currentImageIndex = currentImageIndexes[product.id] || 0;
+                        const currentImage = product.images[currentImageIndex];
 
                         return (
                             <motion.div
@@ -233,27 +233,23 @@ export function ProductsPage() {
                                     </div>
                                 )}
 
-                                <div className="relative h-64 overflow-hidden">
-                                    <AnimatePresence mode="wait">
-                                        <motion.div
-                                            key={`${product.id}-${currentImageIndex}`}
-                                            className="absolute inset-0"
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            exit={{ opacity: 0 }}
-                                            transition={{ duration: 1.2, ease: "easeInOut" }}
-                                        >
-                                            <Image
-                                                src={product.images[currentImageIndex]}
-                                                alt={`${product.name} - View ${currentImageIndex + 1}`}
-                                                width={400}
-                                                height={300}
-                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                            />
-                                        </motion.div>
-                                    </AnimatePresence>
+                                <div className="relative">
+                                    <motion.div
+                                        key={`${product.id}-${currentImageIndex}`}
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{ duration: 0.5 }}
+                                    >
+                                        <Image
+                                            src={currentImage}
+                                            alt={product.name}
+                                            width={400}
+                                            height={300}
+                                            className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500"
+                                        />
+                                    </motion.div>
                                     <motion.button
-                                        className="absolute top-4 right-4 p-3 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white transition-all duration-300 z-20"
+                                        className="absolute top-4 right-4 p-3 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white transition-all duration-300"
                                         whileHover={{ scale: 1.1 }}
                                         whileTap={{ scale: 0.9 }}
                                     >
