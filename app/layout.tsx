@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
 import { PushNotificationManager, InstallPrompt } from '@/components/PWAComponents';
+import { ConvexClientProvider } from '../providers/ConvexClientProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -48,38 +49,40 @@ export default function RootLayout({
         },
       }}
     >
-      <html lang="en">
-        <head>
-          <link rel="manifest" href="/manifest.json" />
-          <meta name="theme-color" content="#22c55e" />
-          <meta name="apple-mobile-web-app-capable" content="yes" />
-          <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-          <meta name="apple-mobile-web-app-title" content="Vunalet" />
-          <link rel="apple-touch-icon" href="/assets/logo/logo.png" />
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `
-                if ('serviceWorker' in navigator) {
-                  window.addEventListener('load', function() {
-                    navigator.serviceWorker.register('/sw.js')
-                      .then(function(registration) {
-                        console.log('SW registered: ', registration);
-                      })
-                      .catch(function(registrationError) {
-                        console.log('SW registration failed: ', registrationError);
-                      });
-                  });
-                }
-              `,
-            }}
-          />
-        </head>
-        <body className={inter.className}>
-          {children}
-          <PushNotificationManager />
-          <InstallPrompt />
-        </body>
-      </html>
+      <ConvexClientProvider>
+        <html lang="en">
+          <head>
+            <link rel="manifest" href="/manifest.json" />
+            <meta name="theme-color" content="#22c55e" />
+            <meta name="apple-mobile-web-app-capable" content="yes" />
+            <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+            <meta name="apple-mobile-web-app-title" content="Vunalet" />
+            <link rel="apple-touch-icon" href="/assets/logo/logo.png" />
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `
+                  if ('serviceWorker' in navigator) {
+                    window.addEventListener('load', function() {
+                      navigator.serviceWorker.register('/sw.js')
+                        .then(function(registration) {
+                          console.log('SW registered: ', registration);
+                        })
+                        .catch(function(registrationError) {
+                          console.log('SW registration failed: ', registrationError);
+                        });
+                    });
+                  }
+                `,
+              }}
+            />
+          </head>
+          <body className={inter.className}>
+            {children}
+            <PushNotificationManager />
+            <InstallPrompt />
+          </body>
+        </html>
+      </ConvexClientProvider>
     </ClerkProvider>
   );
 }
