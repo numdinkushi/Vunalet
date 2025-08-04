@@ -7,7 +7,8 @@
     "fast": "next dev --turbo",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "build:pwa": "next build && cp public/manifest.json .next/static/ && cp public/sw.js .next/static/"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.28.1",
@@ -60,6 +61,7 @@
     "tailwind-merge": "^3.3.1",
     "three": "^0.179.1",
     "vaul": "^1.1.2",
+    "web-push": "^3.6.7",
     "zod": "^4.0.14"
   },
   "devDependencies": {

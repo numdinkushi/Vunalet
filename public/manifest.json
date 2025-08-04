@@ -1,0 +1,27 @@
+{
+  "name": "Vunalet - Harvesting the Future",
+  "short_name": "Vunalet",
+  "description": "Connect directly with local farmers and access the freshest produce while supporting sustainable agriculture in South Africa",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#22c55e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/assets/logo/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/logo/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["food", "shopping", "lifestyle"],
+  "lang": "en",
+  "dir": "ltr"
+} 
