@@ -17,8 +17,14 @@ const categories = [
     { id: 'all', name: 'All Products' },
     { id: 'vegetables', name: 'Vegetables' },
     { id: 'fruits', name: 'Fruits' },
-    { id: 'grains', name: 'Grains' },
-    { id: 'herbs', name: 'Herbs' }
+    { id: 'grains', name: 'Grains & Cereals' },
+    { id: 'tubers', name: 'Tubers & Root Vegetables' },
+    { id: 'herbs', name: 'Herbs & Spices' },
+    { id: 'legumes', name: 'Legumes & Beans' },
+    { id: 'nuts', name: 'Nuts & Seeds' },
+    { id: 'dairy', name: 'Dairy & Eggs' },
+    { id: 'meat', name: 'Meat & Poultry' },
+    { id: 'honey', name: 'Honey & Bee Products' }
 ];
 
 const products = [
@@ -31,7 +37,7 @@ const products = [
         farmer: 'John Farmer',
         location: 'Stellenbosch, Western Cape',
         rating: 4.8,
-        image: '/assets/background_images/image8.jpg',
+        image: '/assets/products/tomatoes/image.jpg',
         quantity: 50,
         harvestDate: '2024-08-01',
         featured: true
@@ -45,7 +51,7 @@ const products = [
         farmer: 'Mary Green',
         location: 'Paarl, Western Cape',
         rating: 4.9,
-        image: '/assets/background_images/image9.jpg',
+        image: '/assets/products/spinach/image (1).jpg',
         quantity: 30,
         harvestDate: '2024-08-02',
         featured: false
@@ -59,7 +65,7 @@ const products = [
         farmer: 'David Farm',
         location: 'Robertson, Western Cape',
         rating: 4.7,
-        image: '/assets/background_images/image10.jpg',
+        image: '/assets/products/corn/image (2).jpg',
         quantity: 100,
         harvestDate: '2024-07-30',
         featured: true
@@ -73,7 +79,7 @@ const products = [
         farmer: 'Citrus Valley',
         location: 'Citrusdal, Western Cape',
         rating: 4.6,
-        image: '/assets/background_images/image11.jpg',
+        image: '/assets/products/orange/image (4).jpg',
         quantity: 75,
         harvestDate: '2024-08-01',
         featured: false
@@ -87,7 +93,7 @@ const products = [
         farmer: 'Root Farm',
         location: 'Ceres, Western Cape',
         rating: 4.5,
-        image: '/assets/background_images/image12.jpg',
+        image: '/assets/products/carrots/image (6).jpg',
         quantity: 40,
         harvestDate: '2024-07-29',
         featured: false
@@ -101,7 +107,7 @@ const products = [
         farmer: 'Berry Farm',
         location: 'Stellenbosch, Western Cape',
         rating: 4.9,
-        image: '/assets/background_images/image13.jpg',
+        image: '/assets/products/strawberry/image (8).jpg',
         quantity: 25,
         harvestDate: '2024-08-02',
         featured: true
