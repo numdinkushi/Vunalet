@@ -134,7 +134,7 @@ export function InstallPrompt() {
                 </div>
                 <div className="flex-1">
                     <p className="text-sm font-medium text-gray-900">
-                        Install Farm Fresh
+                        Install Vunalet
                     </p>
                     <p className="text-xs text-gray-500">
                         Get quick access to fresh produce

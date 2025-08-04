@@ -6,15 +6,15 @@ import { PushNotificationManager, InstallPrompt } from '@/components/PWAComponen
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Farm Fresh - Fresh Produce Marketplace',
-  description: 'Connect directly with South African farmers for fresh produce delivery',
+  title: 'Vunalet - Harvesting the Future',
+  description: 'Connect directly with local farmers and access the freshest produce while supporting sustainable agriculture in South Africa',
   manifest: '/manifest.json',
   themeColor: '#22c55e',
   viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Farm Fresh',
+    title: 'Vunalet',
   },
   formatDetection: {
     telephone: false,
@@ -42,7 +42,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#22c55e" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Farm Fresh" />
+        <meta name="apple-mobile-web-app-title" content="Vunalet" />
         <link rel="apple-touch-icon" href="/assets/logo/logo.png" />
         <script
           dangerouslySetInnerHTML={{

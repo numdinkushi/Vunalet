@@ -1,10 +1,11 @@
-const CACHE_NAME = 'farm-fresh-v1'
+const CACHE_NAME = 'vunalet-v1.0.1' // Update this version for each build
 const urlsToCache = [
   '/',
   '/products',
   '/categories',
   '/assets/logo/logo.png',
-  '/assets/video/falling_leaves.mp4'
+  '/assets/video/falling_leaves.mp4',
+  '/manifest.json'
 ]
 
 // Install event - cache resources

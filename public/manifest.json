@@ -1,7 +1,7 @@
 {
-  "name": "Farm Fresh - Fresh Produce Marketplace",
-  "short_name": "Farm Fresh",
-  "description": "Connect directly with South African farmers for fresh produce delivery",
+  "name": "Vunalet - Harvesting the Future",
+  "short_name": "Vunalet",
+  "description": "Connect directly with local farmers and access the freshest produce while supporting sustainable agriculture in South Africa",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

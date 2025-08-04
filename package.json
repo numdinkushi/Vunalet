@@ -7,7 +7,8 @@
     "fast": "next dev --turbo",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "build:pwa": "next build && cp public/manifest.json .next/static/ && cp public/sw.js .next/static/"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.28.1",
