@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Star, Heart, ShoppingCart, MapPin } from 'lucide-react';
 import { ProductCarousel } from '../../carousel/ProductCarousel';
 import { VideoBackground } from '../../ui/VideoBackground';
+import Link from 'next/link';
 
 interface Product {
     id: string;
@@ -89,14 +90,16 @@ export function ProductCard({ product, index }: ProductCardProps) {
                     </div>
                 </div>
 
-                <motion.button
-                    className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center group"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                >
-                    <ShoppingCart className="mr-2" size={20} />
-                    Add to Cart
-                </motion.button>
+                <Link href={`/products/${product.id}`}>
+                    <motion.button
+                        className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center group"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                    >
+                        <ShoppingCart className="mr-2" size={20} />
+                        Purchase
+                    </motion.button>
+                </Link>
             </div>
         </motion.div>
     );

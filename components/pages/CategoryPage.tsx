@@ -2,10 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Search, MapPin, Star, Heart, ShoppingCart } from 'lucide-react';
+import {
+    Search,
+    MapPin,
+    Star,
+    Heart,
+    Filter,
+    ShoppingCart
+} from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { VideoBackground } from '../ui/VideoBackground';
-import { categoryMap, categories } from '../../constants/categories';
+import { categories } from '../../constants/categories';
 import { allProducts } from '../../constants/products';
 
 interface CategoryPageProps {
@@ -17,7 +25,7 @@ export function CategoryPage({ categoryId }: CategoryPageProps) {
     const [sortBy, setSortBy] = useState('newest');
     const [currentImageIndexes, setCurrentImageIndexes] = useState<{ [key: string]: number; }>({});
 
-    const categoryName = categoryMap[categoryId as keyof typeof categoryMap] || 'Category';
+    const category = categories.find(cat => cat.id === categoryId);
     const products = allProducts[categoryId as keyof typeof allProducts] || [];
 
     // Auto-rotate images for products with multiple images
@@ -38,28 +46,31 @@ export function CategoryPage({ categoryId }: CategoryPageProps) {
         return () => clearInterval(interval);
     }, [products]);
 
+    if (!category) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <h1 className="text-2xl font-bold text-gray-600">Category not found</h1>
+                    <Link href="/products" className="text-green-600 hover:text-green-700">
+                        Back to Products
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen pt-20 bg-gradient-to-br from-gray-50 to-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 {/* Header */}
                 <motion.div
-                    className="mb-8"
+                    className="mb-12 text-center"
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
                 >
-                    <div className="flex items-center mb-4">
-                        <motion.button
-                            onClick={() => window.history.back()}
-                            className="mr-4 p-2 rounded-full bg-white shadow-lg hover:shadow-xl transition-all duration-300"
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                        >
-                            <ArrowLeft size={20} className="text-gray-600" />
-                        </motion.button>
-                        <h1 className="text-4xl font-bold text-gray-900">{categoryName}</h1>
-                    </div>
-                    <p className="text-xl text-gray-600">Discover fresh {categoryName.toLowerCase()} from local farmers</p>
+                    <h1 className="text-5xl font-bold text-gray-900 mb-4">{category.name}</h1>
+                    <p className="text-xl text-gray-600">{category.description}</p>
                 </motion.div>
 
                 {/* Search and Filters */}
@@ -74,7 +85,7 @@ export function CategoryPage({ categoryId }: CategoryPageProps) {
                             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                             <input
                                 type="text"
-                                placeholder={`Search ${categoryName.toLowerCase()}...`}
+                                placeholder="Search products..."
                                 className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 text-lg"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -95,99 +106,99 @@ export function CategoryPage({ categoryId }: CategoryPageProps) {
                 </motion.div>
 
                 {/* Products Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <motion.div
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, duration: 0.6 }}
+                >
                     {products.map((product, index) => {
                         const currentImageIndex = currentImageIndexes[product.id] || 0;
 
                         return (
                             <motion.div
                                 key={product.id}
-                                className={`group relative bg-white rounded-3xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500 ${product.featured ? 'ring-2 ring-green-500' : ''
-                                    }`}
+                                className="group relative bg-white rounded-3xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500 border border-gray-100"
                                 initial={{ opacity: 0, y: 50 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: index * 0.1, duration: 0.6 }}
                                 whileHover={{ y: -10, scale: 1.02 }}
                             >
-                                {product.featured && (
-                                    <div className="absolute top-4 left-4 z-10">
-                                        <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                                            Featured
-                                        </span>
-                                    </div>
-                                )}
-
+                                {/* Product Image */}
                                 <div className="relative h-64 overflow-hidden">
-                                    <AnimatePresence mode="wait">
-                                        <motion.div
-                                            key={`${product.id}-${currentImageIndex}`}
-                                            className="absolute inset-0"
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            exit={{ opacity: 0 }}
-                                            transition={{ duration: 1.2, ease: "easeInOut" }}
+                                    <Image
+                                        src={product.images[currentImageIndex]}
+                                        alt={product.name}
+                                        width={400}
+                                        height={300}
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+                                    {/* Featured Badge */}
+                                    {product.featured && (
+                                        <div className="absolute top-4 left-4 z-10">
+                                            <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg">
+                                                Featured
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    {/* Heart Icon */}
+                                    <div className="absolute top-4 right-4 z-10">
+                                        <motion.button
+                                            className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white transition-all duration-300"
+                                            whileHover={{ scale: 1.1 }}
+                                            whileTap={{ scale: 0.9 }}
                                         >
-                                            <Image
-                                                src={product.images[currentImageIndex]}
-                                                alt={`${product.name} - View ${currentImageIndex + 1}`}
-                                                width={400}
-                                                height={300}
-                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                            />
-                                        </motion.div>
-                                    </AnimatePresence>
-                                    <motion.button
-                                        className="absolute top-4 right-4 p-3 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white transition-all duration-300 z-20"
-                                        whileHover={{ scale: 1.1 }}
-                                        whileTap={{ scale: 0.9 }}
-                                    >
-                                        <Heart size={20} className="text-gray-600" />
-                                    </motion.button>
+                                            <Heart size={16} className="text-gray-600" />
+                                        </motion.button>
+                                    </div>
                                 </div>
 
-                                {/* Video Background for Product Content */}
-                                <div className="absolute bottom-0 left-0 right-0 top-64 pointer-events-none z-0">
-                                    <VideoBackground videoUrl="/assets/video/falling_leaves.mp4" fallbackImage="/assets/background_images/image4.jpg" />
-                                </div>
-
-                                <div className="relative p-6 bg-transparent backdrop-blur-sm z-10">
+                                {/* Content */}
+                                <div className="p-6 bg-gradient-to-br from-white to-gray-50">
                                     <div className="flex justify-between items-start mb-3">
-                                        <h3 className="text-xl font-bold text-white">{product.name}</h3>
+                                        <h3 className="text-xl font-bold text-gray-900 group-hover:text-green-600 transition-colors duration-300">
+                                            {product.name}
+                                        </h3>
                                         <div className="flex items-center bg-yellow-500/30 backdrop-blur-sm px-2 py-1 rounded-full">
-                                            <Star className="text-yellow-300 fill-current" size={16} />
-                                            <span className="text-sm font-semibold text-yellow-200 ml-1">{product.rating}</span>
+                                            <Star className="text-yellow-500 fill-current" size={16} />
+                                            <span className="text-sm font-semibold text-yellow-600 ml-1">{product.rating}</span>
                                         </div>
                                     </div>
 
-                                    <p className="text-gray-200 mb-3">By {product.farmer}</p>
-                                    <div className="flex items-center text-gray-300 mb-4">
+                                    <p className="text-gray-600 mb-3">By {product.farmer}</p>
+                                    <div className="flex items-center text-gray-500 mb-4">
                                         <MapPin size={16} />
                                         <span className="ml-1 text-sm">{product.location}</span>
                                     </div>
 
                                     <div className="flex justify-between items-center mb-6">
-                                        <div className="text-2xl font-bold text-green-300">
+                                        <div className="text-2xl font-bold text-green-600">
                                             R{product.price}
-                                            <span className="text-sm text-gray-300 font-normal">/{product.unit}</span>
+                                            <span className="text-sm text-gray-500 font-normal">/{product.unit}</span>
                                         </div>
-                                        <div className="text-sm text-gray-300">
+                                        <div className="text-sm text-gray-500">
                                             {product.quantity} {product.unit} available
                                         </div>
                                     </div>
 
-                                    <motion.button
-                                        className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center group"
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                    >
-                                        <ShoppingCart className="mr-2" size={20} />
-                                        Add to Cart
-                                    </motion.button>
+                                    <Link href={`/products/${product.id}`}>
+                                        <motion.button
+                                            className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center group"
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                        >
+                                            <ShoppingCart className="mr-2" size={20} />
+                                            Purchase
+                                        </motion.button>
+                                    </Link>
                                 </div>
                             </motion.div>
                         );
                     })}
-                </div>
+                </motion.div>
             </div>
         </div>
     );
