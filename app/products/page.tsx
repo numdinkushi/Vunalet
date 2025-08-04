@@ -1,5 +1,5 @@
 import { Header } from '@/components/layout/Header';
-import { ProductsPage } from '@/components/pages/ProductsPage';
+import { ProductsPage } from '@/components/pages/product/ProductsPage';
 import { Footer } from '@/components/layout/Footer';
 
 export default function Products() {

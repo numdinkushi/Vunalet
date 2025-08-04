@@ -67,13 +67,13 @@ export default function RootLayout({
         },
       }}
     >
-      <html lang="en">
-        <body
+    <html lang="en">
+      <body
           className={`${geistSans.variable} ${geistMono.variable} ${russoOne.variable} ${bungee.variable} ${righteous.variable} ${chakraPetch.variable} antialiased`}
-        >
-          {children}
-        </body>
-      </html>
+      >
+        {children}
+      </body>
+    </html>
     </ClerkProvider>
   );
 }
