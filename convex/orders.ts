@@ -1,0 +1,246 @@
+import { v } from "convex/values";
+import { mutation, query } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
+
+// Create a new order
+export const createOrder = mutation({
+    args: {
+        buyerId: v.string(),
+        farmerId: v.string(),
+        products: v.array(v.object({
+            productId: v.string(),
+            name: v.string(),
+            price: v.number(),
+            quantity: v.number(),
+            unit: v.string(),
+        })),
+        totalAmount: v.number(),
+        deliveryAddress: v.string(),
+        deliveryCoordinates: v.optional(v.object({
+            lat: v.number(),
+            lng: v.number()
+        })),
+        deliveryDistance: v.number(),
+        deliveryCost: v.number(),
+        totalCost: v.number(),
+        paymentMethod: v.union(v.literal("lisk_zar"), v.literal("cash")),
+        paymentStatus: v.union(v.literal("pending"), v.literal("paid"), v.literal("failed")),
+        orderStatus: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("delivered"), v.literal("cancelled")),
+        specialInstructions: v.optional(v.string()),
+        estimatedDeliveryTime: v.optional(v.string()),
+    },
+    handler: async (ctx, args) => {
+        return await ctx.db.insert("orders", {
+            ...args,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        });
+    },
+});
+
+// Get orders by buyer
+export const getOrdersByBuyer = query({
+    args: { buyerId: v.string() },
+    handler: async (ctx, args) => {
+        return await ctx.db
+            .query("orders")
+            .withIndex("by_buyer", (q) => q.eq("buyerId", args.buyerId))
+            .order("desc")
+            .collect();
+    },
+});
+
+// Get orders by farmer
+export const getOrdersByFarmer = query({
+    args: { farmerId: v.string() },
+    handler: async (ctx, args) => {
+        return await ctx.db
+            .query("orders")
+            .withIndex("by_farmer", (q) => q.eq("farmerId", args.farmerId))
+            .order("desc")
+            .collect();
+    },
+});
+
+// Get orders by dispatcher
+export const getOrdersByDispatcher = query({
+    args: { dispatcherId: v.string() },
+    handler: async (ctx, args) => {
+        return await ctx.db
+            .query("orders")
+            .withIndex("by_dispatcher", (q) => q.eq("dispatcherId", args.dispatcherId))
+            .order("desc")
+            .collect();
+    },
+});
+
+// Get order by ID
+export const getOrderById = query({
+    args: { orderId: v.string() },
+    handler: async (ctx, args) => {
+        return await ctx.db.get(args.orderId as Id<"orders">);
+    },
+});
+
+// Update order status
+export const updateOrderStatus = mutation({
+    args: {
+        orderId: v.string(),
+        orderStatus: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("delivered"), v.literal("cancelled")),
+        estimatedDeliveryTime: v.optional(v.string()),
+        actualDeliveryTime: v.optional(v.string()),
+    },
+    handler: async (ctx, args) => {
+        const { orderId, ...updateData } = args;
+        return await ctx.db.patch(orderId as Id<"orders">, {
+            ...updateData,
+            updatedAt: Date.now(),
+        });
+    },
+});
+
+// Update payment status
+export const updatePaymentStatus = mutation({
+    args: {
+        orderId: v.string(),
+        paymentStatus: v.union(v.literal("pending"), v.literal("paid"), v.literal("failed")),
+    },
+    handler: async (ctx, args) => {
+        return await ctx.db.patch(args.orderId as Id<"orders">, {
+            paymentStatus: args.paymentStatus,
+            updatedAt: Date.now(),
+        });
+    },
+});
+
+// Assign dispatcher to order
+export const assignDispatcher = mutation({
+    args: {
+        orderId: v.string(),
+        dispatcherId: v.string(),
+    },
+    handler: async (ctx, args) => {
+        return await ctx.db.patch(args.orderId as Id<"orders">, {
+            dispatcherId: args.dispatcherId,
+            updatedAt: Date.now(),
+        });
+    },
+});
+
+// Get orders by status
+export const getOrdersByStatus = query({
+    args: {
+        status: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("delivered"), v.literal("cancelled")),
+        role: v.union(v.literal("farmer"), v.literal("dispatcher"), v.literal("buyer")),
+        userId: v.string(),
+    },
+    handler: async (ctx, args) => {
+        let orders;
+
+        if (args.role === "farmer") {
+            orders = await ctx.db
+                .query("orders")
+                .withIndex("by_farmer", (q) => q.eq("farmerId", args.userId))
+                .collect();
+        } else if (args.role === "dispatcher") {
+            orders = await ctx.db
+                .query("orders")
+                .withIndex("by_dispatcher", (q) => q.eq("dispatcherId", args.userId))
+                .collect();
+        } else {
+            orders = await ctx.db
+                .query("orders")
+                .withIndex("by_buyer", (q) => q.eq("buyerId", args.userId))
+                .collect();
+        }
+
+        return orders.filter(order => order.orderStatus === args.status);
+    },
+});
+
+// Get recent orders
+export const getRecentOrders = query({
+    args: {
+        role: v.union(v.literal("farmer"), v.literal("dispatcher"), v.literal("buyer")),
+        userId: v.string(),
+        limit: v.optional(v.number()),
+    },
+    handler: async (ctx, args) => {
+        let orders;
+
+        if (args.role === "farmer") {
+            orders = await ctx.db
+                .query("orders")
+                .withIndex("by_farmer", (q) => q.eq("farmerId", args.userId))
+                .order("desc")
+                .collect();
+        } else if (args.role === "dispatcher") {
+            orders = await ctx.db
+                .query("orders")
+                .withIndex("by_dispatcher", (q) => q.eq("dispatcherId", args.userId))
+                .order("desc")
+                .collect();
+        } else {
+            orders = await ctx.db
+                .query("orders")
+                .withIndex("by_buyer", (q) => q.eq("buyerId", args.userId))
+                .order("desc")
+                .collect();
+        }
+
+        return orders.slice(0, args.limit || 10);
+    },
+});
+
+// Cancel order
+export const cancelOrder = mutation({
+    args: { orderId: v.string() },
+    handler: async (ctx, args) => {
+        return await ctx.db.patch(args.orderId as Id<"orders">, {
+            orderStatus: "cancelled",
+            updatedAt: Date.now(),
+        });
+    },
+});
+
+// Get order statistics
+export const getOrderStats = query({
+    args: {
+        role: v.union(v.literal("farmer"), v.literal("dispatcher"), v.literal("buyer")),
+        userId: v.string(),
+    },
+    handler: async (ctx, args) => {
+        let orders;
+
+        if (args.role === "farmer") {
+            orders = await ctx.db
+                .query("orders")
+                .withIndex("by_farmer", (q) => q.eq("farmerId", args.userId))
+                .collect();
+        } else if (args.role === "dispatcher") {
+            orders = await ctx.db
+                .query("orders")
+                .withIndex("by_dispatcher", (q) => q.eq("dispatcherId", args.userId))
+                .collect();
+        } else {
+            orders = await ctx.db
+                .query("orders")
+                .withIndex("by_buyer", (q) => q.eq("buyerId", args.userId))
+                .collect();
+        }
+
+        const stats = {
+            total: orders.length,
+            pending: orders.filter(o => o.orderStatus === "pending").length,
+            confirmed: orders.filter(o => o.orderStatus === "confirmed").length,
+            preparing: orders.filter(o => o.orderStatus === "preparing").length,
+            ready: orders.filter(o => o.orderStatus === "ready").length,
+            inTransit: orders.filter(o => o.orderStatus === "in_transit").length,
+            delivered: orders.filter(o => o.orderStatus === "delivered").length,
+            cancelled: orders.filter(o => o.orderStatus === "cancelled").length,
+            totalRevenue: orders.reduce((sum, order) => sum + order.totalAmount, 0),
+        };
+
+        return stats;
+    },
+}); 
