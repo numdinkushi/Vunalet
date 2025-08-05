@@ -159,30 +159,35 @@ export function ProductsPage() {
                                         </div>
                                     </div>
 
+                                    {/* Video Background for Product Content */}
+                                    <div className="absolute bottom-0 left-0 right-0 top-64 pointer-events-none z-0">
+                                        <VideoBackground videoUrl="/assets/video/falling_leaves.mp4" fallbackImage="/assets/background_images/image4.jpg" />
+                                    </div>
+
                                     {/* Content */}
-                                    <div className="p-6 bg-gradient-to-br from-white to-gray-50">
+                                    <div className="relative p-6 bg-transparent backdrop-blur-sm z-10">
                                         <div className="flex justify-between items-start mb-3">
-                                            <h3 className="text-xl font-bold text-gray-900 group-hover:text-green-600 transition-colors duration-300">
+                                            <h3 className="text-xl font-bold text-white group-hover:text-green-300 transition-colors duration-300">
                                                 {product.name}
                                             </h3>
                                             <div className="flex items-center bg-yellow-500/30 backdrop-blur-sm px-2 py-1 rounded-full">
-                                                <Star className="text-yellow-500 fill-current" size={16} />
-                                                <span className="text-sm font-semibold text-yellow-600 ml-1">{product.rating}</span>
+                                                <Star className="text-yellow-300 fill-current" size={16} />
+                                                <span className="text-sm font-semibold text-yellow-200 ml-1">{product.rating}</span>
                                             </div>
                                         </div>
 
-                                        <p className="text-gray-600 mb-3">By {product.farmer}</p>
-                                        <div className="flex items-center text-gray-500 mb-4">
+                                        <p className="text-gray-200 mb-3">By {product.farmer}</p>
+                                        <div className="flex items-center text-gray-300 mb-4">
                                             <MapPin size={16} />
                                             <span className="ml-1 text-sm">{product.location}</span>
                                         </div>
 
                                         <div className="flex justify-between items-center mb-6">
-                                            <div className="text-2xl font-bold text-green-600">
+                                            <div className="text-2xl font-bold text-green-300">
                                                 R{product.price}
-                                                <span className="text-sm text-gray-500 font-normal">/{product.unit}</span>
+                                                <span className="text-sm text-gray-300 font-normal">/{product.unit}</span>
                                             </div>
-                                            <div className="text-sm text-gray-500">
+                                            <div className="text-sm text-gray-300">
                                                 {product.quantity} {product.unit} available
                                             </div>
                                         </div>
