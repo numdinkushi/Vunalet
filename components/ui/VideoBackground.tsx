@@ -1,13 +1,15 @@
 'use client';
 
+import { cn } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 
 interface VideoBackgroundProps {
     videoUrl: string;
     fallbackImage?: string;
+    styles?: string
 }
 
-export const VideoBackground = ({ videoUrl, fallbackImage }: VideoBackgroundProps) => {
+export const VideoBackground = ({ videoUrl, fallbackImage, styles }: VideoBackgroundProps) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isVideoLoaded, setIsVideoLoaded] = useState(false);
     const [isYouTube, setIsYouTube] = useState(false);
@@ -75,7 +77,7 @@ export const VideoBackground = ({ videoUrl, fallbackImage }: VideoBackgroundProp
 
     // For local video files
     return (
-        <div className="absolute inset-0 overflow-hidden rounded-3xl">
+        <div className={cn("absolute inset-0 overflow-hidden", styles)}>
             <video
                 ref={videoRef}
                 autoPlay

@@ -6,6 +6,7 @@ const isPublicRoute = createRouteMatcher([
     '/sign-up(.*)',
     "/",
     '/products',
+    '/categories(.*)',
     '/farmers',
     '/about',
     '/api/webhook(.*)', // allow Clerk webhooks (no auth info)
