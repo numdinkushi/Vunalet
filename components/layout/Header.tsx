@@ -21,6 +21,7 @@ const navItems = [
     { name: 'Products', href: '/products' },
     { name: 'Farmers', href: '/farmers' },
     { name: 'About', href: '/about' },
+    { name: 'Dashboard', href: '/dashboard' },
 ];
 
 export function Header() {

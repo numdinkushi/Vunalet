@@ -36,7 +36,7 @@ export default function DashboardPage() {
 
     if (!isLoaded) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
+            <div className="flex items-center justify-center min-h-[calc(100vh-5rem)]">
                 <Card className="w-full max-w-md">
                     <CardContent className="p-6 text-center">
                         <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
@@ -50,7 +50,7 @@ export default function DashboardPage() {
 
     if (!user) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
+            <div className="flex items-center justify-center min-h-[calc(100vh-5rem)] bg-gradient-to-br from-green-50 to-blue-50">
                 <Card className="w-full max-w-md">
                     <CardContent className="p-6 text-center">
                         <h2 className="text-2xl font-bold mb-4">Welcome to Vunalet</h2>

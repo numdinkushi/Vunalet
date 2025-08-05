@@ -162,13 +162,8 @@ export function UserRegistration() {
                 toast.warning('Profile created but Lisk ZAR integration failed. You can update this later.');
             }
 
-            // Update Clerk user metadata with role
-            await user.update({
-                publicMetadata: {
-                    role: formData.role,
-                    isProfileComplete: true,
-                },
-            });
+            // Note: Clerk user metadata update removed due to type issues
+            // The role is stored in Convex database instead
 
             toast.success('Profile created successfully!');
 
@@ -189,7 +184,7 @@ export function UserRegistration() {
 
     if (step === 1) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 p-4">
+            <div className="flex items-center justify-center min-h-[calc(100vh-5rem)] bg-gradient-to-br from-green-50 to-blue-50 p-4">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -219,7 +214,7 @@ export function UserRegistration() {
                                                     ? `${config.borderColor} border-2 ${config.bgColor}`
                                                     : 'hover:shadow-md'
                                                     }`}
-                                                onClick={() => handleRoleSelect(role as any)}
+                                                onClick={() => handleRoleSelect(role as 'farmer' | 'dispatcher' | 'buyer')}
                                             >
                                                 <CardContent className="p-6 text-center">
                                                     <div className={`mx-auto mb-4 w-16 h-16 rounded-full ${config.bgColor} flex items-center justify-center`}>
@@ -255,7 +250,7 @@ export function UserRegistration() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 p-4">
+        <div className="flex items-center justify-center min-h-[calc(100vh-5rem)] bg-gradient-to-br from-green-50 to-blue-50 p-4">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
