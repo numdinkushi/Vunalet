@@ -27,12 +27,8 @@ const navItems = [
 export function Header() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
-    const [isHomePage, setIsHomePage] = useState(false);
 
     useEffect(() => {
-        // Check if we're on the homepage
-        setIsHomePage(window.location.pathname === '/');
-
         const handleScroll = () => setIsScrolled(window.scrollY > 50);
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
@@ -40,9 +36,7 @@ export function Header() {
 
     return (
         <motion.header
-            className={`fixed top-0 w-full z-50 transition-all duration-300 ${isHomePage
-                ? (isScrolled ? 'bg-white/95 backdrop-blur-lg shadow-lg' : 'bg-transparent')
-                : 'bg-white/95 backdrop-blur-lg shadow-lg'
+            className={`fixed top-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white/95 backdrop-blur-lg shadow-lg' : 'bg-transparent'
                 }`}
             initial={{ y: -100 }}
             animate={{ y: 0 }}
@@ -61,11 +55,7 @@ export function Header() {
                             transition={{ duration: 0.6 }}
                         >
                             <Image
-                                src={
-                                    isHomePage
-                                        ? (isScrolled ? "/assets/logo/logo.png" : "/assets/logo/logo_white.png")
-                                        : "/assets/logo/logo.png"
-                                }
+                                src={isScrolled ? "/assets/logo/logo.png" : "/assets/logo/logo_white.png"}
                                 alt="Vunalet Logo"
                                 width={40}
                                 height={40}
@@ -73,10 +63,7 @@ export function Header() {
                             />
                         </motion.div>
                         <motion.h1
-                            className={`text-2xl font-bold ${isHomePage
-                                ? (isScrolled ? 'text-green-600' : 'text-white')
-                                : 'text-green-600'
-                                }`}
+                            className={`text-2xl font-bold ${isScrolled ? 'text-green-600' : 'text-white'}`}
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.2 }}
@@ -91,9 +78,9 @@ export function Header() {
                             <motion.a
                                 key={item.name}
                                 href={item.href}
-                                className={`px-3 py-2 text-sm font-medium transition-colors ${isHomePage
-                                    ? (isScrolled ? 'text-gray-700 hover:text-green-600' : 'text-white/90 hover:text-white')
-                                    : 'text-gray-700 hover:text-green-600'
+                                className={`px-3 py-2 text-sm font-medium transition-colors ${isScrolled
+                                    ? 'text-gray-700 hover:text-green-600'
+                                    : 'text-white/90 hover:text-white'
                                     }`}
                                 initial={{ opacity: 0, y: -20 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -107,9 +94,9 @@ export function Header() {
 
                     <div className="hidden md:flex items-center space-x-4">
                         <motion.button
-                            className={`p-2 rounded-full transition-all duration-300 ${isHomePage
-                                    ? (isScrolled ? 'text-gray-700 hover:text-green-600 hover:bg-green-50' : 'text-white/90 hover:text-white hover:bg-white/10')
-                                    : 'text-gray-700 hover:text-green-600 hover:bg-green-50'
+                            className={`p-2 rounded-full transition-all duration-300 ${isScrolled
+                                ? 'text-gray-700 hover:text-green-600 hover:bg-green-50'
+                                : 'text-white/90 hover:text-white hover:bg-white/10'
                                 }`}
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
@@ -121,9 +108,9 @@ export function Header() {
                             <motion.div className="flex items-center space-x-2">
                                 <SignInButton mode="modal">
                                     <motion.button
-                                        className={`px-4 py-2 rounded-lg transition-all duration-300 ${isHomePage
-                                                ? (isScrolled ? 'text-gray-700 hover:text-green-600' : 'text-white/90 hover:text-white')
-                                                : 'text-gray-700 hover:text-green-600'
+                                                                                className={`px-4 py-2 rounded-lg transition-all duration-300 ${isScrolled
+                                            ? 'text-gray-700 hover:text-green-600'
+                                            : 'text-white/90 hover:text-white'
                                             }`}
                                         whileHover={{ scale: 1.05 }}
                                         whileTap={{ scale: 0.95 }}
@@ -156,9 +143,9 @@ export function Header() {
 
                     {/* Mobile menu button */}
                     <motion.button
-                        className={`md:hidden p-2 rounded-lg transition-all duration-300 ${isHomePage
-                                ? (isScrolled ? 'text-gray-700 hover:bg-green-50' : 'text-white hover:bg-white/10')
-                                : 'text-gray-700 hover:bg-green-50'
+                                                className={`md:hidden p-2 rounded-lg transition-all duration-300 ${isScrolled
+                            ? 'text-gray-700 hover:bg-green-50'
+                            : 'text-white hover:bg-white/10'
                             }`}
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
                         whileTap={{ scale: 0.9 }}

@@ -4,8 +4,6 @@ import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
 import { PushNotificationManager, InstallPrompt } from '@/components/PWAComponents';
 import { ConvexClientProvider } from '../providers/ConvexClientProvider';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -79,13 +77,7 @@ export default function RootLayout({
             />
           </head>
           <body className={inter.className}>
-            <div className="min-h-screen bg-white">
-              <Header />
-              <main className="pt-20">
-                {children}
-              </main>
-              <Footer />
-            </div>
+            {children}
             <PushNotificationManager />
             <InstallPrompt />
           </body>
