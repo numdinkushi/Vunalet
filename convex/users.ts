@@ -2,12 +2,44 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 
+// Create basic user profile (without role)
+export const createBasicUserProfile = mutation({
+    args: {
+        clerkUserId: v.string(),
+        email: v.string(),
+        firstName: v.string(),
+        lastName: v.string(),
+    },
+    handler: async (ctx, args) => {
+        const existingProfile = await ctx.db
+            .query("userProfiles")
+            .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", args.clerkUserId))
+            .first();
+
+        if (existingProfile) {
+            // Update existing profile with basic info
+            return await ctx.db.patch(existingProfile._id, {
+                ...args,
+                updatedAt: Date.now(),
+            });
+        } else {
+            // Create new basic profile
+            return await ctx.db.insert("userProfiles", {
+                ...args,
+                isVerified: false,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+            });
+        }
+    },
+});
+
 // Create or update user profile
 export const createUserProfile = mutation({
     args: {
         clerkUserId: v.string(),
         email: v.string(),
-        role: v.union(v.literal("farmer"), v.literal("dispatcher"), v.literal("buyer")),
+        role: v.optional(v.union(v.literal("farmer"), v.literal("dispatcher"), v.literal("buyer"))),
         firstName: v.string(),
         lastName: v.string(),
         phone: v.optional(v.string()),
