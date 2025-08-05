@@ -153,7 +153,7 @@ export function FeaturesSection() {
                 >
                     {/* Video Background for Stats Section */}
                     <div className="absolute inset-0 pointer-events-none z-0 ">
-                        <VideoBackground videoUrl="/assets/video/falling_leaves.mp4" fallbackImage="/assets/background_images/image4.jpg" />
+                        <VideoBackground videoUrl="/assets/video/falling_leaves.mp4" fallbackImage="/assets/background_images/image4.jpg" styles='rounded-3xl' />
                     </div>
                     <div className="absolute inset-0 bg-green-500/20 rounded-3xl" />
 
