@@ -1,10 +1,10 @@
 'use client';
 
-import { SignIn } from '@clerk/nextjs';
+import { SignUp } from '@clerk/nextjs';
 import { motion } from 'framer-motion';
-import { VideoBackground } from '../../components/ui/VideoBackground';
+import { VideoBackground } from '../../../components/ui/VideoBackground';
 
-export default function SignInPage() {
+export default function SignUpPage() {
     return (
         <div className="min-h-screen relative">
             {/* Background */}
@@ -21,11 +21,11 @@ export default function SignInPage() {
                 >
                     <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-8">
                         <div className="text-center mb-8">
-                            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
-                            <p className="text-gray-600">Sign in to your Vunalet account</p>
+                            <h1 className="text-3xl font-bold text-gray-900 mb-2">Join Vunalet</h1>
+                            <p className="text-gray-600">Create your account to start buying fresh produce</p>
                         </div>
 
-                        <SignIn
+                        <SignUp
                             appearance={{
                                 baseTheme: undefined,
                                 variables: {
