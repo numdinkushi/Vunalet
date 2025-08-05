@@ -23,6 +23,7 @@ export function ProductCarousel({
 }: ProductCarouselProps) {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [imageError, setImageError] = useState(false);
+    const [isTransitioning, setIsTransitioning] = useState(false);
 
     // Filter out invalid images
     const validImages = images.filter(img => img && typeof img === 'string' && img.trim() !== '');
@@ -31,7 +32,11 @@ export function ProductCarousel({
         if (!autoPlay || validImages.length <= 1) return;
 
         const timer = setInterval(() => {
-            setCurrentImageIndex((prev) => (prev + 1) % validImages.length);
+            setIsTransitioning(true);
+            setTimeout(() => {
+                setCurrentImageIndex((prev) => (prev + 1) % validImages.length);
+                setIsTransitioning(false);
+            }, 600); // Half of the transition duration
         }, interval);
 
         return () => clearInterval(timer);
@@ -41,6 +46,7 @@ export function ProductCarousel({
     useEffect(() => {
         setImageError(false);
         setCurrentImageIndex(0);
+        setIsTransitioning(false);
     }, [images]);
 
     if (validImages.length === 0) {
@@ -64,10 +70,14 @@ export function ProductCarousel({
                 <motion.div
                     key={`product-${productId}-${currentImageIndex}`}
                     className="absolute inset-0"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.6, ease: "easeInOut" }}
+                    initial={{ opacity: 0, scale: 1.1 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{
+                        duration: 1.2,
+                        ease: "easeInOut",
+                        delay: isTransitioning ? 0.6 : 0 // Delay during transition
+                    }}
                 >
                     <Image
                         src={currentImage}
@@ -100,8 +110,8 @@ export function ProductCarousel({
                             key={index}
                             onClick={() => setCurrentImageIndex(index)}
                             className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentImageIndex
-                                    ? 'bg-white shadow-lg'
-                                    : 'bg-white/50 hover:bg-white/75'
+                                ? 'bg-white shadow-lg'
+                                : 'bg-white/50 hover:bg-white/75'
                                 }`}
                         />
                     ))}

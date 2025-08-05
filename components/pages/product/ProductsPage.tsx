@@ -8,7 +8,8 @@ import {
     Star,
     Heart,
     Filter,
-    ShoppingCart
+    ShoppingCart,
+    ArrowRight
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -281,7 +282,7 @@ export function ProductsPage() {
                                         </span>
                                         <span className="text-sm font-semibold text-green-600 group-hover:text-green-700 transition-colors duration-300 flex items-center">
                                             Explore
-                                            <ShoppingCart size={14} className="ml-1 group-hover:translate-x-1 transition-transform" />
+                                            <ArrowRight size={14} className="ml-1 group-hover:translate-x-1 transition-transform" />
                                         </span>
                                     </div>
                                 </div>
