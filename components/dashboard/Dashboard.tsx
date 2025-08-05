@@ -85,7 +85,7 @@ export function Dashboard() {
     const config = roleConfig[userProfile.role as keyof typeof roleConfig];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100">
             <div className="max-w-7xl mx-auto px-4 py-8">
                 {/* Header */}
                 <motion.div

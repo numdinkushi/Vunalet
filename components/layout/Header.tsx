@@ -21,6 +21,7 @@ const navItems = [
     { name: 'Products', href: '/products' },
     { name: 'Farmers', href: '/farmers' },
     { name: 'About', href: '/about' },
+    { name: 'Dashboard', href: '/dashboard' },
 ];
 
 export function Header() {
@@ -107,7 +108,7 @@ export function Header() {
                             <motion.div className="flex items-center space-x-2">
                                 <SignInButton mode="modal">
                                     <motion.button
-                                        className={`px-4 py-2 rounded-lg transition-all duration-300 ${isScrolled
+                                                                                className={`px-4 py-2 rounded-lg transition-all duration-300 ${isScrolled
                                             ? 'text-gray-700 hover:text-green-600'
                                             : 'text-white/90 hover:text-white'
                                             }`}
@@ -142,7 +143,7 @@ export function Header() {
 
                     {/* Mobile menu button */}
                     <motion.button
-                        className={`md:hidden p-2 rounded-lg transition-all duration-300 ${isScrolled
+                                                className={`md:hidden p-2 rounded-lg transition-all duration-300 ${isScrolled
                             ? 'text-gray-700 hover:bg-green-50'
                             : 'text-white hover:bg-white/10'
                             }`}

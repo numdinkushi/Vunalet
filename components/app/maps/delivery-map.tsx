@@ -3,6 +3,48 @@
 import { useEffect, useRef, useState } from 'react';
 import { MapPin, Navigation, Truck, Clock } from 'lucide-react';
 
+// Declare Leaflet types
+declare global {
+    interface Window {
+        L: {
+            map: (element: HTMLElement) => LeafletMap;
+            tileLayer: (url: string, options: Record<string, unknown>) => LeafletTileLayer;
+            marker: (coords: [number, number], options?: Record<string, unknown>) => LeafletMarker;
+            polyline: (coords: [number, number][], options?: Record<string, unknown>) => LeafletPolyline;
+            divIcon: (options: Record<string, unknown>) => LeafletDivIcon;
+            Map: typeof LeafletMap;
+            Marker: typeof LeafletMarker;
+            Polyline: typeof LeafletPolyline;
+        };
+    }
+}
+
+interface LeafletMap {
+    setView: (center: [number, number], zoom: number) => LeafletMap;
+    eachLayer: (callback: (layer: LeafletLayer) => void) => void;
+    removeLayer: (layer: LeafletLayer) => void;
+    fitBounds: (bounds: unknown, options?: Record<string, unknown>) => void;
+    remove: () => void;
+}
+
+interface LeafletTileLayer {
+    addTo: (map: LeafletMap) => LeafletTileLayer;
+}
+
+interface LeafletMarker {
+    addTo: (map: LeafletMap) => LeafletMarker;
+    bindPopup: (content: string) => LeafletMarker;
+}
+
+interface LeafletPolyline {
+    addTo: (map: LeafletMap) => LeafletPolyline;
+    getBounds: () => unknown;
+}
+
+type LeafletDivIcon = Record<string, unknown>;
+
+type LeafletLayer = unknown;
+
 interface Coordinates {
     lat: number;
     lng: number;
@@ -31,7 +73,7 @@ interface MapMarkersProps {
 // Simulated React Leaflet Components
 const MapContainer: React.FC<MapContainerProps> = ({ center, zoom, style, children }) => {
     const mapRef = useRef<HTMLDivElement | null>(null);
-    const mapInstanceRef = useRef<L.Map | null>(null);
+    const mapInstanceRef = useRef<LeafletMap | null>(null);
     const [leafletLoaded, setLeafletLoaded] = useState(false);
 
     useEffect(() => {
@@ -85,7 +127,7 @@ const MapContainer: React.FC<MapContainerProps> = ({ center, zoom, style, childr
             const { farmerCoords, customerCoords } = (children as React.ReactElement<MapMarkersProps>).props;
 
             // Clear existing markers and polylines
-            map.eachLayer((layer) => {
+            map.eachLayer((layer: LeafletLayer) => {
                 if (layer instanceof window.L.Marker || layer instanceof window.L.Polyline) {
                     map.removeLayer(layer);
                 }
