@@ -75,7 +75,7 @@ class LiskZarApiService {
 
             return await response.json();
         } catch (error) {
-            console.error('Lisk ZAR API request failed:', error);
+            console.log('Lisk ZAR API request failed:', error);
             throw error;
         }
     }
@@ -132,40 +132,40 @@ export const liskZarApi = new LiskZarApiService();
 
 // Helper function to create user and update Convex profile
 export async function createLiskUserAndUpdateProfile(
-  userData: {
-    clerkUserId: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-  },
-  updateProfileFunction: (data: {
-    clerkUserId: string;
-    liskId: string;
-    publicKey: string;
-    paymentIdentifier: string;
-  }) => Promise<void>
+    userData: {
+        clerkUserId: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+    },
+    updateProfileFunction: (data: {
+        clerkUserId: string;
+        liskId: string;
+        publicKey: string;
+        paymentIdentifier: string;
+    }) => Promise<void>
 ) {
-  try {
-    // Create user in Lisk ZAR system
-    const liskUser = await liskZarApi.createUser({
-      email: userData.email,
-      firstName: userData.firstName,
-      lastName: userData.lastName,
-    });
+    try {
+        // Create user in Lisk ZAR system
+        const liskUser = await liskZarApi.createUser({
+            email: userData.email,
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+        });
 
-    // Update Convex profile with Lisk ZAR data
-    await updateProfileFunction({
-      clerkUserId: userData.clerkUserId,
-      liskId: liskUser.user.id,
-      publicKey: liskUser.user.publicKey,
-      paymentIdentifier: liskUser.user.paymentIdentifier,
-    });
+        // Update Convex profile with Lisk ZAR data
+        await updateProfileFunction({
+            clerkUserId: userData.clerkUserId,
+            liskId: liskUser.user.id,
+            publicKey: liskUser.user.publicKey,
+            paymentIdentifier: liskUser.user.paymentIdentifier,
+        });
 
-    return liskUser;
-  } catch (error) {
-    console.error('Failed to create Lisk ZAR user:', error);
-    throw error;
-  }
+        return liskUser;
+    } catch (error) {
+        console.log('Failed to create Lisk ZAR user:', error);
+        throw error;
+    }
 }
 
 // Helper function to process payment
@@ -184,7 +184,7 @@ export async function processPayment(
 
         return payment;
     } catch (error) {
-        console.error('Failed to process payment:', error);
+        console.log('Failed to process payment:', error);
         throw error;
     }
 } 

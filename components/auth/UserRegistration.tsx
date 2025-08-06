@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
-import { useMutation } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { createLiskUserAndUpdateProfile } from '../../lib/services/liskZarApi';
+import { userIntegrationService } from '../../lib/services/userIntegrationService';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
@@ -62,7 +62,7 @@ export function UserRegistration() {
     const { user } = useUser();
     const { setActive } = useClerk();
     const createUserProfile = useMutation(api.users.createUserProfile);
-    const updateLiskUserData = useMutation(api.users.updateLiskUserData);
+    const createUserWithStablecoinIntegration = useMutation(api.users.createUserWithStablecoinIntegration);
 
     const [formData, setFormData] = useState<RegistrationFormData>({
         role: 'buyer',
@@ -100,11 +100,12 @@ export function UserRegistration() {
                             lng: position.coords.longitude,
                         }
                     }));
-                    toast.success('Location captured successfully!');
+                    toast.success('Location captured successfully! Your location has been saved.');
                 },
                 (error) => {
-                    console.error('Error getting location:', error);
-                    toast.error('Could not get your location. Please enter manually.');
+                    console.log('Error getting location:', error);
+                    const errorMessage = error instanceof Error ? error.message : String(error);
+                    toast.error(`Location access denied: ${errorMessage}. Please enter your location manually.`);
                 }
             );
         }
@@ -121,57 +122,94 @@ export function UserRegistration() {
         setIsSubmitting(true);
 
         try {
-            // Create user profile in Convex
-            await createUserProfile({
+            console.log('Starting user registration flow...');
+
+            // Step 1: Create user in stablecoin system
+            console.log('Step 1: Creating user in stablecoin system...');
+            const integrationResult = await userIntegrationService.completeUserIntegration({
                 clerkUserId: user.id,
                 email: user.emailAddresses[0].emailAddress,
-                role: formData.role,
                 firstName: formData.firstName,
                 lastName: formData.lastName,
-                phone: formData.phone,
-                address: formData.address,
-                location: formData.location,
-                businessName: formData.businessName,
-                businessLicense: formData.businessLicense,
-                coordinates: formData.coordinates,
             });
 
-            // Create user in Lisk ZAR system
-            try {
-                const liskUser = await createLiskUserAndUpdateProfile(
-                    {
-                        clerkUserId: user.id,
-                        email: user.emailAddresses[0].emailAddress,
-                        firstName: formData.firstName,
-                        lastName: formData.lastName,
-                    },
-                    async (liskData: {
-                        clerkUserId: string;
-                        liskId: string;
-                        publicKey: string;
-                        paymentIdentifier: string;
-                    }) => {
-                        await updateLiskUserData(liskData);
-                    }
-                );
+            if (!integrationResult.success) {
+                console.log('Stablecoin integration failed:', integrationResult.error);
 
-                console.log('Lisk ZAR user created:', liskUser);
-            } catch (liskError) {
-                console.error('Failed to create Lisk ZAR user:', liskError);
-                // Continue with profile creation even if Lisk ZAR fails
-                toast.warning('Profile created but Lisk ZAR integration failed. You can update this later.');
+                // Show error message
+                const errorMessage = integrationResult.error || 'Failed to create user account';
+                toast.error(errorMessage);
+                return;
             }
 
-            // Note: Clerk user metadata update removed due to type issues
-            // The role is stored in Convex database instead
+            console.log('Step 1 completed: User created in stablecoin system:', integrationResult.stablecoinUser);
 
-            toast.success('Profile created successfully!');
+            // Step 2: Create/update user profile in Convex with stablecoin data
+            console.log('Step 2: Creating user profile in Convex...');
+            console.log('Stablecoin data to save:', {
+                liskId: integrationResult.stablecoinUser?.id,
+                publicKey: integrationResult.stablecoinUser?.publicKey,
+                paymentIdentifier: integrationResult.stablecoinUser?.paymentIdentifier,
+            });
+
+            let convexResult;
+            try {
+                const convexData = {
+                    clerkUserId: user.id,
+                    email: user.emailAddresses[0].emailAddress,
+                    role: formData.role,
+                    firstName: formData.firstName,
+                    lastName: formData.lastName,
+                    phone: formData.phone,
+                    address: formData.address,
+                    location: formData.location,
+                    businessName: formData.businessName,
+                    businessLicense: formData.businessLicense,
+                    coordinates: formData.coordinates,
+                    // Stablecoin API data
+                    liskId: integrationResult.stablecoinUser?.id,
+                    publicKey: integrationResult.stablecoinUser?.publicKey,
+                    paymentIdentifier: integrationResult.stablecoinUser?.paymentIdentifier,
+                };
+
+                console.log('Sending data to Convex:', convexData);
+                console.log('Stablecoin data being sent:', {
+                    liskId: convexData.liskId,
+                    publicKey: convexData.publicKey,
+                    paymentIdentifier: convexData.paymentIdentifier,
+                });
+
+                convexResult = await createUserWithStablecoinIntegration(convexData);
+
+                console.log('Convex mutation completed successfully:', convexResult);
+            } catch (error) {
+                console.log('Error in Convex mutation:', error);
+                throw error;
+            }
+
+            console.log('Step 2 completed: User profile created in Convex:', convexResult);
+
+            // Verify the profile was created/updated correctly
+            console.log('Verifying profile update...');
+
+            // Debug: Check what was actually saved
+            const savedProfile = await fetch('/api/debug-user-profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ clerkUserId: user.id }),
+            });
+            const profileData = await savedProfile.json();
+            console.log('Debug - Saved profile data:', profileData);
+
+            toast.success('Profile created successfully with stablecoin integration! Welcome to Vunalet.');
+            console.log('User registration flow completed successfully');
 
             // Redirect to dashboard
             window.location.href = '/dashboard';
         } catch (error) {
-            console.error('Error creating profile:', error);
-            toast.error('Failed to create profile. Please try again.');
+            console.log('Error in user registration flow:', error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            toast.error(`Failed to complete profile registration: ${errorMessage}`);
         } finally {
             setIsSubmitting(false);
         }
