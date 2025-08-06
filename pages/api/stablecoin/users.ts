@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import axios from 'axios';
+import { toast } from 'sonner';
 
 // API Configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://seal-app-qp9cc.ondigitalocean.app/api/v1';
@@ -55,46 +56,70 @@ export default async function handler(
         }
 
         console.log('Creating user in stablecoin system:', { email, firstName, lastName });
+        console.log('API Configuration:', {
+            baseURL: API_BASE_URL,
+            hasApiKey: !!API_KEY,
+        });
 
         // Create user in stablecoin system
-        const response = await stablecoinApi.post<CreateUserResponse>('/users', {
+        const requestData = {
             email,
             firstName,
             lastName,
-        });
+        };
+        console.log('Sending data to external API:', requestData);
+
+        const response = await stablecoinApi.post<CreateUserResponse>('/users', requestData);
 
         console.log('User created successfully in stablecoin system:', response.data);
 
+        // Extract user data if it's wrapped in a 'user' object
+        let userData = response.data;
+        if (response.data && typeof response.data === 'object' && 'user' in response.data) {
+            console.log('Extracting user data from wrapped response');
+            userData = (response.data as { user: CreateUserResponse; }).user;
+        }
+
         // Return the created user data
-        return res.status(200).json(response.data);
+        return res.status(200).json(userData);
     } catch (error: unknown) {
-        console.error('Failed to create user in stablecoin system:', error);
+        console.log('Failed to create user in stablecoin system:', error);
 
         // Handle different types of errors
         if (error.response) {
             // The request was made and the server responded with a status code
             // that falls out of the range of 2xx
-            const errorMessage = error.response.data?.message || 'Failed to create user';
+            const errorData = error.response.data;
+            let errorMessage = 'Failed to create user';
 
-            // Check if it's a unique constraint error (user already exists)
-            if (errorMessage.includes('Unique constraint failed on the constraint: `User_email_key`')) {
-                // For existing users, we need to return their actual data
-                // Since we can't get it from the API, we'll return a mock response with the user's data
-                return res.status(409).json({
-                    message: 'User already exists',
+            // Extract clean error message from response
+            if (typeof errorData === 'string') {
+                errorMessage = errorData;
+            } else if (errorData?.message) {
+                errorMessage = errorData.message;
+            } else if (errorData?.errors && Array.isArray(errorData.errors)) {
+                errorMessage = errorData.errors.join(', ');
+            }
+
+            console.log('External API error status:', error.response.status);
+            console.log('External API error data:', errorData);
+
+            // Check if it's a unique constraint error (user already exists) - regardless of status code
+            if (errorMessage.includes('Unique constraint failed on the constraint: `User_email_key`') ||
+                errorMessage.includes('User already exists')) {
+
+                console.log('Detected user already exists error');
+                console.log('This could be a real "user exists" or a false positive from the external API');
+
+                // Return the actual error from the external API
+                return res.status(error.response.status).json({
+                    message: 'User creation failed',
                     error: errorMessage,
-                    status: 409,
-                    existingUser: {
-                        id: 'existing-user-id', // This should be fetched from the API
-                        email: email,
-                        firstName: firstName,
-                        lastName: lastName,
-                        publicKey: 'existing-public-key', // This should be fetched from the API
-                        paymentIdentifier: 'existing-payment-identifier', // This should be fetched from the API
-                    }
+                    status: error.response.status,
                 });
             }
 
+            // For all other errors (including 500), return the actual error
             return res.status(error.response.status).json({
                 message: errorMessage,
                 status: error.response.status,
@@ -107,8 +132,9 @@ export default async function handler(
             });
         } else {
             // Something happened in setting up the request that triggered an Error
+            const errorMessage = error instanceof Error ? error.message : 'Internal server error';
             return res.status(500).json({
-                message: error.message || 'Internal server error',
+                message: errorMessage,
                 status: 500,
             });
         }

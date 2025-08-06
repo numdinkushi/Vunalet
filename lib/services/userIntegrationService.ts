@@ -1,4 +1,5 @@
 import { stablecoinApi, CreateUserRequest, CreateUserResponse } from './stablecoinApi';
+import { toast } from 'sonner';
 
 export interface UserIntegrationData {
     clerkUserId: string;
@@ -52,35 +53,23 @@ export class UserIntegrationService {
                 stablecoinUser,
             };
         } catch (error: unknown) {
-            console.error('Failed to create user in stablecoin system:', error);
+            console.log('Failed to create user in stablecoin system:', error);
 
-            // Check if the error is due to user already existing
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            if (errorMessage.includes('Unique constraint failed on the constraint: `User_email_key`') ||
-                errorMessage.includes('User already exists')) {
-                console.log('User already exists in stablecoin system, this is expected for returning users');
-
-                // Try to extract existing user data from the error response
-                let existingUserData = null;
-                if (error && typeof error === 'object' && 'response' in error) {
-                    const response = (error as { response?: { data?: { existingUser?: CreateUserResponse; }; }; }).response;
-                    if (response?.data?.existingUser) {
-                        existingUserData = response.data.existingUser;
-                    }
+            // Extract clean error message
+            let errorMessage = 'Failed to create user in stablecoin system';
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            } else if (typeof error === 'string') {
+                errorMessage = error;
+            } else if (error && typeof error === 'object') {
+                // Handle API error objects
+                if ('message' in error && typeof error.message === 'string') {
+                    errorMessage = error.message;
+                } else if ('error' in error && typeof error.error === 'string') {
+                    errorMessage = error.error;
+                } else {
+                    errorMessage = String(error);
                 }
-
-                // Return existing user data if available, otherwise use fallback
-                return {
-                    success: true,
-                    stablecoinUser: existingUserData || {
-                        id: 'existing-user-id', // This should be fetched from the API
-                        email: userData.email,
-                        firstName: userData.firstName,
-                        lastName: userData.lastName,
-                        publicKey: 'existing-public-key', // This should be fetched from the API
-                        paymentIdentifier: 'existing-payment-identifier', // This should be fetched from the API
-                    },
-                };
             }
 
             return {
@@ -119,8 +108,9 @@ export class UserIntegrationService {
                 stablecoinUser: result.stablecoinUser,
             };
         } catch (error: unknown) {
-            console.error('User integration failed:', error);
+            console.log('User integration failed:', error);
             const errorMessage = error instanceof Error ? error.message : String(error);
+            toast.error(`Failed to complete user integration: ${errorMessage}`);
             return {
                 success: false,
                 error: errorMessage,
@@ -135,7 +125,9 @@ export class UserIntegrationService {
         try {
             return await stablecoinApi.healthCheck();
         } catch (error) {
-            console.error('Integration service health check failed:', error);
+            console.log('Integration service health check failed:', error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            toast.error(`User integration service health check failed: ${errorMessage}`);
             return false;
         }
     }

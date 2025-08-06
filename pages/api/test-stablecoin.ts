@@ -43,7 +43,7 @@ export default async function handler(
             });
         }
     } catch (error: any) {
-        console.error('Test API error:', error);
+        console.log('Test API error:', error);
         return res.status(500).json({
             message: 'Test failed',
             error: error.message || 'Unknown error',

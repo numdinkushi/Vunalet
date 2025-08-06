@@ -288,4 +288,18 @@ export const getUserByLiskId = query({
             .withIndex("by_lisk_id", (q) => q.eq("liskId", args.liskId))
             .first();
     },
+});
+
+// Debug query to get user profile with all fields
+export const getUserProfileDebug = query({
+    args: { clerkUserId: v.string() },
+    handler: async (ctx, args) => {
+        const profile = await ctx.db
+            .query("userProfiles")
+            .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", args.clerkUserId))
+            .first();
+
+        console.log('Debug - User profile data:', profile);
+        return profile;
+    },
 }); 

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
-import { useMutation } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { userIntegrationService } from '../../lib/services/userIntegrationService';
 import { Button } from '../ui/button';
@@ -100,11 +100,12 @@ export function UserRegistration() {
                             lng: position.coords.longitude,
                         }
                     }));
-                    toast.success('Location captured successfully!');
+                    toast.success('Location captured successfully! Your location has been saved.');
                 },
                 (error) => {
-                    console.error('Error getting location:', error);
-                    toast.error('Could not get your location. Please enter manually.');
+                    console.log('Error getting location:', error);
+                    const errorMessage = error instanceof Error ? error.message : String(error);
+                    toast.error(`Location access denied: ${errorMessage}. Please enter your location manually.`);
                 }
             );
         }
@@ -133,8 +134,11 @@ export function UserRegistration() {
             });
 
             if (!integrationResult.success) {
-                console.error('Stablecoin integration failed:', integrationResult.error);
-                toast.error(`Failed to create user in stablecoin system: ${integrationResult.error}`);
+                console.log('Stablecoin integration failed:', integrationResult.error);
+
+                // Show error message
+                const errorMessage = integrationResult.error || 'Failed to create user account';
+                toast.error(errorMessage);
                 return;
             }
 
@@ -150,7 +154,7 @@ export function UserRegistration() {
 
             let convexResult;
             try {
-                convexResult = await createUserWithStablecoinIntegration({
+                const convexData = {
                     clerkUserId: user.id,
                     email: user.emailAddresses[0].emailAddress,
                     role: formData.role,
@@ -166,11 +170,20 @@ export function UserRegistration() {
                     liskId: integrationResult.stablecoinUser?.id,
                     publicKey: integrationResult.stablecoinUser?.publicKey,
                     paymentIdentifier: integrationResult.stablecoinUser?.paymentIdentifier,
+                };
+
+                console.log('Sending data to Convex:', convexData);
+                console.log('Stablecoin data being sent:', {
+                    liskId: convexData.liskId,
+                    publicKey: convexData.publicKey,
+                    paymentIdentifier: convexData.paymentIdentifier,
                 });
+
+                convexResult = await createUserWithStablecoinIntegration(convexData);
 
                 console.log('Convex mutation completed successfully:', convexResult);
             } catch (error) {
-                console.error('Error in Convex mutation:', error);
+                console.log('Error in Convex mutation:', error);
                 throw error;
             }
 
@@ -179,14 +192,24 @@ export function UserRegistration() {
             // Verify the profile was created/updated correctly
             console.log('Verifying profile update...');
 
-            toast.success('Profile created successfully with stablecoin integration!');
+            // Debug: Check what was actually saved
+            const savedProfile = await fetch('/api/debug-user-profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ clerkUserId: user.id }),
+            });
+            const profileData = await savedProfile.json();
+            console.log('Debug - Saved profile data:', profileData);
+
+            toast.success('Profile created successfully with stablecoin integration! Welcome to Vunalet.');
             console.log('User registration flow completed successfully');
 
             // Redirect to dashboard
             window.location.href = '/dashboard';
         } catch (error) {
-            console.error('Error in user registration flow:', error);
-            toast.error('Failed to create profile. Please try again.');
+            console.log('Error in user registration flow:', error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            toast.error(`Failed to complete profile registration: ${errorMessage}`);
         } finally {
             setIsSubmitting(false);
         }

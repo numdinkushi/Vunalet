@@ -4,6 +4,7 @@ import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
 import { PushNotificationManager, InstallPrompt } from '@/components/PWAComponents';
 import { ConvexClientProvider } from '../providers/ConvexClientProvider';
+import { Toaster } from '@/components/ui/sonner';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -80,6 +81,7 @@ export default function RootLayout({
             {children}
             <PushNotificationManager />
             <InstallPrompt />
+            <Toaster />
           </body>
         </html>
       </ConvexClientProvider>
