@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { createLiskUserAndUpdateProfile } from '../../lib/services/liskZarApi';
+import { userIntegrationService } from '../../lib/services/userIntegrationService';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
@@ -62,7 +62,7 @@ export function UserRegistration() {
     const { user } = useUser();
     const { setActive } = useClerk();
     const createUserProfile = useMutation(api.users.createUserProfile);
-    const updateLiskUserData = useMutation(api.users.updateLiskUserData);
+    const createUserWithStablecoinIntegration = useMutation(api.users.createUserWithStablecoinIntegration);
 
     const [formData, setFormData] = useState<RegistrationFormData>({
         role: 'buyer',
@@ -121,8 +121,28 @@ export function UserRegistration() {
         setIsSubmitting(true);
 
         try {
-            // Create user profile in Convex
-            await createUserProfile({
+            console.log('Starting user registration flow...');
+
+            // Step 1: Create user in stablecoin system
+            console.log('Step 1: Creating user in stablecoin system...');
+            const integrationResult = await userIntegrationService.completeUserIntegration({
+                clerkUserId: user.id,
+                email: user.emailAddresses[0].emailAddress,
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+            });
+
+            if (!integrationResult.success) {
+                console.error('Stablecoin integration failed:', integrationResult.error);
+                toast.error(`Failed to create user in stablecoin system: ${integrationResult.error}`);
+                return;
+            }
+
+            console.log('Step 1 completed: User created in stablecoin system:', integrationResult.stablecoinUser);
+
+            // Step 2: Create/update user profile in Convex with stablecoin data
+            console.log('Step 2: Creating user profile in Convex...');
+            await createUserWithStablecoinIntegration({
                 clerkUserId: user.id,
                 email: user.emailAddresses[0].emailAddress,
                 role: formData.role,
@@ -134,43 +154,21 @@ export function UserRegistration() {
                 businessName: formData.businessName,
                 businessLicense: formData.businessLicense,
                 coordinates: formData.coordinates,
+                // Stablecoin API data
+                liskId: integrationResult.stablecoinUser?.id,
+                publicKey: integrationResult.stablecoinUser?.publicKey,
+                paymentIdentifier: integrationResult.stablecoinUser?.paymentIdentifier,
             });
 
-            // Create user in Lisk ZAR system
-            try {
-                const liskUser = await createLiskUserAndUpdateProfile(
-                    {
-                        clerkUserId: user.id,
-                        email: user.emailAddresses[0].emailAddress,
-                        firstName: formData.firstName,
-                        lastName: formData.lastName,
-                    },
-                    async (liskData: {
-                        clerkUserId: string;
-                        liskId: string;
-                        publicKey: string;
-                        paymentIdentifier: string;
-                    }) => {
-                        await updateLiskUserData(liskData);
-                    }
-                );
+            console.log('Step 2 completed: User profile created in Convex');
 
-                console.log('Lisk ZAR user created:', liskUser);
-            } catch (liskError) {
-                console.error('Failed to create Lisk ZAR user:', liskError);
-                // Continue with profile creation even if Lisk ZAR fails
-                toast.warning('Profile created but Lisk ZAR integration failed. You can update this later.');
-            }
-
-            // Note: Clerk user metadata update removed due to type issues
-            // The role is stored in Convex database instead
-
-            toast.success('Profile created successfully!');
+            toast.success('Profile created successfully with stablecoin integration!');
+            console.log('User registration flow completed successfully');
 
             // Redirect to dashboard
             window.location.href = '/dashboard';
         } catch (error) {
-            console.error('Error creating profile:', error);
+            console.error('Error in user registration flow:', error);
             toast.error('Failed to create profile. Please try again.');
         } finally {
             setIsSubmitting(false);

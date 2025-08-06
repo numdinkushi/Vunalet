@@ -11,6 +11,7 @@ import { Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
 import { Footer } from '../../components/layout/Footer';
+import { userIntegrationService } from '../../lib/services/userIntegrationService';
 
 export default function DashboardPage() {
     const { user, isLoaded } = useUser();
@@ -19,16 +20,54 @@ export default function DashboardPage() {
         clerkUserId: user?.id || '',
     });
 
-    // Create basic profile for new users (without role)
+    // Create basic profile for new users (without role) with stablecoin integration
     useEffect(() => {
         if (user && !userProfile && isLoaded) {
-            // Create a basic profile without role
-            createBasicUserProfile({
-                clerkUserId: user.id,
-                email: user.emailAddresses[0].emailAddress,
-                firstName: user.firstName || '',
-                lastName: user.lastName || '',
-            });
+            const createBasicProfileWithStablecoin = async () => {
+                try {
+                    // Step 1: Create user in stablecoin system
+                    const integrationResult = await userIntegrationService.completeUserIntegration({
+                        clerkUserId: user.id,
+                        email: user.emailAddresses[0].emailAddress,
+                        firstName: user.firstName || '',
+                        lastName: user.lastName || '',
+                    });
+
+                    if (integrationResult.success && integrationResult.stablecoinUser) {
+                        // Step 2: Create basic profile with stablecoin data
+                        await createBasicUserProfile({
+                            clerkUserId: user.id,
+                            email: user.emailAddresses[0].emailAddress,
+                            firstName: user.firstName || '',
+                            lastName: user.lastName || '',
+                            // Add stablecoin data
+                            liskId: integrationResult.stablecoinUser.id,
+                            publicKey: integrationResult.stablecoinUser.publicKey,
+                            paymentIdentifier: integrationResult.stablecoinUser.paymentIdentifier,
+                        });
+                    } else {
+                        // Fallback: Create basic profile without stablecoin data
+                        console.warn('Stablecoin integration failed, creating basic profile without stablecoin data');
+                        await createBasicUserProfile({
+                            clerkUserId: user.id,
+                            email: user.emailAddresses[0].emailAddress,
+                            firstName: user.firstName || '',
+                            lastName: user.lastName || '',
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error creating basic profile:', error);
+                    // Fallback: Create basic profile without stablecoin data
+                    await createBasicUserProfile({
+                        clerkUserId: user.id,
+                        email: user.emailAddresses[0].emailAddress,
+                        firstName: user.firstName || '',
+                        lastName: user.lastName || '',
+                    });
+                }
+            };
+
+            createBasicProfileWithStablecoin();
         }
     }, [user, userProfile, isLoaded, createBasicUserProfile]);
 

@@ -9,6 +9,10 @@ export const createBasicUserProfile = mutation({
         email: v.string(),
         firstName: v.string(),
         lastName: v.string(),
+        // Stablecoin API data (optional)
+        liskId: v.optional(v.string()),
+        publicKey: v.optional(v.string()),
+        paymentIdentifier: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
         const existingProfile = await ctx.db
@@ -202,6 +206,52 @@ export const updateLiskUserData = mutation({
             paymentIdentifier: args.paymentIdentifier,
             updatedAt: Date.now(),
         });
+    },
+});
+
+// Create user with stablecoin integration
+export const createUserWithStablecoinIntegration = mutation({
+    args: {
+        clerkUserId: v.string(),
+        email: v.string(),
+        role: v.optional(v.union(v.literal("farmer"), v.literal("dispatcher"), v.literal("buyer"))),
+        firstName: v.string(),
+        lastName: v.string(),
+        phone: v.optional(v.string()),
+        address: v.optional(v.string()),
+        location: v.optional(v.string()),
+        coordinates: v.optional(v.object({
+            lat: v.number(),
+            lng: v.number()
+        })),
+        businessName: v.optional(v.string()),
+        businessLicense: v.optional(v.string()),
+        // Stablecoin API data
+        liskId: v.optional(v.string()),
+        publicKey: v.optional(v.string()),
+        paymentIdentifier: v.optional(v.string()),
+    },
+    handler: async (ctx, args) => {
+        const existingProfile = await ctx.db
+            .query("userProfiles")
+            .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", args.clerkUserId))
+            .first();
+
+        if (existingProfile) {
+            // Update existing profile with stablecoin data
+            return await ctx.db.patch(existingProfile._id, {
+                ...args,
+                updatedAt: Date.now(),
+            });
+        } else {
+            // Create new profile with stablecoin data
+            return await ctx.db.insert("userProfiles", {
+                ...args,
+                isVerified: false,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+            });
+        }
     },
 });
 
