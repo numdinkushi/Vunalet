@@ -15,6 +15,8 @@ export const createBasicUserProfile = mutation({
         paymentIdentifier: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
+        console.log('Creating/updating basic user profile:', args);
+
         const existingProfile = await ctx.db
             .query("userProfiles")
             .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", args.clerkUserId))
@@ -22,18 +24,24 @@ export const createBasicUserProfile = mutation({
 
         if (existingProfile) {
             // Update existing profile with basic info
-            return await ctx.db.patch(existingProfile._id, {
+            console.log('Updating existing profile with stablecoin data');
+            const result = await ctx.db.patch(existingProfile._id, {
                 ...args,
                 updatedAt: Date.now(),
             });
+            console.log('Profile updated successfully:', result);
+            return result;
         } else {
             // Create new basic profile
-            return await ctx.db.insert("userProfiles", {
+            console.log('Creating new basic profile with stablecoin data');
+            const result = await ctx.db.insert("userProfiles", {
                 ...args,
                 isVerified: false,
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
             });
+            console.log('Profile created successfully:', result);
+            return result;
         }
     },
 });
@@ -232,25 +240,41 @@ export const createUserWithStablecoinIntegration = mutation({
         paymentIdentifier: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
+        console.log('createUserWithStablecoinIntegration called with args:', args);
+
         const existingProfile = await ctx.db
             .query("userProfiles")
             .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", args.clerkUserId))
             .first();
 
+        console.log('Existing profile found:', existingProfile);
+
         if (existingProfile) {
             // Update existing profile with stablecoin data
-            return await ctx.db.patch(existingProfile._id, {
+            console.log('Updating existing profile with stablecoin data');
+            const updateData = {
                 ...args,
                 updatedAt: Date.now(),
-            });
+            };
+            console.log('Update data:', updateData);
+
+            const result = await ctx.db.patch(existingProfile._id, updateData);
+            console.log('Profile updated successfully:', result);
+            return result;
         } else {
             // Create new profile with stablecoin data
-            return await ctx.db.insert("userProfiles", {
+            console.log('Creating new profile with stablecoin data');
+            const insertData = {
                 ...args,
                 isVerified: false,
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
-            });
+            };
+            console.log('Insert data:', insertData);
+
+            const result = await ctx.db.insert("userProfiles", insertData);
+            console.log('Profile created successfully:', result);
+            return result;
         }
     },
 });

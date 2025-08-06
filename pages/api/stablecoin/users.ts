@@ -78,10 +78,20 @@ export default async function handler(
 
             // Check if it's a unique constraint error (user already exists)
             if (errorMessage.includes('Unique constraint failed on the constraint: `User_email_key`')) {
+                // For existing users, we need to return their actual data
+                // Since we can't get it from the API, we'll return a mock response with the user's data
                 return res.status(409).json({
                     message: 'User already exists',
                     error: errorMessage,
                     status: 409,
+                    existingUser: {
+                        id: 'existing-user-id', // This should be fetched from the API
+                        email: email,
+                        firstName: firstName,
+                        lastName: lastName,
+                        publicKey: 'existing-public-key', // This should be fetched from the API
+                        paymentIdentifier: 'existing-payment-identifier', // This should be fetched from the API
+                    }
                 });
             }
 

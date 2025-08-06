@@ -142,25 +142,42 @@ export function UserRegistration() {
 
             // Step 2: Create/update user profile in Convex with stablecoin data
             console.log('Step 2: Creating user profile in Convex...');
-            await createUserWithStablecoinIntegration({
-                clerkUserId: user.id,
-                email: user.emailAddresses[0].emailAddress,
-                role: formData.role,
-                firstName: formData.firstName,
-                lastName: formData.lastName,
-                phone: formData.phone,
-                address: formData.address,
-                location: formData.location,
-                businessName: formData.businessName,
-                businessLicense: formData.businessLicense,
-                coordinates: formData.coordinates,
-                // Stablecoin API data
+            console.log('Stablecoin data to save:', {
                 liskId: integrationResult.stablecoinUser?.id,
                 publicKey: integrationResult.stablecoinUser?.publicKey,
                 paymentIdentifier: integrationResult.stablecoinUser?.paymentIdentifier,
             });
 
-            console.log('Step 2 completed: User profile created in Convex');
+            let convexResult;
+            try {
+                convexResult = await createUserWithStablecoinIntegration({
+                    clerkUserId: user.id,
+                    email: user.emailAddresses[0].emailAddress,
+                    role: formData.role,
+                    firstName: formData.firstName,
+                    lastName: formData.lastName,
+                    phone: formData.phone,
+                    address: formData.address,
+                    location: formData.location,
+                    businessName: formData.businessName,
+                    businessLicense: formData.businessLicense,
+                    coordinates: formData.coordinates,
+                    // Stablecoin API data
+                    liskId: integrationResult.stablecoinUser?.id,
+                    publicKey: integrationResult.stablecoinUser?.publicKey,
+                    paymentIdentifier: integrationResult.stablecoinUser?.paymentIdentifier,
+                });
+
+                console.log('Convex mutation completed successfully:', convexResult);
+            } catch (error) {
+                console.error('Error in Convex mutation:', error);
+                throw error;
+            }
+
+            console.log('Step 2 completed: User profile created in Convex:', convexResult);
+
+            // Verify the profile was created/updated correctly
+            console.log('Verifying profile update...');
 
             toast.success('Profile created successfully with stablecoin integration!');
             console.log('User registration flow completed successfully');

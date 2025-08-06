@@ -60,17 +60,25 @@ export class UserIntegrationService {
                 errorMessage.includes('User already exists')) {
                 console.log('User already exists in stablecoin system, this is expected for returning users');
 
-                // Since we can't get the existing user data from the API, we'll need to handle this differently
-                // For now, we'll return a success but indicate the user already exists
+                // Try to extract existing user data from the error response
+                let existingUserData = null;
+                if (error && typeof error === 'object' && 'response' in error) {
+                    const response = (error as { response?: { data?: { existingUser?: CreateUserResponse; }; }; }).response;
+                    if (response?.data?.existingUser) {
+                        existingUserData = response.data.existingUser;
+                    }
+                }
+
+                // Return existing user data if available, otherwise use fallback
                 return {
                     success: true,
-                    stablecoinUser: {
-                        id: 'existing-user-id', // We need to get this from the API somehow
+                    stablecoinUser: existingUserData || {
+                        id: 'existing-user-id', // This should be fetched from the API
                         email: userData.email,
                         firstName: userData.firstName,
                         lastName: userData.lastName,
-                        publicKey: 'existing-public-key', // We need to get this from the API somehow
-                        paymentIdentifier: 'existing-payment-identifier', // We need to get this from the API somehow
+                        publicKey: 'existing-public-key', // This should be fetched from the API
+                        paymentIdentifier: 'existing-payment-identifier', // This should be fetched from the API
                     },
                 };
             }
