@@ -24,6 +24,7 @@ interface CreateUserResponse {
 interface ApiError {
     message: string;
     status?: number;
+    error?: string;
 }
 
 // Create axios instance for stablecoin API
@@ -86,7 +87,7 @@ export default async function handler(
         console.log('Failed to create user in stablecoin system:', error);
 
         // Handle different types of errors
-        if (error.response) {
+        if (axios.isAxiosError(error) && error.response) {
             // The request was made and the server responded with a status code
             // that falls out of the range of 2xx
             const errorData = error.response.data;
@@ -124,7 +125,7 @@ export default async function handler(
                 message: errorMessage,
                 status: error.response.status,
             });
-        } else if (error.request) {
+        } else if (axios.isAxiosError(error) && error.request) {
             // The request was made but no response was received
             return res.status(503).json({
                 message: 'No response from stablecoin API',
