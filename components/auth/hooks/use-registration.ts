@@ -72,7 +72,7 @@ export function useRegistration() {
         setIsSubmitting(true);
 
         try {
-            // Step 1: Create user in stablecoin system
+            // Step 1: Create user in stablecoin system and activate payment
             const integrationResult = await userIntegrationService.completeUserIntegration({
                 clerkUserId: user.id,
                 email: user.emailAddresses[0].emailAddress,
@@ -105,7 +105,7 @@ export function useRegistration() {
 
             await createUserWithStablecoinIntegration(convexData);
 
-            toast.success('Profile created successfully with stablecoin integration! Welcome to Vunalet.');
+            toast.success('Profile created successfully with payment activation! Welcome to Vunalet.');
             window.location.href = '/dashboard';
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
