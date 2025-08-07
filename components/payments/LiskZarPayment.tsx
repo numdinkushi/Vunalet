@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { processPayment } from '../../lib/services/liskZarApi';
+import { paymentService } from '../../lib/services/payment/payment.service';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
@@ -54,8 +54,8 @@ export function LiskZarPayment({
         setPaymentStatus('pending');
 
         try {
-            // Process payment through Lisk ZAR API
-            const payment = await processPayment(
+            // Process payment through stablecoin API
+            const payment = await paymentService.processPayment(
                 amount,
                 userProfile.paymentIdentifier,
                 `Order ${orderId} - Vunalet`

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { userIntegrationService } from '../../lib/services/userIntegrationService';
+import { userIntegrationService } from '../../lib/services/integration/user-integration.service';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
@@ -191,15 +191,6 @@ export function UserRegistration() {
 
             // Verify the profile was created/updated correctly
             console.log('Verifying profile update...');
-
-            // Debug: Check what was actually saved
-            const savedProfile = await fetch('/api/debug-user-profile', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ clerkUserId: user.id }),
-            });
-            const profileData = await savedProfile.json();
-            console.log('Debug - Saved profile data:', profileData);
 
             toast.success('Profile created successfully with stablecoin integration! Welcome to Vunalet.');
             console.log('User registration flow completed successfully');
