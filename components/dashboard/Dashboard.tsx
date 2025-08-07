@@ -4,24 +4,18 @@ import { useUser } from '@clerk/nextjs';
 import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { motion } from 'framer-motion';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import {
     User,
     Truck,
     ShoppingCart,
-    Package,
-    TrendingUp,
-    MapPin,
-    Clock,
-    DollarSign,
     AlertCircle
 } from 'lucide-react';
 import { FarmerDashboard } from './FarmerDashboard';
 import { DispatcherDashboard } from './DispatcherDashboard';
-import { BuyerDashboard } from './BuyerDashboard';
+import BuyerDashboard from './buyer/BuyerDashboard';
 
 export function Dashboard() {
     const { user } = useUser();
@@ -122,7 +116,7 @@ export function Dashboard() {
                 >
                     {userProfile.role === 'farmer' && <FarmerDashboard userProfile={userProfile} />}
                     {userProfile.role === 'dispatcher' && <DispatcherDashboard userProfile={userProfile} />}
-                    {userProfile.role === 'buyer' && <BuyerDashboard userProfile={userProfile} />}
+                    {userProfile.role === 'buyer' && <BuyerDashboard />}
                 </motion.div>
             </div>
         </div>
