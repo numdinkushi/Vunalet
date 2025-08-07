@@ -18,7 +18,7 @@ export class StablecoinApiService {
     private constructor() {
         const config: ApiConfig = {
             baseURL: '/api/stablecoin',
-            timeout: 10000,
+            timeout: 30000, // Increased timeout for payment operations
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -54,9 +54,24 @@ export class StablecoinApiService {
     }
 
     /**
+     * Activate payment for a user (enable gas payment)
+     */
+    async activatePayment(userId: string): Promise<void> {
+        console.log('Activating payment for user:', userId);
+
+        try {
+            await this.httpClient.post(`/activate-pay/${userId}`);
+            console.log('Payment activated successfully for user:', userId);
+        } catch (error) {
+            console.log('Failed to activate payment:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Handle specific error cases for user creation
      */
-    private handleUserCreationError(error: any): void {
+    private handleUserCreationError(error: unknown): void {
         // Check if it's a 409 error (user already exists)
         if (error && typeof error === 'object' && 'status' in error && error.status === 409) {
             console.log('User already exists, returning existing user data');

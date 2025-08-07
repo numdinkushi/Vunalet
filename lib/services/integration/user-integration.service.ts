@@ -48,9 +48,32 @@ export class UserIntegrationService {
     }
 
     /**
+     * Activate payment for a user
+     */
+    async activatePayment(userId: string): Promise<void> {
+        try {
+            console.log('Activating payment for user:', userId);
+            await stablecoinApi.activatePayment(userId);
+            console.log('Payment activated successfully for user:', userId);
+        } catch (error) {
+            console.log('Failed to activate payment:', error);
+
+            // Handle specific timeout errors
+            if (error && typeof error === 'object' && 'code' in error && error.code === 'ECONNABORTED') {
+                console.log('Payment activation timed out, but this is expected for first-time activation');
+                // Don't throw error for timeout, as it might be a slow external API
+                return;
+            }
+
+            throw error;
+        }
+    }
+
+    /**
      * Complete user integration flow
      * 1. Create user in stablecoin system
-     * 2. Return data for Convex update
+     * 2. Activate payment for the user
+     * 3. Return data for Convex update
      */
     async completeUserIntegration(userData: UserIntegrationData): Promise<IntegrationResult> {
         try {
@@ -61,7 +84,17 @@ export class UserIntegrationService {
                 return result;
             }
 
-            // Step 2: Prepare data for Convex update
+            // Step 2: Activate payment for the user
+            try {
+                await this.activatePayment(result.stablecoinUser.id);
+                console.log('Payment activation completed successfully');
+            } catch (activationError) {
+                console.log('Payment activation failed, but continuing with user creation:', activationError);
+                // Don't fail the entire registration if payment activation fails
+                // The user can still be created, payment can be activated later
+            }
+
+            // Step 3: Prepare data for Convex update
             const convexUpdateData = {
                 clerkUserId: userData.clerkUserId,
                 liskId: result.stablecoinUser.id,

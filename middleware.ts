@@ -11,6 +11,7 @@ const isPublicRoute = createRouteMatcher([
     '/about',
     '/api/webhook(.*)', // allow Clerk webhooks (no auth info)
     '/api/stablecoin/users', // allow stablecoin user creation
+    '/api/stablecoin/activate-pay(.*)', // allow payment activation
     '/api/test-stablecoin(.*)', // allow test API routes for development
 ]);
 
