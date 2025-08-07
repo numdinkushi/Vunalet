@@ -11,7 +11,7 @@ const isPublicRoute = createRouteMatcher([
     '/about',
     '/api/webhook(.*)', // allow Clerk webhooks (no auth info)
     '/api/stablecoin/users', // allow stablecoin user creation
-    '/api/test-stablecoin(.*)', // allow test API routes
+    '/api/test-stablecoin(.*)', // allow test API routes for development
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

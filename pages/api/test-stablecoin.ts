@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { stablecoinApi } from '../../lib/services/stablecoinApi';
+import { stablecoinApi } from '../../lib/services/api/stablecoin-api';
 
 interface TestResponse {
     message: string;

@@ -1,27 +1,19 @@
-import { stablecoinApi, CreateUserRequest, CreateUserResponse } from './stablecoinApi';
+import { stablecoinApi } from '../api/stablecoin-api';
+import { UserIntegrationData, IntegrationResult, CreateUserResponse } from '../api/types';
 import { toast } from 'sonner';
 
-export interface UserIntegrationData {
-    clerkUserId: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-}
-
-export interface IntegrationResult {
-    success: boolean;
-    stablecoinUser?: CreateUserResponse;
-    error?: string;
-}
-
 /**
- * Service to handle user creation and integration between Clerk, Convex, and Stablecoin API
+ * User Integration Service following Single Responsibility Principle
+ * Orchestrates user creation across multiple systems (Clerk, Convex, Stablecoin)
  */
 export class UserIntegrationService {
     private static instance: UserIntegrationService;
 
     private constructor() { }
 
+    /**
+     * Singleton pattern for integration service
+     */
     public static getInstance(): UserIntegrationService {
         if (!UserIntegrationService.instance) {
             UserIntegrationService.instance = new UserIntegrationService();
@@ -30,52 +22,28 @@ export class UserIntegrationService {
     }
 
     /**
-     * Create user in stablecoin system and return integration data
+     * Create user in stablecoin system
      */
     async createStablecoinUser(userData: UserIntegrationData): Promise<IntegrationResult> {
         try {
             console.log('Creating user in stablecoin system:', userData);
 
-            // Prepare data for stablecoin API
-            const stablecoinUserData: CreateUserRequest = {
+            const stablecoinUserData = {
                 email: userData.email,
                 firstName: userData.firstName,
                 lastName: userData.lastName,
             };
 
-            // Create user in stablecoin system using fetch-based API
             const stablecoinUser = await stablecoinApi.createUser(stablecoinUserData);
-
             console.log('User created in stablecoin system:', stablecoinUser);
 
             return {
                 success: true,
                 stablecoinUser,
             };
-        } catch (error: unknown) {
+        } catch (error) {
             console.log('Failed to create user in stablecoin system:', error);
-
-            // Extract clean error message
-            let errorMessage = 'Failed to create user in stablecoin system';
-            if (error instanceof Error) {
-                errorMessage = error.message;
-            } else if (typeof error === 'string') {
-                errorMessage = error;
-            } else if (error && typeof error === 'object') {
-                // Handle API error objects
-                if ('message' in error && typeof error.message === 'string') {
-                    errorMessage = error.message;
-                } else if ('error' in error && typeof error.error === 'string') {
-                    errorMessage = error.error;
-                } else {
-                    errorMessage = String(error);
-                }
-            }
-
-            return {
-                success: false,
-                error: errorMessage,
-            };
+            return this.handleIntegrationError(error);
         }
     }
 
@@ -93,7 +61,7 @@ export class UserIntegrationService {
                 return result;
             }
 
-            // Step 2: Return data for Convex update
+            // Step 2: Prepare data for Convex update
             const convexUpdateData = {
                 clerkUserId: userData.clerkUserId,
                 liskId: result.stablecoinUser.id,
@@ -107,15 +75,38 @@ export class UserIntegrationService {
                 success: true,
                 stablecoinUser: result.stablecoinUser,
             };
-        } catch (error: unknown) {
+        } catch (error) {
             console.log('User integration failed:', error);
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            toast.error(`Failed to complete user integration: ${errorMessage}`);
-            return {
-                success: false,
-                error: errorMessage,
-            };
+            return this.handleIntegrationError(error);
         }
+    }
+
+    /**
+     * Handle integration errors and provide user-friendly messages
+     */
+    private handleIntegrationError(error: unknown): IntegrationResult {
+        let errorMessage = 'Failed to create user in stablecoin system';
+
+        if (error instanceof Error) {
+            errorMessage = error.message;
+        } else if (typeof error === 'string') {
+            errorMessage = error;
+        } else if (error && typeof error === 'object') {
+            if ('message' in error && typeof error.message === 'string') {
+                errorMessage = error.message;
+            } else if ('error' in error && typeof error.error === 'string') {
+                errorMessage = error.error;
+            } else {
+                errorMessage = String(error);
+            }
+        }
+
+        toast.error(`Failed to complete user integration: ${errorMessage}`);
+
+        return {
+            success: false,
+            error: errorMessage,
+        };
     }
 
     /**
@@ -130,6 +121,17 @@ export class UserIntegrationService {
             toast.error(`User integration service health check failed: ${errorMessage}`);
             return false;
         }
+    }
+
+    /**
+     * Validate user data before integration
+     */
+    validateUserData(userData: UserIntegrationData): boolean {
+        const requiredFields = ['clerkUserId', 'email', 'firstName', 'lastName'];
+        return requiredFields.every(field =>
+            userData[field as keyof UserIntegrationData] &&
+            userData[field as keyof UserIntegrationData].trim() !== ''
+        );
     }
 }
 
