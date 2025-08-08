@@ -13,8 +13,8 @@ import {
     ShoppingCart,
     AlertCircle
 } from 'lucide-react';
-import { FarmerDashboard } from './FarmerDashboard';
-import { DispatcherDashboard } from './DispatcherDashboard';
+import { FarmerDashboard } from './farmer/FarmerDashboard';
+import { DispatcherDashboard } from './dispatcher/DispatcherDashboard';
 import BuyerDashboard from './buyer/BuyerDashboard';
 
 export function Dashboard() {

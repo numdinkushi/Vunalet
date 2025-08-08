@@ -1,4 +1,4 @@
-gi'use client';
+'use client';
 
 import {
     Dialog,
@@ -110,18 +110,14 @@ export function OrderModal({ order, isOpen, onClose }: OrderModalProps) {
                                 <span className="font-medium">Address:</span>
                                 <span>{order.deliveryAddress}</span>
                             </div>
-
-                            {order.estimatedDeliveryTime && (
-                                <div className="flex items-center space-x-2 text-sm">
-                                    <Clock className="w-4 h-4 text-emerald-500" />
-                                    <span className="font-medium">Estimated Delivery:</span>
-                                    <span className="text-emerald-600">{order.estimatedDeliveryTime}</span>
-                                </div>
-                            )}
-
+                            <div className="flex items-center space-x-2 text-sm">
+                                <Clock className="w-4 h-4 text-gray-500" />
+                                <span className="font-medium">Estimated Delivery:</span>
+                                <span>{order.estimatedDeliveryTime ? formatDate(order.estimatedDeliveryTime) : 'Not set'}</span>
+                            </div>
                             {order.riderName && (
                                 <div className="flex items-center space-x-2 text-sm">
-                                    <Truck className="w-4 h-4 text-blue-500" />
+                                    <Truck className="w-4 h-4 text-gray-500" />
                                     <span className="font-medium">Rider:</span>
                                     <span>{order.riderName}</span>
                                 </div>
@@ -134,39 +130,27 @@ export function OrderModal({ order, isOpen, onClose }: OrderModalProps) {
                     {/* Payment Information */}
                     <div className="space-y-3">
                         <h3 className="font-semibold text-lg">Payment Information</h3>
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                                <CreditCard className="w-4 h-4 text-gray-500" />
-                                <span className="font-medium">Payment Status</span>
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-600">Payment Status</span>
+                                <Badge variant={order.paymentStatus === 'paid' ? 'default' : 'secondary'}>
+                                    {order.paymentStatus}
+                                </Badge>
                             </div>
-                            <Badge
-                                variant={order.paymentStatus === 'paid' ? 'default' : 'secondary'}
-                                className={order.paymentStatus === 'paid' ? 'bg-green-100 text-green-800' : ''}
-                            >
-                                {order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1)}
-                            </Badge>
                         </div>
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex space-x-2 pt-4">
-                        <Button className="flex-1" variant="outline">
+                    <Separator />
+
+                    {/* Actions */}
+                    <div className="flex justify-end space-x-2">
+                        <Button variant="outline" onClick={onClose}>
+                            Close
+                        </Button>
+                        <Button>
                             <Eye className="w-4 h-4 mr-2" />
                             Track Order
                         </Button>
-
-                        {order.orderStatus === 'pending' && (
-                            <Button className="flex-1" variant="destructive">
-                                Cancel Order
-                            </Button>
-                        )}
-
-                        {order.orderStatus === 'delivered' && (
-                            <Button className="flex-1" variant="outline">
-                                <Star className="w-4 h-4 mr-2" />
-                                Rate Order
-                            </Button>
-                        )}
                     </div>
                 </div>
             </DialogContent>
