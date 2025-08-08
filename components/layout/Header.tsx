@@ -29,9 +29,17 @@ export function Header() {
     const [isScrolled, setIsScrolled] = useState(false);
 
     useEffect(() => {
-        const handleScroll = () => setIsScrolled(window.scrollY > 50);
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
+        // Only apply scroll effects on the home page
+        const isHomePage = window.location.pathname === '/';
+
+        if (isHomePage) {
+            const handleScroll = () => setIsScrolled(window.scrollY > 50);
+            window.addEventListener('scroll', handleScroll);
+            return () => window.removeEventListener('scroll', handleScroll);
+        } else {
+            // For non-home pages, always show the scrolled state
+            setIsScrolled(true);
+        }
     }, []);
 
     return (
@@ -108,7 +116,7 @@ export function Header() {
                             <motion.div className="flex items-center space-x-2">
                                 <SignInButton mode="modal">
                                     <motion.button
-                                                                                className={`px-4 py-2 rounded-lg transition-all duration-300 ${isScrolled
+                                        className={`px-4 py-2 rounded-lg transition-all duration-300 ${isScrolled
                                             ? 'text-gray-700 hover:text-green-600'
                                             : 'text-white/90 hover:text-white'
                                             }`}
@@ -143,7 +151,7 @@ export function Header() {
 
                     {/* Mobile menu button */}
                     <motion.button
-                                                className={`md:hidden p-2 rounded-lg transition-all duration-300 ${isScrolled
+                        className={`md:hidden p-2 rounded-lg transition-all duration-300 ${isScrolled
                             ? 'text-gray-700 hover:bg-green-50'
                             : 'text-white hover:bg-white/10'
                             }`}

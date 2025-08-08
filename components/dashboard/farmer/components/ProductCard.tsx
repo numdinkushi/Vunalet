@@ -1,0 +1,87 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Leaf, Package, MapPin, Clock, Edit, Trash2, Eye, Star } from 'lucide-react';
+import { Product } from '../types';
+import { formatCurrency, formatDate } from '../utils';
+
+interface ProductCardProps {
+    product: Product;
+    showActions?: boolean;
+}
+
+export function ProductCard({ product, showActions = true }: ProductCardProps) {
+    return (
+        <Card className="hover:shadow-md transition-shadow">
+            <CardHeader>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                        <Leaf className="w-6 h-6 text-green-500" />
+                        <div>
+                            <CardTitle className="text-lg">{product.name}</CardTitle>
+                            <p className="text-sm text-gray-600">{product.category}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        {product.isOrganic && (
+                            <Badge variant="secondary" className="bg-green-100 text-green-800">
+                                Organic
+                            </Badge>
+                        )}
+                        {product.isFeatured && (
+                            <Badge variant="secondary" className="bg-amber-100 text-amber-800">
+                                Featured
+                            </Badge>
+                        )}
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-4">
+                    <p className="text-gray-700">{product.description}</p>
+
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <span className="font-medium">Price:</span>
+                            <p className="text-lg font-bold text-green-600">{formatCurrency(product.price)}</p>
+                        </div>
+                        <div>
+                            <span className="font-medium">Quantity:</span>
+                            <p className="text-lg">{product.quantity} {product.unit}</p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-sm text-gray-500">
+                        <div className="flex items-center space-x-1">
+                            <MapPin className="w-4 h-4" />
+                            <span>{product.location}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                            <Clock className="w-4 h-4" />
+                            <span>Harvested: {formatDate(product.harvestDate)}</span>
+                        </div>
+                    </div>
+
+                    {showActions && (
+                        <div className="flex items-center justify-between pt-3 border-t">
+                            <Badge variant={product.status === 'active' ? 'default' : 'secondary'}>
+                                {product.status}
+                            </Badge>
+                            <div className="flex space-x-2">
+                                <Button size="sm" variant="outline">
+                                    <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button size="sm" variant="outline">
+                                    <Eye className="w-4 h-4" />
+                                </Button>
+                                <Button size="sm" variant="outline" className="text-red-600">
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </CardContent>
+        </Card>
+    );
+} 
