@@ -27,9 +27,9 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { formatCurrency } from './utils';
 import { mockFarmerStats, mockProducts, mockFarmerOrders } from './data';
 import { StatCard, ProductCard, OrderCard } from './components';
+import { WalletCard } from '../shared/WalletCard';
 
 interface FarmerDashboardProps {
     userProfile: any;
@@ -116,7 +116,10 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
                 <StatCard
                     icon={DollarSign}
                     title="Total Revenue"
-                    value={formatCurrency(stats.totalRevenue)}
+                    value={`R ${stats.totalRevenue.toLocaleString('en-ZA', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    })}`}
                     color="bg-amber-100 text-amber-600"
                     delay={0.3}
                 />
@@ -128,6 +131,12 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
                     delay={0.4}
                 />
             </div>
+
+            {/* Wallet & Ledger */}
+            <WalletCard 
+                walletBalance={22340.25}
+                ledgerBalance={26890.95}
+            />
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

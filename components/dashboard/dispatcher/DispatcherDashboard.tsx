@@ -21,9 +21,10 @@ import {
     Eye
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { formatCurrency, formatDate, getStatusColor, getOrderStatusText } from './utils';
+import { formatDate, getStatusColor, getOrderStatusText } from './utils';
 import { mockDispatcherStats, mockDispatcherOrders } from './data';
 import { StatCard, DeliveryCard } from './components';
+import { WalletCard } from '../shared/WalletCard';
 
 interface DispatcherDashboardProps {
     userProfile: any;
@@ -84,11 +85,20 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
                 <StatCard
                     icon={DollarSign}
                     title="Total Earnings"
-                    value={formatCurrency(stats.totalEarnings)}
+                    value={`R ${stats.totalEarnings.toLocaleString('en-ZA', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    })}`}
                     color="bg-amber-100 text-amber-600"
                     delay={0.4}
                 />
             </div>
+
+            {/* Wallet & Ledger */}
+            <WalletCard
+                walletBalance={13200.0}
+                ledgerBalance={14950.35}
+            />
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

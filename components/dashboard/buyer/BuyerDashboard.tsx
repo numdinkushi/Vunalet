@@ -5,6 +5,7 @@ import { DashboardHeader, StatsGrid, TabNavigation, OrderList, OrderModal } from
 import { mockOrderStats, mockOrders } from './data';
 import { filterOrdersByStatus } from './utils';
 import { Order } from './types';
+import { WalletCard } from '../shared/WalletCard';
 
 export default function BuyerDashboard() {
     const [activeTab, setActiveTab] = useState('overview');
@@ -43,7 +44,16 @@ export default function BuyerDashboard() {
 
             <div className="max-w-7xl mx-auto px-6 py-8">
                 <StatsGrid stats={stats} />
-                <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+
+                {/* Wallet Card */}
+                <WalletCard
+                    walletBalance={12500.5}
+                    ledgerBalance={15890.0}
+                    className="mt-4"
+                />
+                <div className="mt-8">
+                    <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+                </div>
 
                 {/* Content */}
                 {activeTab === 'overview' && (
