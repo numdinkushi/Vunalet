@@ -1,3 +1,5 @@
+import { Clock, CheckCircle, Package, Truck, X } from 'lucide-react';
+
 export const formatCurrency = (amount: number) => {
     return `R ${amount.toLocaleString('en-ZA', {
         minimumFractionDigits: 2,
@@ -30,4 +32,17 @@ export const getStatusColor = (status: string) => {
 
 export const getOrderStatusText = (status: string) => {
     return status.replace('_', ' ').charAt(0).toUpperCase() + status.replace('_', ' ').slice(1);
+};
+
+export const getStatusIcon = (status: string) => {
+    const icons = {
+        pending: Clock,
+        confirmed: CheckCircle,
+        preparing: Package,
+        ready: CheckCircle,
+        in_transit: Truck,
+        delivered: CheckCircle,
+        cancelled: X
+    };
+    return icons[status as keyof typeof icons] || Clock;
 }; 

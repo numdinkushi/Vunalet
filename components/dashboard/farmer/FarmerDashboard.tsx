@@ -28,6 +28,8 @@ import {
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { formatCurrency } from './utils';
+import { mockFarmerStats, mockProducts, mockFarmerOrders } from './data';
+import { StatCard, ProductCard, OrderCard } from './components';
 
 interface FarmerDashboardProps {
     userProfile: any;
@@ -89,96 +91,42 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
         }
     };
 
-    const stats = {
-        totalProducts: products?.length || 0,
-        activeOrders: orders?.filter(o => o.orderStatus !== 'delivered' && o.orderStatus !== 'cancelled').length || 0,
-        totalRevenue: orders?.reduce((sum, order) => sum + order.totalAmount, 0) || 0,
-        averageRating: 4.5,
-    };
+    const stats = mockFarmerStats;
+    const farmerProducts = mockProducts;
+    const farmerOrders = mockFarmerOrders;
 
     return (
         <div className="space-y-6">
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                >
-                    <Card>
-                        <CardContent className="p-6">
-                            <div className="flex items-center space-x-4">
-                                <div className="p-3 bg-green-100 rounded-lg">
-                                    <Package className="w-6 h-6 text-green-600" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Total Products</p>
-                                    <p className="text-2xl font-bold text-gray-900">{stats.totalProducts}</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                >
-                    <Card>
-                        <CardContent className="p-6">
-                            <div className="flex items-center space-x-4">
-                                <div className="p-3 bg-blue-100 rounded-lg">
-                                    <Clock className="w-6 h-6 text-blue-600" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Active Orders</p>
-                                    <p className="text-2xl font-bold text-gray-900">{stats.activeOrders}</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                >
-                    <Card>
-                        <CardContent className="p-6">
-                            <div className="flex items-center space-x-4">
-                                <div className="p-3 bg-amber-100 rounded-lg">
-                                    <DollarSign className="w-6 h-6 text-amber-600" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                                    <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalRevenue)}</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
-                >
-                    <Card>
-                        <CardContent className="p-6">
-                            <div className="flex items-center space-x-4">
-                                <div className="p-3 bg-purple-100 rounded-lg">
-                                    <Star className="w-6 h-6 text-purple-600" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Average Rating</p>
-                                    <p className="text-2xl font-bold text-gray-900">{stats.averageRating}</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </motion.div>
+                <StatCard
+                    icon={Package}
+                    title="Total Products"
+                    value={stats.totalProducts}
+                    color="bg-green-100 text-green-600"
+                    delay={0.1}
+                />
+                <StatCard
+                    icon={Clock}
+                    title="Active Orders"
+                    value={stats.activeOrders}
+                    color="bg-blue-100 text-blue-600"
+                    delay={0.2}
+                />
+                <StatCard
+                    icon={DollarSign}
+                    title="Total Revenue"
+                    value={formatCurrency(stats.totalRevenue)}
+                    color="bg-amber-100 text-amber-600"
+                    delay={0.3}
+                />
+                <StatCard
+                    icon={Star}
+                    title="Average Rating"
+                    value={stats.averageRating}
+                    color="bg-purple-100 text-purple-600"
+                    delay={0.4}
+                />
             </div>
 
             {/* Tabs */}
@@ -204,20 +152,8 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
-                                    {products?.slice(0, 5).map((product) => (
-                                        <div key={product._id} className="flex items-center justify-between p-3 border rounded-lg">
-                                            <div className="flex items-center space-x-3">
-                                                <Leaf className="w-5 h-5 text-green-500" />
-                                                <div>
-                                                    <p className="font-medium">{product.name}</p>
-                                                    <p className="text-sm text-gray-500">{product.category}</p>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="font-semibold">{formatCurrency(product.price)}</p>
-                                                <p className="text-sm text-gray-500">{product.quantity} {product.unit}</p>
-                                            </div>
-                                        </div>
+                                    {farmerProducts.slice(0, 3).map((product) => (
+                                        <ProductCard key={product._id} product={product} showActions={false} />
                                     ))}
                                 </div>
                             </CardContent>
@@ -230,20 +166,8 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
-                                    {orders?.slice(0, 5).map((order) => (
-                                        <div key={order._id} className="flex items-center justify-between p-3 border rounded-lg">
-                                            <div className="flex items-center space-x-3">
-                                                <Package className="w-5 h-5 text-blue-500" />
-                                                <div>
-                                                    <p className="font-medium">Order #{order._id.slice(-6)}</p>
-                                                    <p className="text-sm text-gray-500">{order.orderStatus}</p>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="font-semibold">{formatCurrency(order.totalAmount)}</p>
-                                                <p className="text-sm text-gray-500">{order.products?.length || 0} items</p>
-                                            </div>
-                                        </div>
+                                    {farmerOrders.slice(0, 3).map((order) => (
+                                        <OrderCard key={order._id} order={order} showActions={false} />
                                     ))}
                                 </div>
                             </CardContent>
@@ -263,46 +187,11 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="space-y-4">
-                                {products?.map((product) => (
-                                    <div key={product._id} className="p-4 border rounded-lg hover:bg-gray-50">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center space-x-4">
-                                                <Leaf className="w-6 h-6 text-green-500" />
-                                                <div>
-                                                    <h3 className="font-semibold">{product.name}</h3>
-                                                    <p className="text-sm text-gray-600">{product.category}</p>
-                                                    <p className="text-sm text-gray-500">{product.description}</p>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="font-bold text-lg">{formatCurrency(product.price)}</p>
-                                                <p className="text-sm text-gray-600">{product.quantity} {product.unit}</p>
-                                                <Badge variant={product.status === 'active' ? 'default' : 'secondary'}>
-                                                    {product.status}
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                                            <div className="flex items-center space-x-2 text-sm text-gray-500">
-                                                <MapPin className="w-4 h-4" />
-                                                <span>{product.location}</span>
-                                            </div>
-                                            <div className="flex space-x-2">
-                                                <Button size="sm" variant="outline">
-                                                    <Edit className="w-4 h-4" />
-                                                </Button>
-                                                <Button size="sm" variant="outline">
-                                                    <Eye className="w-4 h-4" />
-                                                </Button>
-                                                <Button size="sm" variant="outline" className="text-red-600">
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                                            <div className="space-y-4">
+                    {farmerProducts.map((product) => (
+                        <ProductCard key={product._id} product={product} />
+                    ))}
+                </div>
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -313,42 +202,11 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
                             <CardTitle>Order Management</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="space-y-4">
-                                {orders?.map((order) => (
-                                    <div key={order._id} className="p-4 border rounded-lg hover:bg-gray-50">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center space-x-4">
-                                                <Package className="w-6 h-6 text-blue-500" />
-                                                <div>
-                                                    <h3 className="font-semibold">Order #{order._id.slice(-6)}</h3>
-                                                    <p className="text-sm text-gray-600">{order.orderStatus}</p>
-                                                    <p className="text-sm text-gray-500">{order.products?.length || 0} items</p>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="font-bold text-lg">{formatCurrency(order.totalAmount)}</p>
-                                                <Badge variant={order.orderStatus === 'delivered' ? 'default' : 'secondary'}>
-                                                    {order.orderStatus}
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                                            <div className="flex items-center space-x-2 text-sm text-gray-500">
-                                                <Clock className="w-4 h-4" />
-                                                <span>{new Date(order.createdAt).toLocaleDateString('en-ZA')}</span>
-                                            </div>
-                                            <div className="flex space-x-2">
-                                                <Button size="sm" variant="outline">
-                                                    <Eye className="w-4 h-4" />
-                                                </Button>
-                                                <Button size="sm" variant="outline">
-                                                    <Edit className="w-4 h-4" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                                            <div className="space-y-4">
+                    {farmerOrders.map((order) => (
+                        <OrderCard key={order._id} order={order} />
+                    ))}
+                </div>
                         </CardContent>
                     </Card>
                 </TabsContent>

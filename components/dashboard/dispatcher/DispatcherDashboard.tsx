@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatCurrency, formatDate, getStatusColor, getOrderStatusText } from './utils';
+import { mockDispatcherStats, mockDispatcherOrders } from './data';
+import { StatCard, DeliveryCard } from './components';
 
 interface DispatcherDashboardProps {
     userProfile: any;
@@ -51,96 +53,41 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
         }
     };
 
-    const stats = {
-        totalDeliveries: orderStats?.total || 0,
-        activeDeliveries: orderStats?.inTransit || 0,
-        completedDeliveries: orderStats?.delivered || 0,
-        totalEarnings: 0, // This would be calculated from delivery fees
-    };
+    const stats = mockDispatcherStats;
+    const dispatcherOrders = mockDispatcherOrders;
 
     return (
         <div className="space-y-6">
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                >
-                    <Card>
-                        <CardContent className="p-6">
-                            <div className="flex items-center space-x-4">
-                                <div className="p-3 bg-blue-100 rounded-lg">
-                                    <Truck className="w-6 h-6 text-blue-600" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Total Deliveries</p>
-                                    <p className="text-2xl font-bold text-gray-900">{stats.totalDeliveries}</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                >
-                    <Card>
-                        <CardContent className="p-6">
-                            <div className="flex items-center space-x-4">
-                                <div className="p-3 bg-orange-100 rounded-lg">
-                                    <Clock className="w-6 h-6 text-orange-600" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Active Deliveries</p>
-                                    <p className="text-2xl font-bold text-gray-900">{stats.activeDeliveries}</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                >
-                    <Card>
-                        <CardContent className="p-6">
-                            <div className="flex items-center space-x-4">
-                                <div className="p-3 bg-green-100 rounded-lg">
-                                    <CheckCircle className="w-6 h-6 text-green-600" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Completed</p>
-                                    <p className="text-2xl font-bold text-gray-900">{stats.completedDeliveries}</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
-                >
-                    <Card>
-                        <CardContent className="p-6">
-                            <div className="flex items-center space-x-4">
-                                <div className="p-3 bg-amber-100 rounded-lg">
-                                    <DollarSign className="w-6 h-6 text-amber-600" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Total Earnings</p>
-                                    <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalEarnings)}</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </motion.div>
+                <StatCard
+                    icon={Truck}
+                    title="Total Deliveries"
+                    value={stats.totalDeliveries}
+                    color="bg-blue-100 text-blue-600"
+                    delay={0.1}
+                />
+                <StatCard
+                    icon={Clock}
+                    title="Active Deliveries"
+                    value={stats.activeDeliveries}
+                    color="bg-orange-100 text-orange-600"
+                    delay={0.2}
+                />
+                <StatCard
+                    icon={CheckCircle}
+                    title="Completed"
+                    value={stats.completedDeliveries}
+                    color="bg-green-100 text-green-600"
+                    delay={0.3}
+                />
+                <StatCard
+                    icon={DollarSign}
+                    title="Total Earnings"
+                    value={formatCurrency(stats.totalEarnings)}
+                    color="bg-amber-100 text-amber-600"
+                    delay={0.4}
+                />
             </div>
 
             {/* Tabs */}
@@ -160,20 +107,8 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
-                                    {orders?.slice(0, 5).map((order) => (
-                                        <div key={order._id} className="flex items-center justify-between p-3 border rounded-lg">
-                                            <div className="flex items-center space-x-3">
-                                                <Package className="w-5 h-5 text-blue-500" />
-                                                <div>
-                                                    <p className="font-medium">Order #{order._id.slice(-6)}</p>
-                                                    <p className="text-sm text-gray-500">{order.orderStatus}</p>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="font-semibold">{formatCurrency(order.totalAmount)}</p>
-                                                <p className="text-sm text-gray-500">{order.products?.length || 0} items</p>
-                                            </div>
-                                        </div>
+                                    {dispatcherOrders.slice(0, 3).map((order) => (
+                                        <DeliveryCard key={order._id} order={order} showActions={false} />
                                     ))}
                                 </div>
                             </CardContent>
@@ -186,19 +121,8 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
-                                    {orders?.slice(0, 5).map((order) => (
-                                        <div key={order._id} className="flex items-center justify-between p-3 border rounded-lg">
-                                            <div className="flex items-center space-x-3">
-                                                <Truck className="w-5 h-5 text-green-500" />
-                                                <div>
-                                                    <p className="font-medium">Delivery #{order._id.slice(-6)}</p>
-                                                    <p className="text-sm text-gray-500">{formatDate(order.createdAt)}</p>
-                                                </div>
-                                            </div>
-                                            <Badge className={getStatusColor(order.orderStatus)}>
-                                                {getOrderStatusText(order.orderStatus)}
-                                            </Badge>
-                                        </div>
+                                    {dispatcherOrders.slice(0, 3).map((order) => (
+                                        <DeliveryCard key={order._id} order={order} showActions={false} />
                                     ))}
                                 </div>
                             </CardContent>
@@ -213,48 +137,8 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
-                                {orders?.filter(order => order.orderStatus === 'in_transit' || order.orderStatus === 'ready').map((order) => (
-                                    <div key={order._id} className="p-4 border rounded-lg hover:bg-gray-50">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center space-x-4">
-                                                <Truck className="w-6 h-6 text-blue-500" />
-                                                <div>
-                                                    <h3 className="font-semibold">Order #{order._id.slice(-6)}</h3>
-                                                    <p className="text-sm text-gray-600">{order.orderStatus}</p>
-                                                    <p className="text-sm text-gray-500">{order.products?.length || 0} items</p>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="font-bold text-lg">{formatCurrency(order.totalAmount)}</p>
-                                                <Badge className={getStatusColor(order.orderStatus)}>
-                                                    {getOrderStatusText(order.orderStatus)}
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                                            <div className="flex items-center space-x-4 text-sm text-gray-500">
-                                                <div className="flex items-center space-x-1">
-                                                    <MapPin className="w-4 h-4" />
-                                                    <span>{order.deliveryAddress || 'Address not set'}</span>
-                                                </div>
-                                                <div className="flex items-center space-x-1">
-                                                    <Clock className="w-4 h-4" />
-                                                    <span>{formatDate(order.createdAt)}</span>
-                                                </div>
-                                            </div>
-                                            <div className="flex space-x-2">
-                                                <Button size="sm" variant="outline" onClick={() => handleUpdateStatus(order._id, 'delivered')}>
-                                                    <CheckCircle className="w-4 h-4" />
-                                                </Button>
-                                                <Button size="sm" variant="outline">
-                                                    <Navigation className="w-4 h-4" />
-                                                </Button>
-                                                <Button size="sm" variant="outline">
-                                                    <Phone className="w-4 h-4" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </div>
+                                {dispatcherOrders.filter(order => order.orderStatus === 'in_transit' || order.orderStatus === 'ready').map((order) => (
+                                    <DeliveryCard key={order._id} order={order} />
                                 ))}
                             </div>
                         </CardContent>
@@ -268,45 +152,8 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
-                                {orders?.filter(order => order.orderStatus === 'delivered').map((order) => (
-                                    <div key={order._id} className="p-4 border rounded-lg hover:bg-gray-50">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center space-x-4">
-                                                <CheckCircle className="w-6 h-6 text-green-500" />
-                                                <div>
-                                                    <h3 className="font-semibold">Order #{order._id.slice(-6)}</h3>
-                                                    <p className="text-sm text-gray-600">Delivered</p>
-                                                    <p className="text-sm text-gray-500">{order.products?.length || 0} items</p>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="font-bold text-lg">{formatCurrency(order.totalAmount)}</p>
-                                                <Badge className="bg-green-100 text-green-800">
-                                                    Delivered
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                                            <div className="flex items-center space-x-4 text-sm text-gray-500">
-                                                <div className="flex items-center space-x-1">
-                                                    <MapPin className="w-4 h-4" />
-                                                    <span>{order.deliveryAddress || 'Address not set'}</span>
-                                                </div>
-                                                <div className="flex items-center space-x-1">
-                                                    <Clock className="w-4 h-4" />
-                                                    <span>{formatDate(order.createdAt)}</span>
-                                                </div>
-                                            </div>
-                                            <div className="flex space-x-2">
-                                                <Button size="sm" variant="outline">
-                                                    <Eye className="w-4 h-4" />
-                                                </Button>
-                                                <Button size="sm" variant="outline">
-                                                    <User className="w-4 h-4" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </div>
+                                {dispatcherOrders.filter(order => order.orderStatus === 'delivered').map((order) => (
+                                    <DeliveryCard key={order._id} order={order} />
                                 ))}
                             </div>
                         </CardContent>

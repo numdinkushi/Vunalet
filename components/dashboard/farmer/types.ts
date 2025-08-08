@@ -1,0 +1,65 @@
+export interface FarmerStats {
+    totalProducts: number;
+    activeOrders: number;
+    totalRevenue: number;
+    averageRating: number;
+}
+
+export interface Product {
+    _id: string;
+    name: string;
+    category: string;
+    price: number;
+    unit: string;
+    quantity: number;
+    description: string;
+    harvestDate: string;
+    location: string;
+    isOrganic: boolean;
+    isFeatured: boolean;
+    status: 'active' | 'inactive';
+    images: string[];
+}
+
+export interface FarmerOrder {
+    _id: string;
+    products: OrderProduct[];
+    totalCost: number;
+    orderStatus: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'delivered' | 'cancelled';
+    paymentStatus: 'paid' | 'pending' | 'failed';
+    createdAt: string;
+    deliveryAddress: string;
+    estimatedDeliveryTime?: string;
+    riderName?: string;
+    farmName: string;
+}
+
+export interface OrderProduct {
+    name: string;
+    quantity: number;
+    price: number;
+}
+
+export interface StatCardProps {
+    icon: React.ComponentType<any>;
+    title: string;
+    value: string | number;
+    trend?: string;
+    color: string;
+}
+
+export interface ProductCardProps {
+    product: Product;
+    showActions?: boolean;
+}
+
+export interface OrderCardProps {
+    order: FarmerOrder;
+    showActions?: boolean;
+}
+
+export interface TabItem {
+    id: string;
+    label: string;
+    icon: React.ComponentType<any>;
+} 
