@@ -298,7 +298,8 @@ export function DeliveryMap({
             );
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                console.log('HTTP error! status: ', response.status);
+                // throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();

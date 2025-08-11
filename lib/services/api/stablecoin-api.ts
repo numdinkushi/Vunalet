@@ -1,157 +1,139 @@
-import { HttpClient } from './http-client';
-import {
-    CreateUserRequest,
-    CreateUserResponse,
-    PaymentRequest,
-    PaymentResponse,
-    ApiConfig
-} from './types';
+import axios, { AxiosInstance } from 'axios';
+import { CreateUserRequest, CreateUserResponse, ApiError } from './types';
+
+// API Configuration
+const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://seal-app-qp9cc.ondigitalocean.app/api/v1';
+const API_KEY = process.env.NEXT_PRIVATE_API_KEY || '';
 
 /**
- * Stablecoin API Service following Single Responsibility Principle
- * Handles all stablecoin-related API operations
+ * Shared stablecoin API service
  */
-export class StablecoinApiService {
-    private httpClient: HttpClient;
-    private static instance: StablecoinApiService;
+class StablecoinApiService {
+    private api: AxiosInstance;
 
-    private constructor() {
-        const config: ApiConfig = {
-            baseURL: '/api/stablecoin',
-            timeout: 30000, // Increased timeout for payment operations
+    constructor() {
+        this.api = axios.create({
+            baseURL: API_BASE_URL,
+            timeout: 10000,
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${API_KEY}`,
             },
-        };
-        this.httpClient = new HttpClient(config);
+        });
     }
 
     /**
-     * Singleton pattern for API service
+     * Create axios instance with custom timeout
      */
-    public static getInstance(): StablecoinApiService {
-        if (!StablecoinApiService.instance) {
-            StablecoinApiService.instance = new StablecoinApiService();
+    private createCustomApi(timeout: number): AxiosInstance {
+        return axios.create({
+            baseURL: API_BASE_URL,
+            timeout,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${API_KEY}`,
+            },
+        });
+    }
+
+    /**
+     * Handle API errors and return appropriate response
+     */
+    handleApiError(error: unknown): ApiError {
+        if (axios.isAxiosError(error) && error.response) {
+            const errorData = error.response.data;
+            let errorMessage = 'API request failed';
+
+            if (typeof errorData === 'string') {
+                errorMessage = errorData;
+            } else if (errorData?.message) {
+                errorMessage = errorData.message;
+            } else if (errorData?.errors && Array.isArray(errorData.errors)) {
+                errorMessage = errorData.errors.join(', ');
+            }
+
+            // Check for user already exists error
+            if (errorMessage.includes('Unique constraint failed on the constraint: `User_email_key`') ||
+                errorMessage.includes('User already exists')) {
+                return {
+                    message: 'User creation failed',
+                    error: errorMessage,
+                    status: error.response.status,
+                };
+            }
+
+            return {
+                message: errorMessage,
+                status: error.response.status,
+            };
+        } else if (axios.isAxiosError(error) && error.request) {
+            return {
+                message: 'No response from stablecoin API',
+                status: 503,
+            };
+        } else {
+            const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+            return {
+                message: errorMessage,
+                status: 500,
+            };
         }
-        return StablecoinApiService.instance;
     }
 
     /**
-     * Create a new user in the stablecoin system
+     * Create user in external stablecoin API
      */
-    async createUser(userData: CreateUserRequest): Promise<CreateUserResponse> {
-        console.log('Creating user via stablecoin API:', userData);
+    async createUser(requestData: CreateUserRequest): Promise<CreateUserResponse> {
+        console.log('Creating user in stablecoin system:', requestData);
+        console.log('API Configuration:', {
+            baseURL: API_BASE_URL,
+            hasApiKey: !!API_KEY,
+        });
 
-        try {
-            const response = await this.httpClient.post<CreateUserResponse>('/users', userData);
-            console.log('User created successfully:', response);
-            return response;
-        } catch (error) {
-            console.log('Failed to create user:', error);
-            this.handleUserCreationError(error);
-            throw error;
+        const response = await this.api.post<CreateUserResponse>('/users', requestData);
+        console.log('User created successfully in stablecoin system:', response.data);
+
+        // Extract user data if it's wrapped in a 'user' object
+        let responseData = response.data;
+        if (response.data && typeof response.data === 'object' && 'user' in response.data) {
+            console.log('Extracting user data from wrapped response');
+            responseData = (response.data as { user: CreateUserResponse; }).user;
         }
+
+        return responseData;
     }
 
     /**
-     * Activate payment for a user (enable gas payment)
+     * Activate payment for user with extended timeout
      */
-    async activatePayment(userId: string): Promise<void> {
+    async activatePayment(userId: string): Promise<{ message: string; userId: string; warning?: string; }> {
         console.log('Activating payment for user:', userId);
 
+        // Use extended timeout for payment activation
+        const customApi = this.createCustomApi(30000);
+
         try {
-            await this.httpClient.post(`/activate-pay/${userId}`);
+            await customApi.post(`/activate-pay/${userId}`);
             console.log('Payment activated successfully for user:', userId);
-        } catch (error) {
-            console.log('Failed to activate payment:', error);
-            throw error;
-        }
-    }
 
-    /**
-     * Handle specific error cases for user creation
-     */
-    private handleUserCreationError(error: unknown): void {
-        // Check if it's a 409 error (user already exists)
-        if (error && typeof error === 'object' && 'status' in error && error.status === 409) {
-            console.log('User already exists, returning existing user data');
-            // This could be handled differently based on business requirements
-        }
-    }
-
-    /**
-     * Get user by ID
-     */
-    async getUserById(userId: string): Promise<CreateUserResponse> {
-        try {
-            return await this.httpClient.get<CreateUserResponse>(`/users/${userId}`);
+            return {
+                message: 'Payment activated successfully',
+                userId,
+            };
         } catch (error) {
-            console.log('Failed to get user:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Update user information
-     */
-    async updateUser(userId: string, userData: Partial<CreateUserRequest>): Promise<CreateUserResponse> {
-        try {
-            return await this.httpClient.put<CreateUserResponse>(`/users/${userId}`, userData);
-        } catch (error) {
-            console.log('Failed to update user:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Delete user
-     */
-    async deleteUser(userId: string): Promise<void> {
-        try {
-            await this.httpClient.delete(`/users/${userId}`);
-        } catch (error) {
-            console.log('Failed to delete user:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Create a payment
-     */
-    async createPayment(paymentData: PaymentRequest): Promise<PaymentResponse> {
-        try {
-            return await this.httpClient.post<PaymentResponse>('/payments', paymentData);
-        } catch (error) {
-            console.log('Failed to create payment:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Get payment by ID
-     */
-    async getPayment(paymentId: string): Promise<PaymentResponse> {
-        try {
-            return await this.httpClient.get<PaymentResponse>(`/payments/${paymentId}`);
-        } catch (error) {
-            console.log('Failed to get payment:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Health check for the API
-     */
-    async healthCheck(): Promise<boolean> {
-        try {
-            await this.httpClient.get('/health');
-            return true;
-        } catch (error) {
-            console.log('Health check failed:', error);
-            return false;
+            // Handle timeout errors specifically
+            if (axios.isAxiosError(error) && error.code === 'ECONNABORTED') {
+                console.log('Payment activation timed out, but this might be expected for first-time activation');
+                return {
+                    message: 'Payment activation initiated (timeout may be expected for first-time activation)',
+                    userId,
+                    warning: 'Request timed out, but activation may still be processing',
+                };
+            }
+            throw error; // Re-throw other errors to be handled by the caller
         }
     }
 }
 
 // Export singleton instance
-export const stablecoinApi = StablecoinApiService.getInstance(); 
+export const stablecoinApiService = new StablecoinApiService(); 

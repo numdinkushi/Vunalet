@@ -1,5 +1,5 @@
 // API Services
-export { stablecoinApi } from './api/stablecoin-api';
+export { stablecoinApiService } from './api/stablecoin-api';
 export { HttpClient } from './api/http-client';
 export * from './api/types';
 
