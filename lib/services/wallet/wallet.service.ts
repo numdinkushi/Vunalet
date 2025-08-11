@@ -1,9 +1,9 @@
+import { LZC_TOKEN_NAME } from '../../../constants/tokens';
+
 export interface WalletBalances {
     walletBalance: number;
     ledgerBalance: number;
 }
-
-const BALANCE_TOKEN_NAME = 'L ZAR Coin';
 
 export class WalletService {
     private static instance: WalletService;
@@ -25,7 +25,7 @@ export class WalletService {
         }
         const data = await res.json();
         const tokens: Array<{ name: string; balance: string | number; }> = data?.tokens || [];
-        const zarToken = tokens.find(t => t.name === BALANCE_TOKEN_NAME);
+        const zarToken = tokens.find(t => t.name === LZC_TOKEN_NAME);
         const walletBalance = zarToken ? Number(zarToken.balance) : 0;
         // For now, ledger mirrors wallet until we have pending/holds sourced
         const ledgerBalance = walletBalance;

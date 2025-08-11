@@ -10,6 +10,7 @@ import { useUser } from '@clerk/nextjs';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { walletService } from '../../../lib/services/wallet/wallet.service';
+import { LZC_TOKEN_NAME } from '../../../constants/tokens';
 
 export default function BuyerDashboard() {
     const [activeTab, setActiveTab] = useState('overview');
@@ -22,7 +23,7 @@ export default function BuyerDashboard() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const balance = useQuery((api as unknown as any).balances.getUserBalance, {
         clerkUserId: user?.id || '',
-        token: 'L ZAR Coin',
+        token: LZC_TOKEN_NAME,
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -34,9 +35,9 @@ export default function BuyerDashboard() {
             .fetchBalances(user.id)
             .then(({ walletBalance, ledgerBalance }) => {
                 console.log('Fetched balances', { walletBalance, ledgerBalance });
-                return gi({
+                return upsertBalance({
                     clerkUserId: user.id,
-                    token: 'L ZAR Coin',
+                    token: LZC_TOKEN_NAME,
                     walletBalance,
                     ledgerBalance,
                 });

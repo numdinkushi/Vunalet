@@ -28,6 +28,7 @@ import { WalletCard } from '../shared/WalletCard';
 import { useUser } from '@clerk/nextjs';
 import { useEffect } from 'react';
 import { walletService } from '../../../lib/services/wallet/wallet.service';
+import { LZC_TOKEN_NAME } from '../../../constants/tokens';
 
 interface DispatcherDashboardProps {
     userProfile: any;
@@ -40,7 +41,7 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const balance = useQuery((api as unknown as any).balances.getUserBalance, {
         clerkUserId: user?.id || '',
-        token: 'L ZAR Coin',
+        token: LZC_TOKEN_NAME,
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -54,7 +55,7 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
                 console.log('Fetched balances', { walletBalance, ledgerBalance });
                 return upsertBalance({
                     clerkUserId: user.id,
-                    token: 'L ZAR Coin',
+                    token: LZC_TOKEN_NAME,
                     walletBalance,
                     ledgerBalance,
                 });
