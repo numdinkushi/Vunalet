@@ -31,6 +31,16 @@ export default defineSchema({
         .index("by_email", ["email"])
         .index("by_lisk_id", ["liskId"]),
 
+    // Balances table
+    balances: defineTable({
+        clerkUserId: v.string(),
+        token: v.string(), // e.g. "L ZAR Coin"
+        walletBalance: v.number(),
+        ledgerBalance: v.number(),
+        updatedAt: v.number(),
+    })
+        .index("by_user_token", ["clerkUserId", "token"]),
+
     // Products table
     products: defineTable({
         farmerId: v.string(), // clerkUserId of the farmer

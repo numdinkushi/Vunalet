@@ -133,6 +133,14 @@ class StablecoinApiService {
             throw error; // Re-throw other errors to be handled by the caller
         }
     }
+
+    /**
+     * Get user token balances from external stablecoin API
+     */
+    async getUserBalances(userId: string): Promise<{ tokens: { name: string; balance: string | number; }[]; }> {
+        const response = await this.api.get(`/${userId}/balance`);
+        return response.data;
+    }
 }
 
 // Export singleton instance

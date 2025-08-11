@@ -7,4 +7,7 @@ export * from './api/types';
 export { userIntegrationService } from './integration/user-integration.service';
 
 // Payment Services
-export { paymentService } from './payment/payment.service'; 
+export { paymentService } from './payment/payment.service';
+
+// Wallet Service
+export { walletService, WalletService } from './wallet/wallet.service'; 

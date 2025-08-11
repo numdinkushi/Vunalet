@@ -67,4 +67,14 @@ export interface ApiResponse<T> {
     data: T;
     status: number;
     message?: string;
+}
+
+// Add balance-related types
+export interface TokenBalance {
+    name: string;
+    balance: string | number;
+}
+
+export interface UserBalancesResponse {
+    tokens: TokenBalance[];
 } 

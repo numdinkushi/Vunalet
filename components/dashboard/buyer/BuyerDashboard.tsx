@@ -1,17 +1,51 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardHeader, StatsGrid, TabNavigation, OrderList, OrderModal } from './components';
 import { mockOrderStats, mockOrders } from './data';
 import { filterOrdersByStatus } from './utils';
 import { Order } from './types';
 import { WalletCard } from '../shared/WalletCard';
+import { useUser } from '@clerk/nextjs';
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
+import { walletService } from '../../../lib/services/wallet/wallet.service';
 
 export default function BuyerDashboard() {
     const [activeTab, setActiveTab] = useState('overview');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const { user } = useUser();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const balance = useQuery((api as unknown as any).balances.getUserBalance, {
+        clerkUserId: user?.id || '',
+        token: 'L ZAR Coin',
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const upsertBalance = useMutation((api as unknown as any).balances.upsertUserBalance);
+
+    useEffect(() => {
+        if (!user?.id) return;
+        walletService
+            .fetchBalances(user.id)
+            .then(({ walletBalance, ledgerBalance }) => {
+                console.log('Fetched balances', { walletBalance, ledgerBalance });
+                return gi({
+                    clerkUserId: user.id,
+                    token: 'L ZAR Coin',
+                    walletBalance,
+                    ledgerBalance,
+                });
+            })
+            .catch((err) => console.log('Failed to refresh balances', err));
+    }, [user?.id]);
+
+    const walletBalance = balance?.walletBalance ?? 0;
+    const ledgerBalance = balance?.ledgerBalance ?? 0;
 
     const stats = {
         totalOrders: mockOrderStats.total,
@@ -47,8 +81,8 @@ export default function BuyerDashboard() {
 
                 {/* Wallet Card */}
                 <WalletCard
-                    walletBalance={12500.5}
-                    ledgerBalance={15890.0}
+                    walletBalance={walletBalance}
+                    ledgerBalance={ledgerBalance}
                     className="mt-4"
                 />
                 <div className="mt-8">
@@ -93,12 +127,10 @@ export default function BuyerDashboard() {
                 )}
             </div>
 
-            {/* Order Modal */}
-            <OrderModal
-                order={selectedOrder}
-                isOpen={isModalOpen}
-                onClose={handleCloseModal}
-            />
+            {/* Modal */}
+            {isModalOpen && (
+                <OrderModal order={selectedOrder} isOpen={isModalOpen} onClose={handleCloseModal} />
+            )}
         </div>
     );
 } 
