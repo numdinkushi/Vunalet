@@ -77,13 +77,20 @@ export function ImageUpload({ onImagesUploaded, maxImages = 5, className }: Imag
         uploadImages(acceptedFiles);
     }, [uploadedImages.length, maxImages]);
 
+    const onDropRejected = useCallback((rejectedFiles: unknown[]) => {
+        console.log('Rejected files:', rejectedFiles);
+    }, []);
+
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
+        onDropRejected,
         accept: {
             'image/*': ['.jpeg', '.jpg', '.png', '.webp']
         },
         maxSize: 5 * 1024 * 1024, // 5MB
-        multiple: true
+        multiple: true,
+        noClick: false,
+        noKeyboard: false
     });
 
     const removeImage = (index: number) => {
@@ -97,6 +104,8 @@ export function ImageUpload({ onImagesUploaded, maxImages = 5, className }: Imag
             {/* Upload Area */}
             <div
                 {...getRootProps()}
+                onClick={(e) => e.preventDefault()}
+                onKeyDown={(e) => e.preventDefault()}
                 className={cn(
                     "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
                     isDragActive ? "border-emerald-500 bg-emerald-50" : "border-gray-300 hover:border-gray-400",

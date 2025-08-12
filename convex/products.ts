@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+import { api } from "./_generated/api";
 
 // Create a new product
 export const createProduct = mutation({
@@ -32,8 +33,7 @@ export const createProduct = mutation({
         });
 
         // Update category product count
-        const { updateCategoryProductCount } = await import("./categories");
-        await ctx.scheduler.runAfter(0, updateCategoryProductCount, { categoryId: args.categoryId });
+        await ctx.scheduler.runAfter(0, api.categories.updateCategoryProductCount, { categoryId: args.categoryId });
 
         return productId;
     },
@@ -124,11 +124,10 @@ export const updateProduct = mutation({
         if (categoryId) {
             const product = await ctx.db.get(productId as Id<"products">);
             if (product && product.categoryId !== categoryId) {
-                const { updateCategoryProductCount } = await import("./categories");
                 // Update old category count
-                await ctx.scheduler.runAfter(0, updateCategoryProductCount, { categoryId: product.categoryId });
+                await ctx.scheduler.runAfter(0, api.categories.updateCategoryProductCount, { categoryId: product.categoryId });
                 // Update new category count
-                await ctx.scheduler.runAfter(0, updateCategoryProductCount, { categoryId });
+                await ctx.scheduler.runAfter(0, api.categories.updateCategoryProductCount, { categoryId });
             }
         }
 
