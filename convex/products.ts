@@ -1,13 +1,14 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+import { api } from "./_generated/api";
 
 // Create a new product
 export const createProduct = mutation({
     args: {
         farmerId: v.string(),
+        categoryId: v.string(),
         name: v.string(),
-        category: v.string(),
         price: v.number(),
         unit: v.string(),
         quantity: v.number(),
@@ -25,11 +26,16 @@ export const createProduct = mutation({
         status: v.union(v.literal("active"), v.literal("inactive"), v.literal("out_of_stock")),
     },
     handler: async (ctx, args) => {
-        return await ctx.db.insert("products", {
+        const productId = await ctx.db.insert("products", {
             ...args,
             createdAt: Date.now(),
             updatedAt: Date.now(),
         });
+
+        // Update category product count
+        await ctx.scheduler.runAfter(0, api.categories.updateCategoryProductCount, { categoryId: args.categoryId });
+
+        return productId;
     },
 });
 
@@ -58,11 +64,11 @@ export const getActiveProducts = query({
 
 // Get products by category
 export const getProductsByCategory = query({
-    args: { category: v.string() },
+    args: { categoryId: v.string() },
     handler: async (ctx, args) => {
         return await ctx.db
             .query("products")
-            .withIndex("by_category", (q) => q.eq("category", args.category))
+            .withIndex("by_category", (q) => q.eq("categoryId", args.categoryId))
             .filter((q) => q.eq(q.field("status"), "active"))
             .order("desc")
             .collect();
@@ -94,7 +100,7 @@ export const updateProduct = mutation({
     args: {
         productId: v.string(),
         name: v.optional(v.string()),
-        category: v.optional(v.string()),
+        categoryId: v.optional(v.string()),
         price: v.optional(v.number()),
         unit: v.optional(v.string()),
         quantity: v.optional(v.number()),
@@ -112,7 +118,19 @@ export const updateProduct = mutation({
         status: v.optional(v.union(v.literal("active"), v.literal("inactive"), v.literal("out_of_stock"))),
     },
     handler: async (ctx, args) => {
-        const { productId, ...updateData } = args;
+        const { productId, categoryId, ...updateData } = args;
+
+        // If category is being updated, we need to update product counts for both old and new categories
+        if (categoryId) {
+            const product = await ctx.db.get(productId as Id<"products">);
+            if (product && product.categoryId !== categoryId) {
+                // Update old category count
+                await ctx.scheduler.runAfter(0, api.categories.updateCategoryProductCount, { categoryId: product.categoryId });
+                // Update new category count
+                await ctx.scheduler.runAfter(0, api.categories.updateCategoryProductCount, { categoryId });
+            }
+        }
+
         return await ctx.db.patch(productId as Id<"products">, {
             ...updateData,
             updatedAt: Date.now(),
@@ -132,7 +150,7 @@ export const deleteProduct = mutation({
 export const searchProducts = query({
     args: {
         searchTerm: v.string(),
-        category: v.optional(v.string()),
+        categoryId: v.optional(v.string()),
         minPrice: v.optional(v.number()),
         maxPrice: v.optional(v.number()),
     },
@@ -151,8 +169,8 @@ export const searchProducts = query({
         }
 
         // Filter by category
-        if (args.category) {
-            products = products.filter(product => product.category === args.category);
+        if (args.categoryId) {
+            products = products.filter(product => product.categoryId === args.categoryId);
         }
 
         // Filter by price range

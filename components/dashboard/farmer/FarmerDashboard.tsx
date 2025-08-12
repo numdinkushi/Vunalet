@@ -11,6 +11,10 @@ import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 import { Textarea } from '../../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
+import { ImageUpload } from '../../ui/image-upload';
+import { Checkbox } from '../../ui/checkbox';
+import { Calendar } from '../../ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover';
 import {
     Plus,
     Package,
@@ -23,12 +27,14 @@ import {
     Eye,
     Upload,
     Leaf,
-    Star
+    Star,
+    Calendar as CalendarIcon
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { mockFarmerStats, mockProducts, mockFarmerOrders } from './data';
 import { StatCard, ProductCard, OrderCard } from './components';
+import { cn } from '../../../lib/utils';
 import { WalletCard } from '../shared/WalletCard';
 import { useUser } from '@clerk/nextjs';
 import { useEffect } from 'react';
@@ -78,6 +84,7 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
 
     const products = useQuery(api.products.getProductsByFarmer, { farmerId: userProfile.clerkUserId });
     const orders = useQuery(api.orders.getOrdersByFarmer, { farmerId: userProfile.clerkUserId });
+    const categories = useQuery(api.categories.getActiveCategories);
 
     const createProduct = useMutation(api.products.createProduct);
     const updateProduct = useMutation(api.products.updateProduct);
@@ -85,7 +92,7 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
 
     const [newProduct, setNewProduct] = useState({
         name: '',
-        category: '',
+        categoryId: '',
         price: 0,
         unit: '',
         quantity: 0,
@@ -94,7 +101,9 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
         location: userProfile.location || '',
         isOrganic: false,
         isFeatured: false,
+        images: [] as string[],
     });
+    const [harvestDate, setHarvestDate] = useState<Date | undefined>(undefined);
 
     const handleAddProduct = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -103,7 +112,6 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
             await createProduct({
                 farmerId: userProfile.clerkUserId,
                 ...newProduct,
-                images: [],
                 status: 'active',
             });
 
@@ -111,7 +119,7 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
             setShowAddProduct(false);
             setNewProduct({
                 name: '',
-                category: '',
+                categoryId: '',
                 price: 0,
                 unit: '',
                 quantity: 0,
@@ -120,7 +128,9 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
                 location: userProfile.location || '',
                 isOrganic: false,
                 isFeatured: false,
+                images: [],
             });
+            setHarvestDate(undefined);
         } catch (error) {
             toast.error('Failed to add product');
         }
@@ -277,15 +287,16 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
                                     </div>
                                     <div>
                                         <Label htmlFor="category">Category</Label>
-                                        <Select value={newProduct.category} onValueChange={(value) => setNewProduct({ ...newProduct, category: value })}>
+                                        <Select value={newProduct.categoryId} onValueChange={(value) => setNewProduct({ ...newProduct, categoryId: value })}>
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Select category" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="vegetables">Vegetables</SelectItem>
-                                                <SelectItem value="fruits">Fruits</SelectItem>
-                                                <SelectItem value="grains">Grains</SelectItem>
-                                                <SelectItem value="dairy">Dairy</SelectItem>
+                                                {categories?.map((category) => (
+                                                    <SelectItem key={category.categoryId} value={category.categoryId}>
+                                                        {category.name}
+                                                    </SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -322,6 +333,56 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
                                         />
                                     </div>
                                 </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label htmlFor="harvestDate">Harvest Date</Label>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    className={cn(
+                                                        "w-full justify-start text-left font-normal",
+                                                        !harvestDate && "text-muted-foreground"
+                                                    )}
+                                                >
+                                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                                    {harvestDate ? (
+                                                        harvestDate.toLocaleDateString()
+                                                    ) : (
+                                                        <span>Pick a date</span>
+                                                    )}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={harvestDate}
+                                                    onSelect={(date) => {
+                                                        setHarvestDate(date);
+                                                        if (date) {
+                                                            setNewProduct({
+                                                                ...newProduct,
+                                                                harvestDate: date.toISOString().split('T')[0]
+                                                            });
+                                                        }
+                                                    }}
+                                                    initialFocus
+                                                    disabled={(date) => date > new Date()}
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="location">Location</Label>
+                                        <Input
+                                            id="location"
+                                            value={newProduct.location}
+                                            onChange={(e) => setNewProduct({ ...newProduct, location: e.target.value })}
+                                            placeholder="Farm location"
+                                            required
+                                        />
+                                    </div>
+                                </div>
                                 <div>
                                     <Label htmlFor="description">Description</Label>
                                     <Textarea
@@ -330,6 +391,31 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
                                         onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
                                         rows={3}
                                     />
+                                </div>
+                                <div>
+                                    <Label>Product Images</Label>
+                                    <ImageUpload
+                                        onImagesUploaded={(urls) => setNewProduct({ ...newProduct, images: urls })}
+                                        maxImages={5}
+                                    />
+                                </div>
+                                <div className="flex items-center space-x-6">
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id="isOrganic"
+                                            checked={newProduct.isOrganic}
+                                            onCheckedChange={(checked) => setNewProduct({ ...newProduct, isOrganic: checked as boolean })}
+                                        />
+                                        <Label htmlFor="isOrganic">Organic Product</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id="isFeatured"
+                                            checked={newProduct.isFeatured}
+                                            onCheckedChange={(checked) => setNewProduct({ ...newProduct, isFeatured: checked as boolean })}
+                                        />
+                                        <Label htmlFor="isFeatured">Featured Product</Label>
+                                    </div>
                                 </div>
                                 <div className="flex justify-end space-x-2">
                                     <Button type="button" variant="outline" onClick={() => setShowAddProduct(false)}>

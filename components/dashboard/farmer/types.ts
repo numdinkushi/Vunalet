@@ -8,7 +8,11 @@ export interface FarmerStats {
 export interface Product {
     _id: string;
     name: string;
-    category: string;
+    categoryId: string;
+    category?: {
+        name: string;
+        categoryId: string;
+    };
     price: number;
     unit: string;
     quantity: number;
