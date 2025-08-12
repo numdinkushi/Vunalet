@@ -77,4 +77,27 @@ export interface TokenBalance {
 
 export interface UserBalancesResponse {
     tokens: TokenBalance[];
+}
+
+// Mint transaction types
+export interface MintTransactionResponse {
+    message: string;
+    transaction: {
+        _type: string;
+        accessList: any[];
+        blockNumber: string | null;
+        blockHash: string | null;
+        blobVersionedHashes: string | null;
+        chainId: string;
+        data: string;
+        from: string;
+        gasLimit: string;
+        gasPrice: string | null;
+        hash: string;
+        maxFeePerGas: string;
+        maxPriorityFeePerGas: string;
+        maxFeePerBlobGas: string | null;
+        nonce: number;
+        signature: any;
+    };
 } 

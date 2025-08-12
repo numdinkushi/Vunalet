@@ -1,9 +1,9 @@
 import axios, { AxiosInstance } from 'axios';
-import { CreateUserRequest, CreateUserResponse, ApiError } from './types';
+import { CreateUserRequest, CreateUserResponse, ApiError, MintTransactionResponse } from './types';
 
 // API Configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://seal-app-qp9cc.ondigitalocean.app/api/v1';
-const API_KEY = process.env.NEXT_PRIVATE_API_KEY || '';
+const API_KEY = process.env.NEXT_PRIVATE_API_KEY || process.env.STABLECOIN_API_KEY || '';
 
 /**
  * Shared stablecoin API service
@@ -12,12 +12,16 @@ class StablecoinApiService {
     private api: AxiosInstance;
 
     constructor() {
+        if (!API_KEY) {
+            console.error('Missing API key for stablecoin service. Please set NEXT_PRIVATE_API_KEY or STABLECOIN_API_KEY environment variable.');
+        }
+
         this.api = axios.create({
             baseURL: API_BASE_URL,
             timeout: 10000,
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${API_KEY}`,
+                'Authorization': API_KEY ? `Bearer ${API_KEY}` : '',
             },
         });
     }
@@ -31,7 +35,7 @@ class StablecoinApiService {
             timeout,
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${API_KEY}`,
+                'Authorization': API_KEY ? `Bearer ${API_KEY}` : '',
             },
         });
     }
@@ -88,7 +92,12 @@ class StablecoinApiService {
         console.log('API Configuration:', {
             baseURL: API_BASE_URL,
             hasApiKey: !!API_KEY,
+            apiKeyLength: API_KEY ? API_KEY.length : 0,
         });
+
+        if (!API_KEY) {
+            throw new Error('Missing API key for stablecoin service. Please check your environment variables.');
+        }
 
         const response = await this.api.post<CreateUserResponse>('/users', requestData);
         console.log('User created successfully in stablecoin system:', response.data);
@@ -139,6 +148,24 @@ class StablecoinApiService {
      */
     async getUserBalances(userId: string): Promise<{ tokens: { name: string; balance: string | number; }[]; }> {
         const response = await this.api.get(`/${userId}/balance`);
+        return response.data;
+    }
+
+    /**
+     * Mint stablecoins to a user's payment identifier
+     */
+    async mintStablecoins(paymentIdentifier: string, amount: number, notes?: string): Promise<MintTransactionResponse> {
+        console.log('Minting stablecoins:', { paymentIdentifier, amount, notes });
+
+        const mintData = {
+            transactionAmount: amount,
+            transactionRecipient: paymentIdentifier,
+            transactionNotes: notes || 'Onboarding Token',
+        };
+
+        const response = await this.api.post<MintTransactionResponse>('/mint', mintData);
+        console.log('Stablecoins minted successfully:', response.data);
+
         return response.data;
     }
 }

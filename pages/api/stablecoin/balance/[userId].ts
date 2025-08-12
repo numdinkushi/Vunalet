@@ -9,6 +9,15 @@ export default async function handler(
         return res.status(405).json({ message: 'Method not allowed' });
     }
 
+    // Debug environment variables (only in development)
+    if (process.env.NODE_ENV === 'development') {
+        console.log('Balance API Route Debug:', {
+            hasNextPrivateApiKey: !!process.env.NEXT_PRIVATE_API_KEY,
+            hasStablecoinApiKey: !!process.env.STABLECOIN_API_KEY,
+            apiKeyLength: process.env.NEXT_PRIVATE_API_KEY?.length || process.env.STABLECOIN_API_KEY?.length || 0,
+        });
+    }
+
     try {
         const { userId } = req.query;
 

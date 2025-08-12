@@ -1,4 +1,3 @@
-import { stablecoinApiService } from '../api/stablecoin-api';
 import { UserIntegrationData, IntegrationResult, CreateUserResponse } from '../api/types';
 import { toast } from 'sonner';
 
@@ -22,7 +21,7 @@ export class UserIntegrationService {
     }
 
     /**
-     * Create user in stablecoin system
+     * Create user in stablecoin system via API route
      */
     async createStablecoinUser(userData: UserIntegrationData): Promise<IntegrationResult> {
         try {
@@ -34,7 +33,31 @@ export class UserIntegrationService {
                 lastName: userData.lastName,
             };
 
-            const stablecoinUser = await stablecoinApiService.createUser(stablecoinUserData);
+            // Use the Next.js API route instead of direct service call
+            const response = await fetch('/api/stablecoin/users', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(stablecoinUserData),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+
+                // Check for specific "user already exists" error
+                if (errorData.error && errorData.error.includes('Unique constraint failed on the constraint: `User_email_key`')) {
+                    console.log('User already exists in stablecoin system:', userData.email);
+                    return {
+                        success: false,
+                        error: 'User already exists in stablecoin system',
+                    };
+                }
+
+                throw new Error(errorData.message || 'Failed to create user in stablecoin system');
+            }
+
+            const stablecoinUser = await response.json();
             console.log('User created in stablecoin system:', stablecoinUser);
 
             return {
@@ -48,12 +71,25 @@ export class UserIntegrationService {
     }
 
     /**
-     * Activate payment for a user
+     * Activate payment for a user via API route
      */
     async activatePayment(userId: string): Promise<void> {
         try {
             console.log('Activating payment for user:', userId);
-            const result = await stablecoinApiService.activatePayment(userId);
+
+            const response = await fetch(`/api/stablecoin/activate-pay/${userId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to activate payment');
+            }
+
+            const result = await response.json();
             console.log('Payment activated successfully for user:', userId, result);
         } catch (error) {
             console.log('Failed to activate payment:', error);
@@ -62,10 +98,43 @@ export class UserIntegrationService {
     }
 
     /**
+     * Mint stablecoins to user's payment identifier via API route
+     */
+    async mintStablecoins(paymentIdentifier: string, amount: number = 30, notes?: string): Promise<void> {
+        try {
+            console.log('Minting stablecoins for user:', { paymentIdentifier, amount, notes });
+
+            const response = await fetch('/api/stablecoin/mint', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    paymentIdentifier,
+                    amount,
+                    notes: notes || 'Onboarding Token',
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to mint stablecoins');
+            }
+
+            const result = await response.json();
+            console.log('Stablecoins minted successfully:', result);
+        } catch (error) {
+            console.log('Failed to mint stablecoins:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Complete user integration flow
      * 1. Create user in stablecoin system
-     * 2. Activate payment for the user
-     * 3. Return data for Convex update
+     * 2. Mint R30 stablecoins to user's payment identifier
+     * 3. Activate payment for the user
+     * 4. Return data for Convex update
      */
     async completeUserIntegration(userData: UserIntegrationData): Promise<IntegrationResult> {
         try {
@@ -76,7 +145,17 @@ export class UserIntegrationService {
                 return result;
             }
 
-            // Step 2: Activate payment for the user
+            // Step 2: Mint R30 stablecoins to user's payment identifier
+            try {
+                await this.mintStablecoins(result.stablecoinUser.paymentIdentifier, 30, 'Onboarding Token');
+                console.log('Stablecoins minted successfully for onboarding');
+            } catch (mintError) {
+                console.log('Stablecoin minting failed, but continuing with user creation:', mintError);
+                // Don't fail the entire registration if minting fails
+                // The user can still be created, minting can be retried later
+            }
+
+            // Step 3: Activate payment for the user
             try {
                 await this.activatePayment(result.stablecoinUser.id);
                 console.log('Payment activation completed successfully');
@@ -86,7 +165,7 @@ export class UserIntegrationService {
                 // The user can still be created, payment can be activated later
             }
 
-            // Step 3: Prepare data for Convex update
+            // Step 4: Prepare data for Convex update
             const convexUpdateData = {
                 clerkUserId: userData.clerkUserId,
                 liskId: result.stablecoinUser.id,
