@@ -44,33 +44,27 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
     const [showAddProduct, setShowAddProduct] = useState(false);
     const { user } = useUser();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const balance = useQuery((api as unknown as any).balances.getUserBalance, {
         clerkUserId: user?.id || '',
         token: LZC_TOKEN_NAME,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const upsertBalance = useMutation((api as unknown as any).balances.upsertUserBalance);
 
     useEffect(() => {
         if (!user?.id) return;
 
-        // Fetch latest balance from stablecoin API and update Convex
         const refreshBalances = async () => {
             try {
                 const { walletService } = await import('../../../lib/services/wallet/wallet.service');
                 const balances = await walletService.fetchBalances(userProfile?.liskId || user.id);
 
-                // Update Convex with the latest balances
                 await upsertBalance({
                     clerkUserId: user.id,
                     token: LZC_TOKEN_NAME,
                     walletBalance: balances.walletBalance,
                     ledgerBalance: balances.ledgerBalance,
                 });
-
-                console.log('Balances refreshed from stablecoin API:', balances);
             } catch (error) {
                 console.log('Failed to refresh balances:', error);
             }
@@ -82,11 +76,9 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
     const walletBalance = balance?.walletBalance ?? 0;
     const ledgerBalance = balance?.ledgerBalance ?? 0;
 
-    // Queries
     const products = useQuery(api.products.getProductsByFarmer, { farmerId: userProfile.clerkUserId });
     const orders = useQuery(api.orders.getOrdersByFarmer, { farmerId: userProfile.clerkUserId });
 
-    // Mutations
     const createProduct = useMutation(api.products.createProduct);
     const updateProduct = useMutation(api.products.updateProduct);
     const deleteProduct = useMutation(api.products.deleteProduct);

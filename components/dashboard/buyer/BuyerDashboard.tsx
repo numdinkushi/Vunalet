@@ -20,7 +20,6 @@ export default function BuyerDashboard() {
 
     const { user } = useUser();
 
-    // Get user profile to access liskId
     const userProfile = useQuery(api.users.getUserProfile, {
         clerkUserId: user?.id || '',
     });
@@ -37,22 +36,17 @@ export default function BuyerDashboard() {
     useEffect(() => {
         if (!user?.id || !userProfile?.liskId) return;
 
-        // Fetch latest balance from stablecoin API and update Convex
         const refreshBalances = async () => {
             try {
                 const { walletService } = await import('../../../lib/services/wallet/wallet.service');
                 const balances = await walletService.fetchBalances(userProfile.liskId!);
-                console.log('Fetched balances', balances);
 
-                // Update Convex with the latest balances
                 await upsertBalance({
                     clerkUserId: user.id,
                     token: LZC_TOKEN_NAME,
                     walletBalance: balances.walletBalance,
                     ledgerBalance: balances.ledgerBalance,
                 });
-
-                console.log('Balances refreshed from stablecoin API:', balances);
             } catch (error) {
                 console.log('Failed to refresh balances:', error);
             }

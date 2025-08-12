@@ -75,7 +75,6 @@ export function useRegistration() {
         setIsSubmitting(true);
 
         try {
-            // Step 1: Create user in stablecoin system, mint tokens, and activate payment
             const integrationResult = await userIntegrationService.completeUserIntegration({
                 clerkUserId: user.id,
                 email: user.emailAddresses[0].emailAddress,
@@ -88,7 +87,6 @@ export function useRegistration() {
                 return;
             }
 
-            // Step 2: Create user profile in Convex with stablecoin data
             const convexData = {
                 clerkUserId: user.id,
                 email: user.emailAddresses[0].emailAddress,
@@ -108,13 +106,10 @@ export function useRegistration() {
 
             await createUserWithStablecoinIntegration(convexData);
 
-            // Step 3: Update balances in Convex to reflect the minted tokens
             if (integrationResult.stablecoinUser?.id && integrationResult.mintedAmount) {
                 try {
-                    // Fetch the latest balances from the stablecoin API
                     const balances = await walletService.fetchBalances(integrationResult.stablecoinUser.id);
 
-                    // Update Convex with the new balances
                     await upsertBalance({
                         clerkUserId: user.id,
                         token: 'L ZAR Coin',
@@ -122,13 +117,10 @@ export function useRegistration() {
                         ledgerBalance: balances.ledgerBalance,
                     });
 
-                    console.log('Balances updated in Convex after minting:', balances);
-
                     if (integrationResult.mintedAmount > 0) {
                         toast.success(`Welcome! R${integrationResult.mintedAmount} has been added to your wallet.`);
                     }
                 } catch (balanceError) {
-                    console.log('Failed to update balances after minting:', balanceError);
                     // Don't fail the registration if balance update fails
                 }
             }

@@ -3,31 +3,18 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
-import { Button } from '../../ui/button';
-import { Badge } from '../../ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs';
 import {
     Truck,
-    MapPin,
     Clock,
     DollarSign,
-    CheckCircle,
-    AlertCircle,
-    Navigation,
-    Package,
-    User,
-    Phone,
-    Eye
-} from 'lucide-react';
-import { motion } from 'framer-motion';
-import { formatDate, getStatusColor, getOrderStatusText } from './utils';
+    CheckCircle} from 'lucide-react';
 import { mockDispatcherStats, mockDispatcherOrders } from './data';
 import { StatCard, DeliveryCard } from './components';
 import { WalletCard } from '../shared/WalletCard';
 import { useUser } from '@clerk/nextjs';
 import { useEffect } from 'react';
-import { walletService } from '../../../lib/services/wallet/wallet.service';
 import { LZC_TOKEN_NAME } from '../../../constants/tokens';
 
 interface DispatcherDashboardProps {
@@ -50,21 +37,17 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
     useEffect(() => {
         if (!user?.id) return;
 
-        // Fetch latest balance from stablecoin API and update Convex
         const refreshBalances = async () => {
             try {
                 const { walletService } = await import('../../../lib/services/wallet/wallet.service');
                 const balances = await walletService.fetchBalances(userProfile?.liskId || user.id);
 
-                // Update Convex with the latest balances
                 await upsertBalance({
                     clerkUserId: user.id,
                     token: LZC_TOKEN_NAME,
                     walletBalance: balances.walletBalance,
                     ledgerBalance: balances.ledgerBalance,
                 });
-
-                console.log('Balances refreshed from stablecoin API:', balances);
             } catch (error) {
                 console.log('Failed to refresh balances:', error);
             }
