@@ -25,10 +25,24 @@ export default async function handler(
             return res.status(400).json({ message: 'Missing or invalid userId parameter' });
         }
 
+        console.log('Fetching balances for userId:', userId);
+
         const result = await stablecoinApiService.getUserBalances(userId);
+        console.log('Balance fetch result:', result);
+
         return res.status(200).json(result);
     } catch (error: unknown) {
         console.log('Failed to get user balances:', error);
+
+        // Check if it's a user not found error
+        if (error && typeof error === 'object' && 'message' in error) {
+            const errorMessage = String(error.message);
+            if (errorMessage.includes('404') || errorMessage.includes('not found')) {
+                console.log('User not found in stablecoin system, returning empty balances');
+                return res.status(200).json({ tokens: [] });
+            }
+        }
+
         // Reuse the stablecoinApiService error handler
         const apiError = stablecoinApiService.handleApiError(error);
         return res.status(apiError.status || 500).json(apiError);
