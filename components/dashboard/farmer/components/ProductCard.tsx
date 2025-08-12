@@ -38,6 +38,27 @@ export function ProductCard({ product, showActions = true }: ProductCardProps) {
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
+                    {/* Product Images */}
+                    {product.images && product.images.length > 0 && (
+                        <div className="space-y-2">
+                            <div className="grid grid-cols-2 gap-2">
+                                {product.images.slice(0, 2).map((image, index) => (
+                                    <img
+                                        key={index}
+                                        src={image}
+                                        alt={`${product.name} ${index + 1}`}
+                                        className="w-full h-24 object-cover rounded-lg border"
+                                    />
+                                ))}
+                            </div>
+                            {product.images.length > 2 && (
+                                <p className="text-xs text-gray-500 text-center">
+                                    +{product.images.length - 2} more images
+                                </p>
+                            )}
+                        </div>
+                    )}
+
                     <p className="text-gray-700">{product.description}</p>
 
                     <div className="grid grid-cols-2 gap-4 text-sm">
