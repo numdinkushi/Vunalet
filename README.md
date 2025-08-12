@@ -57,38 +57,90 @@ vunalet/
 ### Prerequisites
 - Node.js 18+ 
 - npm or yarn
+- Clerk account (for authentication)
+- Cloudinary account (for image storage)
+- Convex account (for database)
 
 ### Installation
 
-1. Clone the repository:
+1. **Clone the repository:**
 ```bash
 git clone <repository-url>
 cd vunalet
 ```
 
-2. Install dependencies:
+2. **Install dependencies:**
 ```bash
 npm install
 ```
 
-3. Set up environment variables:
-Create a `.env.local` file in the root directory:
+3. **Set up environment variables:**
+Create a `.env` file in the root directory with the following variables:
+
 ```env
 # Clerk Authentication
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
-CLERK_SECRET_KEY=your_clerk_secret_key
+# Get these from https://dashboard.clerk.com/
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your_clerk_publishable_key_here
+CLERK_SECRET_KEY=sk_test_your_clerk_secret_key_here
+
+# Cloudinary Configuration
+# Get these from https://cloudinary.com/console
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+
+# Convex Configuration
+# This will be auto-generated when you run 'npx convex dev'
+NEXT_PUBLIC_CONVEX_URL=https://your-deployment-name.convex.cloud
 
 # App Configuration
 NEXT_PUBLIC_APP_NAME=Vunalet
 NEXT_PUBLIC_APP_DESCRIPTION=Harvesting the future through sustainable agriculture
+
+# Stablecoin API Configuration (for Lisk ZAR payments)
+# Get these from your stablecoin service provider
+NEXT_PRIVATE_API_KEY=your_stablecoin_api_key_here
+STABLECOIN_API_KEY=your_stablecoin_api_key_here
+STABLECOIN_API_URL=https://your-stablecoin-api-url.com
 ```
 
-4. Run the development server:
+**Required Services:**
+- **Clerk**: [https://dashboard.clerk.com/](https://dashboard.clerk.com/) (Authentication)
+- **Cloudinary**: [https://cloudinary.com/console](https://cloudinary.com/console) (Image Storage)
+- **Convex**: [https://dashboard.convex.dev/](https://dashboard.convex.dev/) (Database)
+- **Stablecoin API**: Your stablecoin service provider (Payments)
+
+4. **Initialize Convex Database:**
+```bash
+npx convex dev
+```
+This will:
+- Provision a new Convex deployment
+- Save the deployment URL to `.env.local`
+- Start the Convex development server
+
+5. **Initialize Categories in Database:**
+```bash
+npm run init:categories
+```
+This populates the categories table with predefined data and Cloudinary image URLs.
+
+6. **Start the development server:**
 ```bash
 npm run dev
 ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+7. **Open the application:**
+Navigate to [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Expected Result
+After completing these steps, you should have:
+- ✅ A running Next.js application
+- ✅ Connected Convex database with categories
+- ✅ Image upload functionality via Cloudinary
+- ✅ Authentication system via Clerk
+- ✅ Farmer dashboard with product management
+- ✅ Buyer dashboard with order tracking
 
 ## 📱 Pages
 
@@ -126,6 +178,49 @@ npm run dev
 - `npm run build` - Build for production
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
+
+### Database Migration Scripts
+
+These scripts help manage the database schema and data migration:
+
+#### Image Migration Script
+Migrate local category images to Cloudinary and generate updated category data:
+```bash
+npm run migrate:images
+```
+This script will:
+- Upload local category images from `public/assets/categories/` to Cloudinary
+- Generate JSON output with Cloudinary URLs for each category
+- Output can be used to update the `initializeCategories` function in `convex/categories.ts`
+
+#### Category Initialization Script
+Initialize categories in the Convex database with Cloudinary images:
+```bash
+npm run init:categories
+```
+This script will:
+- Call the `initializeCategories` mutation in Convex
+- Populate the categories table with predefined data
+- Set up proper category relationships for products
+
+#### Environment Variables Required
+Make sure your `.env` file includes:
+```env
+# Cloudinary Configuration
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+
+# Convex Configuration
+NEXT_PUBLIC_CONVEX_URL=your_convex_deployment_url
+```
+
+#### Manual Migration (Alternative)
+If you prefer to run migrations manually through the UI:
+1. Start the development server: `npm run dev`
+2. Navigate to `/admin/migrate` in your browser
+3. Use the DatabaseMigrator component to run migrations
+4. Use the CategoryInitializer component to initialize categories
 
 ### Component Structure
 
@@ -190,9 +285,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Contact
 
-- **Project Link**: [https://github.com/your-username/vunalet](https://github.com/your-username/vunalet)
+- **Project Link**: https://github.com/numdinkushi/Vunalet
 - **Hackathon**: [Lisk ZAR Stablecoin Payments Hackathon](https://www.hackersdao.com/lisk-zar-stablecoin-payments-hackathon)
 
 ---
 
-Built with ❤️ for Nigerian farmers and sustainable agriculture.
+Built with ❤️ for South African farmers and sustainable agriculture.

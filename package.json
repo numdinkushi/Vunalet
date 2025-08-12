@@ -8,7 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "build:pwa": "next build && cp public/manifest.json .next/static/ && cp public/sw.js .next/static/"
+    "build:pwa": "next build && cp public/manifest.json .next/static/ && cp public/sw.js .next/static/",
+    "migrate:images": "tsx scripts/migrate-category-images.ts",
+    "init:categories": "tsx scripts/init-categories.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.28.1",
@@ -78,6 +80,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.4.5",
     "tailwindcss": "^4",
+    "tsx": "^4.20.3",
     "tw-animate-css": "^1.3.6",
     "typescript": "^5"
   }

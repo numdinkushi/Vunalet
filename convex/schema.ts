@@ -44,8 +44,8 @@ export default defineSchema({
     // Products table
     products: defineTable({
         farmerId: v.string(), // clerkUserId of the farmer
+        categoryId: v.string(), // Reference to categories table
         name: v.string(),
-        category: v.string(),
         price: v.number(),
         unit: v.string(),
         quantity: v.number(),
@@ -65,7 +65,7 @@ export default defineSchema({
         updatedAt: v.number(),
     })
         .index("by_farmer", ["farmerId"])
-        .index("by_category", ["category"])
+        .index("by_category", ["categoryId"])
         .index("by_status", ["status"])
         .index("by_featured", ["isFeatured"]),
 
@@ -135,13 +135,17 @@ export default defineSchema({
 
     // Categories table
     categories: defineTable({
+        categoryId: v.string(), // Unique identifier matching constants
         name: v.string(),
         slug: v.string(),
         description: v.optional(v.string()),
-        image: v.optional(v.string()),
+        images: v.array(v.string()), // Array of image URLs
+        productCount: v.number(), // Cached count of products in this category
         isActive: v.boolean(),
         createdAt: v.number(),
+        updatedAt: v.number(),
     })
+        .index("by_category_id", ["categoryId"])
         .index("by_slug", ["slug"])
         .index("by_active", ["isActive"]),
 

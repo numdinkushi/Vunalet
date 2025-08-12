@@ -19,7 +19,7 @@ export function ProductCard({ product, showActions = true }: ProductCardProps) {
                         <Leaf className="w-6 h-6 text-green-500" />
                         <div>
                             <CardTitle className="text-lg">{product.name}</CardTitle>
-                            <p className="text-sm text-gray-600">{product.category}</p>
+                            <p className="text-sm text-gray-600">{product.category?.name || product.categoryId}</p>
                         </div>
                     </div>
                     <div className="flex items-center space-x-2">
