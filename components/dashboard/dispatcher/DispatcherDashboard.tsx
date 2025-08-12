@@ -3,28 +3,19 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
-import { Button } from '../../ui/button';
-import { Badge } from '../../ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs';
 import {
     Truck,
-    MapPin,
     Clock,
     DollarSign,
-    CheckCircle,
-    AlertCircle,
-    Navigation,
-    Package,
-    User,
-    Phone,
-    Eye
-} from 'lucide-react';
-import { motion } from 'framer-motion';
-import { formatDate, getStatusColor, getOrderStatusText } from './utils';
+    CheckCircle} from 'lucide-react';
 import { mockDispatcherStats, mockDispatcherOrders } from './data';
 import { StatCard, DeliveryCard } from './components';
 import { WalletCard } from '../shared/WalletCard';
+import { useUser } from '@clerk/nextjs';
+import { useEffect } from 'react';
+import { LZC_TOKEN_NAME } from '../../../constants/tokens';
 
 interface DispatcherDashboardProps {
     userProfile: any;
@@ -32,6 +23,41 @@ interface DispatcherDashboardProps {
 
 export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
     const [activeTab, setActiveTab] = useState('overview');
+    const { user } = useUser();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const balance = useQuery((api as unknown as any).balances.getUserBalance, {
+        clerkUserId: user?.id || '',
+        token: LZC_TOKEN_NAME,
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const upsertBalance = useMutation((api as unknown as any).balances.upsertUserBalance);
+
+    useEffect(() => {
+        if (!user?.id) return;
+
+        const refreshBalances = async () => {
+            try {
+                const { walletService } = await import('../../../lib/services/wallet/wallet.service');
+                const balances = await walletService.fetchBalances(userProfile?.liskId || user.id);
+
+                await upsertBalance({
+                    clerkUserId: user.id,
+                    token: LZC_TOKEN_NAME,
+                    walletBalance: balances.walletBalance,
+                    ledgerBalance: balances.ledgerBalance,
+                });
+            } catch (error) {
+                console.log('Failed to refresh balances:', error);
+            }
+        };
+
+        refreshBalances();
+    }, [user?.id, userProfile?.liskId]);
+
+    const walletBalance = balance?.walletBalance ?? 0;
+    const ledgerBalance = balance?.ledgerBalance ?? 0;
 
     // Queries
     const orders = useQuery(api.orders.getOrdersByDispatcher, { dispatcherId: userProfile.clerkUserId });
@@ -96,8 +122,8 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
 
             {/* Wallet & Ledger */}
             <WalletCard
-                walletBalance={13200.0}
-                ledgerBalance={14950.35}
+                walletBalance={walletBalance}
+                ledgerBalance={ledgerBalance}
             />
 
             {/* Tabs */}

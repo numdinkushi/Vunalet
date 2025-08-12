@@ -5,14 +5,13 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
-    // Only allow POST requests
-    if (req.method !== 'POST') {
+    if (req.method !== 'GET') {
         return res.status(405).json({ message: 'Method not allowed' });
     }
 
     // Debug environment variables (only in development)
     if (process.env.NODE_ENV === 'development') {
-        console.log('Activate Pay API Route Debug:', {
+        console.log('Balance API Route Debug:', {
             hasNextPrivateApiKey: !!process.env.NEXT_PRIVATE_API_KEY,
             hasStablecoinApiKey: !!process.env.STABLECOIN_API_KEY,
             apiKeyLength: process.env.NEXT_PRIVATE_API_KEY?.length || process.env.STABLECOIN_API_KEY?.length || 0,
@@ -23,18 +22,28 @@ export default async function handler(
         const { userId } = req.query;
 
         if (!userId || typeof userId !== 'string') {
-            return res.status(400).json({
-                message: 'Missing or invalid userId parameter'
-            });
+            return res.status(400).json({ message: 'Missing or invalid userId parameter' });
         }
 
-        // Use the shared service to activate payment
-        const result = await stablecoinApiService.activatePayment(userId);
+        console.log('Fetching balances for userId:', userId);
+
+        const result = await stablecoinApiService.getUserBalances(userId);
+        console.log('Balance fetch result:', result);
 
         return res.status(200).json(result);
     } catch (error: unknown) {
-        console.log('Failed to activate payment:', error);
+        console.log('Failed to get user balances:', error);
 
+        // Check if it's a user not found error
+        if (error && typeof error === 'object' && 'message' in error) {
+            const errorMessage = String(error.message);
+            if (errorMessage.includes('404') || errorMessage.includes('not found')) {
+                console.log('User not found in stablecoin system, returning empty balances');
+                return res.status(200).json({ tokens: [] });
+            }
+        }
+
+        // Reuse the stablecoinApiService error handler
         const apiError = stablecoinApiService.handleApiError(error);
         return res.status(apiError.status || 500).json(apiError);
     }

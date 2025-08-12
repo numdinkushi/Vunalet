@@ -1,5 +1,5 @@
 // API Services
-export { stablecoinApi } from './api/stablecoin-api';
+export { stablecoinApiService } from './api/stablecoin-api';
 export { HttpClient } from './api/http-client';
 export * from './api/types';
 
@@ -7,4 +7,7 @@ export * from './api/types';
 export { userIntegrationService } from './integration/user-integration.service';
 
 // Payment Services
-export { paymentService } from './payment/payment.service'; 
+export { paymentService } from './payment/payment.service';
+
+// Wallet Service
+export { walletService, WalletService } from './wallet/wallet.service'; 

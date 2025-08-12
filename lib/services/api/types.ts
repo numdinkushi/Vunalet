@@ -49,6 +49,7 @@ export interface UserIntegrationData {
 export interface IntegrationResult {
     success: boolean;
     stablecoinUser?: CreateUserResponse;
+    mintedAmount?: number;
     error?: string;
 }
 
@@ -67,4 +68,37 @@ export interface ApiResponse<T> {
     data: T;
     status: number;
     message?: string;
+}
+
+// Add balance-related types
+export interface TokenBalance {
+    name: string;
+    balance: string | number;
+}
+
+export interface UserBalancesResponse {
+    tokens: TokenBalance[];
+}
+
+// Mint transaction types
+export interface MintTransactionResponse {
+    message: string;
+    transaction: {
+        _type: string;
+        accessList: any[];
+        blockNumber: string | null;
+        blockHash: string | null;
+        blobVersionedHashes: string | null;
+        chainId: string;
+        data: string;
+        from: string;
+        gasLimit: string;
+        gasPrice: string | null;
+        hash: string;
+        maxFeePerGas: string;
+        maxPriorityFeePerGas: string;
+        maxFeePerBlobGas: string | null;
+        nonce: number;
+        signature: any;
+    };
 } 

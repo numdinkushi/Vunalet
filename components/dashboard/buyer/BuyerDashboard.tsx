@@ -1,17 +1,62 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardHeader, StatsGrid, TabNavigation, OrderList, OrderModal } from './components';
 import { mockOrderStats, mockOrders } from './data';
 import { filterOrdersByStatus } from './utils';
 import { Order } from './types';
 import { WalletCard } from '../shared/WalletCard';
+import { useUser } from '@clerk/nextjs';
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
+import { walletService } from '../../../lib/services/wallet/wallet.service';
+import { LZC_TOKEN_NAME } from '../../../constants/tokens';
 
 export default function BuyerDashboard() {
     const [activeTab, setActiveTab] = useState('overview');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const { user } = useUser();
+
+    const userProfile = useQuery(api.users.getUserProfile, {
+        clerkUserId: user?.id || '',
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const balance = useQuery((api as unknown as any).balances.getUserBalance, {
+        clerkUserId: user?.id || '',
+        token: LZC_TOKEN_NAME,
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const upsertBalance = useMutation((api as unknown as any).balances.upsertUserBalance);
+
+    useEffect(() => {
+        if (!user?.id || !userProfile?.liskId) return;
+
+        const refreshBalances = async () => {
+            try {
+                const { walletService } = await import('../../../lib/services/wallet/wallet.service');
+                const balances = await walletService.fetchBalances(userProfile.liskId!);
+
+                await upsertBalance({
+                    clerkUserId: user.id,
+                    token: LZC_TOKEN_NAME,
+                    walletBalance: balances.walletBalance,
+                    ledgerBalance: balances.ledgerBalance,
+                });
+            } catch (error) {
+                console.log('Failed to refresh balances:', error);
+            }
+        };
+
+        refreshBalances();
+    }, [user?.id, userProfile?.liskId]);
+
+    const walletBalance = balance?.walletBalance ?? 0;
+    const ledgerBalance = balance?.ledgerBalance ?? 0;
 
     const stats = {
         totalOrders: mockOrderStats.total,
@@ -47,8 +92,8 @@ export default function BuyerDashboard() {
 
                 {/* Wallet Card */}
                 <WalletCard
-                    walletBalance={12500.5}
-                    ledgerBalance={15890.0}
+                    walletBalance={walletBalance}
+                    ledgerBalance={ledgerBalance}
                     className="mt-4"
                 />
                 <div className="mt-8">
@@ -93,12 +138,10 @@ export default function BuyerDashboard() {
                 )}
             </div>
 
-            {/* Order Modal */}
-            <OrderModal
-                order={selectedOrder}
-                isOpen={isModalOpen}
-                onClose={handleCloseModal}
-            />
+            {/* Modal */}
+            {isModalOpen && (
+                <OrderModal order={selectedOrder} isOpen={isModalOpen} onClose={handleCloseModal} />
+            )}
         </div>
     );
 } 
