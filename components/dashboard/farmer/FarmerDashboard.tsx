@@ -55,19 +55,29 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
 
     useEffect(() => {
         if (!user?.id) return;
-        walletService
-            .fetchBalances(userProfile?.liskId || user.id)
-            .then(({ walletBalance, ledgerBalance }) => {
-                console.log('Fetched balances', { walletBalance, ledgerBalance });
-                return upsertBalance({
+
+        // Fetch latest balance from stablecoin API and update Convex
+        const refreshBalances = async () => {
+            try {
+                const { walletService } = await import('../../../lib/services/wallet/wallet.service');
+                const balances = await walletService.fetchBalances(userProfile?.liskId || user.id);
+
+                // Update Convex with the latest balances
+                await upsertBalance({
                     clerkUserId: user.id,
                     token: LZC_TOKEN_NAME,
-                    walletBalance,
-                    ledgerBalance,
+                    walletBalance: balances.walletBalance,
+                    ledgerBalance: balances.ledgerBalance,
                 });
-            })
-            .catch((err) => console.log('Failed to refresh balances', err));
-    }, [user?.id]);
+
+                console.log('Balances refreshed from stablecoin API:', balances);
+            } catch (error) {
+                console.log('Failed to refresh balances:', error);
+            }
+        };
+
+        refreshBalances();
+    }, [user?.id, userProfile?.liskId]);
 
     const walletBalance = balance?.walletBalance ?? 0;
     const ledgerBalance = balance?.ledgerBalance ?? 0;

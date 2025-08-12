@@ -132,9 +132,9 @@ export class UserIntegrationService {
     /**
      * Complete user integration flow
      * 1. Create user in stablecoin system
-     * 2. Mint R30 stablecoins to user's payment identifier
-     * 3. Activate payment for the user
-     * 4. Return data for Convex update
+     * 2. Activate payment for the user
+     * 3. Mint R30 stablecoins to user's payment identifier
+     * 4. Return data for Convex update with minted amount
      */
     async completeUserIntegration(userData: UserIntegrationData): Promise<IntegrationResult> {
         try {
@@ -145,17 +145,7 @@ export class UserIntegrationService {
                 return result;
             }
 
-            // Step 2: Mint R30 stablecoins to user's payment identifier
-            try {
-                await this.mintStablecoins(result.stablecoinUser.paymentIdentifier, 30, 'Onboarding Token');
-                console.log('Stablecoins minted successfully for onboarding');
-            } catch (mintError) {
-                console.log('Stablecoin minting failed, but continuing with user creation:', mintError);
-                // Don't fail the entire registration if minting fails
-                // The user can still be created, minting can be retried later
-            }
-
-            // Step 3: Activate payment for the user
+            // Step 2: Activate payment for the user
             try {
                 await this.activatePayment(result.stablecoinUser.id);
                 console.log('Payment activation completed successfully');
@@ -163,6 +153,19 @@ export class UserIntegrationService {
                 console.log('Payment activation failed, but continuing with user creation:', activationError);
                 // Don't fail the entire registration if payment activation fails
                 // The user can still be created, payment can be activated later
+            }
+
+            let mintedAmount = 0;
+
+            // Step 3: Mint R30 stablecoins to user's payment identifier
+            try {
+                await this.mintStablecoins(result.stablecoinUser.paymentIdentifier, 30, 'Onboarding Token');
+                console.log('Stablecoins minted successfully for onboarding');
+                mintedAmount = 30; // R30 was minted
+            } catch (mintError) {
+                console.log('Stablecoin minting failed, but continuing with user creation:', mintError);
+                // Don't fail the entire registration if minting fails
+                // The user can still be created, minting can be retried later
             }
 
             // Step 4: Prepare data for Convex update
@@ -178,6 +181,7 @@ export class UserIntegrationService {
             return {
                 success: true,
                 stablecoinUser: result.stablecoinUser,
+                mintedAmount,
             };
         } catch (error) {
             console.log('User integration failed:', error);

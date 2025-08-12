@@ -49,6 +49,7 @@ export interface UserIntegrationData {
 export interface IntegrationResult {
     success: boolean;
     stablecoinUser?: CreateUserResponse;
+    mintedAmount?: number;
     error?: string;
 }
 

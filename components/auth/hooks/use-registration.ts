@@ -3,12 +3,15 @@ import { useUser } from '@clerk/nextjs';
 import { useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { userIntegrationService } from '../../../lib/services/integration/user-integration.service';
+import { walletService } from '../../../lib/services/wallet/wallet.service';
 import { RegistrationFormData } from '../types';
 import { toast } from 'sonner';
 
 export function useRegistration() {
     const { user } = useUser();
     const createUserWithStablecoinIntegration = useMutation(api.users.createUserWithStablecoinIntegration);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const upsertBalance = useMutation((api as unknown as any).balances.upsertUserBalance);
 
     const [formData, setFormData] = useState<RegistrationFormData>({
         role: 'buyer',
@@ -72,7 +75,7 @@ export function useRegistration() {
         setIsSubmitting(true);
 
         try {
-            // Step 1: Create user in stablecoin system and activate payment
+            // Step 1: Create user in stablecoin system, mint tokens, and activate payment
             const integrationResult = await userIntegrationService.completeUserIntegration({
                 clerkUserId: user.id,
                 email: user.emailAddresses[0].emailAddress,
@@ -104,6 +107,31 @@ export function useRegistration() {
             };
 
             await createUserWithStablecoinIntegration(convexData);
+
+            // Step 3: Update balances in Convex to reflect the minted tokens
+            if (integrationResult.stablecoinUser?.id && integrationResult.mintedAmount) {
+                try {
+                    // Fetch the latest balances from the stablecoin API
+                    const balances = await walletService.fetchBalances(integrationResult.stablecoinUser.id);
+
+                    // Update Convex with the new balances
+                    await upsertBalance({
+                        clerkUserId: user.id,
+                        token: 'L ZAR Coin',
+                        walletBalance: balances.walletBalance,
+                        ledgerBalance: balances.ledgerBalance,
+                    });
+
+                    console.log('Balances updated in Convex after minting:', balances);
+
+                    if (integrationResult.mintedAmount > 0) {
+                        toast.success(`Welcome! R${integrationResult.mintedAmount} has been added to your wallet.`);
+                    }
+                } catch (balanceError) {
+                    console.log('Failed to update balances after minting:', balanceError);
+                    // Don't fail the registration if balance update fails
+                }
+            }
 
             toast.success('Profile created successfully with payment activation! Welcome to Vunalet.');
             window.location.href = '/dashboard';
