@@ -1,111 +1,51 @@
-'use client';
-
-import { useState, useRef } from 'react';
+import React, { useCallback, useState } from 'react';
+import { useDropzone } from 'react-dropzone';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
 import { Button } from './button';
-import { Label } from './label';
+import { Progress } from './progress';
+import { cn } from '../../lib/utils';
 
 interface ImageUploadProps {
-    value?: string;
-    onChange: (url: string) => void;
-    label?: string;
-    placeholder?: string;
+    onImagesUploaded: (urls: string[]) => void;
+    maxImages?: number;
     className?: string;
-    multiple?: boolean;
 }
 
-export function ImageUpload({
-    value,
-    onChange,
-    label = "Product Images",
-    placeholder = "Upload product images",
-    className = "",
-    multiple = true
-}: ImageUploadProps) {
+export function ImageUpload({ onImagesUploaded, maxImages = 5, className }: ImageUploadProps) {
+    const [uploadedImages, setUploadedImages] = useState<string[]>([]);
     const [isUploading, setIsUploading] = useState(false);
-    const [preview, setPreview] = useState<string | null>(value && value.trim() !== '' ? value : null);
-    const [isDragOver, setIsDragOver] = useState(false);
-    const [uploadSuccess, setUploadSuccess] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploadProgress, setUploadProgress] = useState(0);
 
-    const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const files = event.target.files;
-        if (!files || files.length === 0) return;
-
-        if (multiple) {
-            // Handle multiple files
-            for (let i = 0; i < files.length; i++) {
-                await handleFileUpload(files[i]);
-            }
-        } else {
-            // Handle single file
-            await handleFileUpload(files[0]);
-        }
-    };
-
-    const handleRemove = () => {
-        setPreview(null);
-        onChange('');
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
-    };
-
-    const handleClick = () => {
-        fileInputRef.current?.click();
-    };
-
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragOver(true);
-    };
-
-    const handleDragLeave = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragOver(false);
-    };
-
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragOver(false);
-
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            if (multiple) {
-                // Handle multiple files
-                for (let i = 0; i < files.length; i++) {
-                    handleFileUpload(files[i]);
-                }
-            } else {
-                // Handle single file
-                handleFileUpload(files[0]);
-            }
-        }
-    };
-
-    const handleFileUpload = async (file: File) => {
-        // Validate file type
-        if (!file.type.startsWith('image/')) {
-            alert('Please select an image file');
-            return;
-        }
-
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            alert('File size must be less than 5MB');
-            return;
-        }
+    const uploadImages = async (files: File[]) => {
+        if (files.length === 0) return;
 
         setIsUploading(true);
+        setUploadProgress(0);
 
         try {
             const formData = new FormData();
-            formData.append('images', file);
+            files.forEach((file) => {
+                formData.append('images', file);
+            });
+
+            // Simulate progress
+            const progressInterval = setInterval(() => {
+                setUploadProgress((prev) => {
+                    if (prev >= 90) {
+                        clearInterval(progressInterval);
+                        return 90;
+                    }
+                    return prev + 10;
+                });
+            }, 200);
 
             const response = await fetch('/api/upload-image', {
                 method: 'POST',
                 body: formData,
             });
+
+            clearInterval(progressInterval);
+            setUploadProgress(100);
 
             if (!response.ok) {
                 const errorData = await response.json();
@@ -114,149 +54,110 @@ export function ImageUpload({
 
             const data = await response.json();
 
-            if (data.success && data.urls && data.urls.length > 0) {
-                setPreview(data.urls[0]);
-                onChange(data.urls[0]);
-                setUploadSuccess(true);
-                // Reset success state after 3 seconds
-                setTimeout(() => setUploadSuccess(false), 3000);
+            if (data.success) {
+                const newImages = [...uploadedImages, ...data.urls];
+                setUploadedImages(newImages);
+                onImagesUploaded(newImages);
             } else {
-                throw new Error('No image URL returned');
+                throw new Error(data.error || 'Upload failed');
             }
         } catch (error) {
             console.error('Upload error:', error);
-            alert('Failed to upload image. Please try again.');
         } finally {
             setIsUploading(false);
+            setTimeout(() => setUploadProgress(0), 1000);
         }
     };
 
+    const onDrop = useCallback((acceptedFiles: File[]) => {
+        if (uploadedImages.length + acceptedFiles.length > maxImages) {
+            alert(`Maximum ${maxImages} images allowed`);
+            return;
+        }
+        uploadImages(acceptedFiles);
+    }, [uploadedImages.length, maxImages]);
+
+    const onDropRejected = useCallback((rejectedFiles: unknown[]) => {
+        console.log('Rejected files:', rejectedFiles);
+    }, []);
+
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+        onDrop,
+        onDropRejected,
+        accept: {
+            'image/*': ['.jpeg', '.jpg', '.png', '.webp']
+        },
+        maxSize: 5 * 1024 * 1024, // 5MB
+        multiple: true,
+        noClick: false,
+        noKeyboard: false
+    });
+
+    const removeImage = (index: number) => {
+        const newImages = uploadedImages.filter((_, i) => i !== index);
+        setUploadedImages(newImages);
+        onImagesUploaded(newImages);
+    };
+
     return (
-        <div className={`space-y-3 ${className}`}>
-            {label && (
-                <Label className="text-sm font-medium text-gray-700">
-                    {label}
-                </Label>
+        <div className={cn("space-y-4", className)}>
+            {/* Upload Area */}
+            <div
+                {...getRootProps()}
+                onClick={(e) => e.preventDefault()}
+                onKeyDown={(e) => e.preventDefault()}
+                className={cn(
+                    "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
+                    isDragActive ? "border-emerald-500 bg-emerald-50" : "border-gray-300 hover:border-gray-400",
+                    isUploading && "pointer-events-none opacity-50"
+                )}
+            >
+                <input {...getInputProps()} />
+                <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                <p className="mt-2 text-sm text-gray-600">
+                    {isDragActive
+                        ? "Drop the images here..."
+                        : "Drag & drop images here, or click to select"}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                    PNG, JPG, WebP up to 5MB each. Max {maxImages} images.
+                </p>
+            </div>
+
+            {/* Upload Progress */}
+            {isUploading && (
+                <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                        <span>Uploading images...</span>
+                        <span>{uploadProgress}%</span>
+                    </div>
+                    <Progress value={uploadProgress} className="h-2" />
+                </div>
             )}
 
-            <div className="space-y-4">
-                {/* Preview Section */}
-                {preview && (
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                            <Label className="text-sm font-medium text-gray-700">Current Image</Label>
-                            {uploadSuccess && (
-                                <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                                    ✓ Uploaded successfully!
-                                </span>
-                            )}
-                        </div>
-                        <div className="relative inline-block group">
-                            <div className="relative">
-                                {preview ? (
-                                    <img
-                                        src={preview}
-                                        alt="Preview"
-                                        className={`w-32 h-32 rounded-lg object-cover border-2 shadow-sm transition-all duration-200 ${uploadSuccess
-                                            ? 'border-green-300 ring-2 ring-green-200'
-                                            : 'border-gray-200'
-                                            }`}
-                                    />
-                                ) : (
-                                    <div className={`w-32 h-32 rounded-lg border-2 shadow-sm flex items-center justify-center bg-gray-100 ${uploadSuccess
-                                        ? 'border-green-300 ring-2 ring-green-200'
-                                        : 'border-gray-200'
-                                        }`}>
-                                        <ImageIcon className="w-8 h-8 text-gray-400" />
-                                    </div>
-                                )}
-                                {/* Overlay on hover */}
-                                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 rounded-lg flex items-center justify-center">
-                                    <button
-                                        type="button"
-                                        onClick={handleRemove}
-                                        className="opacity-0 group-hover:opacity-100 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-all duration-200 transform scale-90 group-hover:scale-100"
-                                    >
-                                        <X size={16} />
-                                    </button>
-                                </div>
+            {/* Uploaded Images Preview */}
+            {uploadedImages.length > 0 && (
+                <div className="space-y-3">
+                    <h4 className="text-sm font-medium text-gray-700">Uploaded Images</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        {uploadedImages.map((url, index) => (
+                            <div key={index} className="relative group">
+                                <img
+                                    src={url}
+                                    alt={`Product image ${index + 1}`}
+                                    className="w-full h-24 object-cover rounded-lg border"
+                                />
+                                <button
+                                    onClick={() => removeImage(index)}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    <X className="w-3 h-3" />
+                                </button>
                             </div>
-                            <p className="text-xs text-gray-500 mt-2">Click the X to remove this image</p>
-                        </div>
-                    </div>
-                )}
-
-                {/* Upload Area */}
-                <div
-                    onClick={handleClick}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    className={`
-                        border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all duration-200
-                        ${isDragOver
-                            ? 'border-green-400 bg-green-50 scale-105'
-                            : preview
-                                ? 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100'
-                                : 'border-gray-300 hover:border-green-400 hover:bg-green-50'
-                        }
-                        ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}
-                    `}
-                >
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileSelect}
-                        className="hidden"
-                        disabled={isUploading}
-                        multiple={multiple}
-                    />
-
-                    <div className="space-y-3">
-                        {isUploading ? (
-                            <div className="flex flex-col items-center justify-center space-y-2">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-                                <span className="text-sm text-gray-600">Uploading image...</span>
-                                <span className="text-xs text-gray-500">Please wait</span>
-                            </div>
-                        ) : preview ? (
-                            <div className="flex flex-col items-center justify-center space-y-2">
-                                <ImageIcon className="mx-auto h-8 w-8 text-gray-400" />
-                                <p className="text-sm text-gray-600">Click to change image</p>
-                                <p className="text-xs text-gray-500">or drag and drop a new image</p>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center space-y-2">
-                                <Upload className="mx-auto h-8 w-8 text-gray-400" />
-                                <p className="text-sm text-gray-600">{placeholder}</p>
-                                <p className="text-xs text-gray-500">PNG, JPG up to 5MB</p>
-                                <p className="text-xs text-gray-400">Click or drag and drop</p>
-                            </div>
-                        )}
+                        ))}
                     </div>
                 </div>
-
-                {/* URL Input (for manual entry) */}
-                <div className="space-y-2">
-                    <Label className="text-xs text-gray-500">Or enter image URL manually:</Label>
-                    <input
-                        type="url"
-                        value={value || ''}
-                        onChange={(e) => {
-                            const url = e.target.value;
-                            onChange(url);
-                            if (url && url.trim() !== '') {
-                                setPreview(url);
-                            } else {
-                                setPreview(null);
-                            }
-                        }}
-                        placeholder="https://example.com/image.jpg"
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    />
-                </div>
-            </div>
+            )}
         </div>
     );
 } 

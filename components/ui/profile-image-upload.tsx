@@ -2,7 +2,6 @@
 
 import { useState, useRef } from 'react';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
-import Image from 'next/image';
 import { Button } from './button';
 import { Label } from './label';
 
@@ -21,10 +20,8 @@ export function ProfileImageUpload({
     placeholder = "Upload your profile picture",
     className = ""
 }: ProfileImageUploadProps) {
+    const [uploadedImages, setUploadedImages] = useState<string[]>(value ? [value] : []);
     const [isUploading, setIsUploading] = useState(false);
-    const [preview, setPreview] = useState<string | null>(value && value.trim() !== '' ? value : null);
-    const [isDragOver, setIsDragOver] = useState(false);
-    const [uploadSuccess, setUploadSuccess] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,7 +31,7 @@ export function ProfileImageUpload({
     };
 
     const handleRemove = () => {
-        setPreview(null);
+        setUploadedImages([]);
         onChange('');
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
@@ -43,27 +40,6 @@ export function ProfileImageUpload({
 
     const handleClick = () => {
         fileInputRef.current?.click();
-    };
-
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragOver(true);
-    };
-
-    const handleDragLeave = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragOver(false);
-    };
-
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragOver(false);
-
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            const file = files[0];
-            handleFileUpload(file);
-        }
     };
 
     const handleFileUpload = async (file: File) => {
@@ -98,11 +74,9 @@ export function ProfileImageUpload({
             const data = await response.json();
 
             if (data.success && data.url) {
-                setPreview(data.url);
+                const newImages = [data.url];
+                setUploadedImages(newImages);
                 onChange(data.url);
-                setUploadSuccess(true);
-                // Reset success state after 3 seconds
-                setTimeout(() => setUploadSuccess(false), 3000);
             } else {
                 throw new Error('No image URL returned');
             }
@@ -114,6 +88,8 @@ export function ProfileImageUpload({
         }
     };
 
+    console.log({ uploadedImages });
+
     return (
         <div className={`space-y-3 ${className}`}>
             {label && (
@@ -123,47 +99,27 @@ export function ProfileImageUpload({
             )}
 
             <div className="space-y-4">
-                {/* Preview Section */}
-                {preview && (
+                {/* Uploaded Images Preview */}
+                {uploadedImages.length > 0 && (
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
                             <Label className="text-sm font-medium text-gray-700">Current Profile Picture</Label>
-                            {uploadSuccess && (
-                                <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                                    ✓ Uploaded successfully!
-                                </span>
-                            )}
                         </div>
                         <div className="relative inline-block group">
                             <div className="relative">
-                                {preview ? (
-                                    <Image
-                                        src={preview}
-                                        alt="Profile preview"
-                                        width={128}
-                                        height={128}
-                                        className={`rounded-lg object-cover border-2 shadow-sm transition-all duration-200 ${uploadSuccess
-                                            ? 'border-green-300 ring-2 ring-green-200'
-                                            : 'border-gray-200'
-                                            }`}
-                                        priority
-                                    />
-                                ) : (
-                                    <div className={`w-32 h-32 rounded-lg border-2 shadow-sm flex items-center justify-center bg-gray-100 ${uploadSuccess
-                                        ? 'border-green-300 ring-2 ring-green-200'
-                                        : 'border-gray-200'
-                                        }`}>
-                                        <ImageIcon className="w-8 h-8 text-gray-400" />
-                                    </div>
-                                )}
+                                <img
+                                    src={uploadedImages[0]}
+                                    alt="Profile preview"
+                                    className="w-32 h-32 rounded-lg object-cover border-2 shadow-sm transition-all duration-200 border-gray-200"
+                                />
                                 {/* Overlay on hover */}
-                                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 rounded-lg flex items-center justify-center">
+                                <div className="absolute inset-0 hover:bg-black/10 bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-200 rounded-lg flex items-center justify-center">
                                     <button
                                         type="button"
                                         onClick={handleRemove}
-                                        className="opacity-0 group-hover:opacity-100 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-all duration-200 transform scale-90 group-hover:scale-100"
+                                        className="opacity-0 group-hover:opacity-100 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-all duration-200 transform scale-90 group-hover:scale-100 shadow-lg"
                                     >
-                                        <X size={16} />
+                                        <X size={14} />
                                     </button>
                                 </div>
                             </div>
@@ -175,16 +131,11 @@ export function ProfileImageUpload({
                 {/* Upload Area */}
                 <div
                     onClick={handleClick}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
                     className={`
                         border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all duration-200
-                        ${isDragOver
-                            ? 'border-green-400 bg-green-50 scale-105'
-                            : preview
-                                ? 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100'
-                                : 'border-gray-300 hover:border-green-400 hover:bg-green-50'
+                        ${uploadedImages.length > 0
+                            ? 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100'
+                            : 'border-gray-300 hover:border-green-400 hover:bg-green-50'
                         }
                         ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}
                     `}
@@ -205,7 +156,7 @@ export function ProfileImageUpload({
                                 <span className="text-sm text-gray-600">Uploading your profile picture...</span>
                                 <span className="text-xs text-gray-500">Please wait</span>
                             </div>
-                        ) : preview ? (
+                        ) : uploadedImages.length > 0 ? (
                             <div className="flex flex-col items-center justify-center space-y-2">
                                 <ImageIcon className="mx-auto h-8 w-8 text-gray-400" />
                                 <p className="text-sm text-gray-600">Click to change image</p>
@@ -216,7 +167,7 @@ export function ProfileImageUpload({
                                 <Upload className="mx-auto h-8 w-8 text-gray-400" />
                                 <p className="text-sm text-gray-600">{placeholder}</p>
                                 <p className="text-xs text-gray-500">PNG, JPG up to 5MB</p>
-                                <p className="text-xs text-gray-400">Click or drag and drop</p>
+                                <p className="text-xs text-gray-400">Click to select</p>
                             </div>
                         )}
                     </div>
@@ -232,9 +183,9 @@ export function ProfileImageUpload({
                             const url = e.target.value;
                             onChange(url);
                             if (url && url.trim() !== '') {
-                                setPreview(url);
+                                setUploadedImages([url]);
                             } else {
-                                setPreview(null);
+                                setUploadedImages([]);
                             }
                         }}
                         placeholder="https://example.com/image.jpg"
