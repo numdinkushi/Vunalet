@@ -31,7 +31,7 @@ export function FarmersPageWithStats() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-green-900 via-green-800 to-green-900">
-            <VideoBackground />
+            <VideoBackground  />
             <div className="relative z-10 container mx-auto px-4 py-16">
                 {/* Header */}
                 <motion.div
@@ -78,7 +78,7 @@ export function FarmersPageWithStats() {
                                 No Farmers Available
                             </h3>
                             <p className="text-gray-300">
-                                We're working on connecting with local farmers.
+                                We&apos;re working on connecting with local farmers.
                                 Check back soon for fresh produce from our community!
                             </p>
                         </div>
