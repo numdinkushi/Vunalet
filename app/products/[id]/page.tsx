@@ -5,18 +5,18 @@ import { useState, useEffect } from 'react';
 import { use } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
-import { allProducts } from '../../../constants/products';
+import { useQuery } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 import { VideoBackground } from '../../../components/ui/VideoBackground';
 import { ProductDetailCard } from '../../../components/app/cards/product-detail';
 import { DeliveryMap } from '../../../components/app/maps/delivery-map';
-import { Product, PurchaseFormData } from '../../../app/types';
+import { PurchaseFormData } from '../../../app/types';
 import Link from 'next/link';
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string; }>; }) {
     // Unwrap params using React.use()
     const { id } = use(params);
 
-    const [product, setProduct] = useState<Product | null>(null);
     const [formData, setFormData] = useState<PurchaseFormData>({
         name: '',
         email: '',
@@ -29,18 +29,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     });
     const [isCalculating, setIsCalculating] = useState(false);
 
-    useEffect(() => {
-        // Find the product from all categories
-        let foundProduct: Product | null = null;
-        for (const categoryProducts of Object.values(allProducts)) {
-            const product = categoryProducts.find(p => p.id === id);
-            if (product) {
-                foundProduct = product;
-                break;
-            }
-        }
-        setProduct(foundProduct);
-    }, [id]);
+    // Get product from database
+    const product = useQuery(api.products.getProductById, { productId: id });
 
     useEffect(() => {
         if (product) {
@@ -86,13 +76,34 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         alert('Purchase submitted successfully!');
     };
 
-    if (!product) {
+
+
+    // Show loading state
+    if (product === undefined) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
-                    <h1 className="text-2xl font-bold text-gray-600">Product not found</h1>
+                    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-500 mx-auto mb-4"></div>
+                    <h1 className="text-2xl font-bold text-gray-600 mb-4">Loading product...</h1>
                     <Link href="/products" className="text-green-600 hover:text-green-700">
                         Back to Products
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
+    // Show error for product not found
+    if (product === null) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <h1 className="text-2xl font-bold text-gray-600 mb-4">Product Not Found</h1>
+                    <p className="text-gray-500 mb-6">
+                        The product you&apos;re looking for doesn&apos;t exist or has been removed.
+                    </p>
+                    <Link href="/products" className="text-green-600 hover:text-green-700">
+                        Browse Products
                     </Link>
                 </div>
             </div>

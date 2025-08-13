@@ -13,15 +13,11 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useQuery } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 import { VideoBackground } from '../../ui/VideoBackground';
 import { categories } from '../../../constants/categories';
-import { allProducts } from '../../../constants/products';
-
-// Featured products (first 6 products from vegetables and fruits)
-const featuredProducts = [
-    ...allProducts['1'].slice(0, 3), // vegetables
-    ...allProducts['2'].slice(0, 3)  // fruits
-];
+import { ProductCard } from '../../app/cards/ProductCard';
 
 export function ProductsPage() {
     const [searchTerm, setSearchTerm] = useState('');
@@ -29,15 +25,22 @@ export function ProductsPage() {
     const [sortBy, setSortBy] = useState('newest');
     const [currentImageIndexes, setCurrentImageIndexes] = useState<{ [key: string]: number; }>({});
 
+    // Get products from database
+    const allProducts = useQuery(api.products.getActiveProducts);
+    const featuredProducts = useQuery(api.products.getFeaturedProducts);
+    const farmers = useQuery(api.users.getAllFarmers);
+
     // Auto-rotate images for products with multiple images
     useEffect(() => {
+        if (!featuredProducts) return;
+
         const interval = setInterval(() => {
             setCurrentImageIndexes(prev => {
                 const newIndexes = { ...prev };
                 featuredProducts.forEach(product => {
                     if (product.images.length > 1) {
-                        const currentIndex = newIndexes[product.id] || 0;
-                        newIndexes[product.id] = (currentIndex + 1) % product.images.length;
+                        const currentIndex = newIndexes[product._id] || 0;
+                        newIndexes[product._id] = (currentIndex + 1) % product.images.length;
                     }
                 });
                 return newIndexes;
@@ -45,7 +48,20 @@ export function ProductsPage() {
         }, 5000); // Change image every 5 seconds
 
         return () => clearInterval(interval);
-    }, []);
+    }, [featuredProducts]);
+
+    if (!allProducts || !featuredProducts) {
+        return (
+            <div className="min-h-screen pt-20 bg-gradient-to-br from-gray-50 to-white">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-500 mx-auto"></div>
+                        <p className="text-gray-600 mt-4">Loading products...</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen pt-20 bg-gradient-to-br from-gray-50 to-white">
@@ -116,97 +132,16 @@ export function ProductsPage() {
                         <p className="text-lg text-gray-600">Handpicked fresh produce from our trusted farmers</p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {featuredProducts.map((product, index) => {
-                            const currentImageIndex = currentImageIndexes[product.id] || 0;
-
-                            return (
-                                <motion.div
-                                    key={product.id}
-                                    className="group relative bg-white rounded-3xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500 border border-gray-100"
-                                    initial={{ opacity: 0, y: 50 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.1, duration: 0.6 }}
-                                    whileHover={{ y: -10, scale: 1.02 }}
-                                >
-                                    {/* Product Image */}
-                                    <div className="relative h-64 overflow-hidden">
-                                        <Image
-                                            src={product.images[currentImageIndex]}
-                                            alt={product.name}
-                                            width={400}
-                                            height={300}
-                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-
-                                        {/* Featured Badge */}
-                                        {product.featured && (
-                                            <div className="absolute top-4 left-4 z-10">
-                                                <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg">
-                                                    Featured
-                                                </span>
-                                            </div>
-                                        )}
-
-                                        {/* Heart Icon */}
-                                        <div className="absolute top-4 right-4 z-10">
-                                            <motion.button
-                                                className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white transition-all duration-300"
-                                                whileHover={{ scale: 1.1 }}
-                                                whileTap={{ scale: 0.9 }}
-                                            >
-                                                <Heart size={16} className="text-gray-600" />
-                                            </motion.button>
-                                        </div>
-                                    </div>
-
-                                    {/* Video Background for Product Content */}
-                                    <div className="absolute bottom-0 left-0 right-0 top-64 pointer-events-none z-0">
-                                        <VideoBackground videoUrl="/assets/video/falling_leaves.mp4" fallbackImage="/assets/background_images/image4.jpg" />
-                                    </div>
-
-                                    {/* Content */}
-                                    <div className="relative p-6 bg-transparent backdrop-blur-sm z-10">
-                                        <div className="flex justify-between items-start mb-3">
-                                            <h3 className="text-xl font-bold text-white group-hover:text-green-300 transition-colors duration-300">
-                                                {product.name}
-                                            </h3>
-                                            <div className="flex items-center bg-yellow-500/30 backdrop-blur-sm px-2 py-1 rounded-full">
-                                                <Star className="text-yellow-300 fill-current" size={16} />
-                                                <span className="text-sm font-semibold text-yellow-200 ml-1">{product.rating}</span>
-                                            </div>
-                                        </div>
-
-                                        <p className="text-gray-200 mb-3">By {product.farmer}</p>
-                                        <div className="flex items-center text-gray-300 mb-4">
-                                            <MapPin size={16} />
-                                            <span className="ml-1 text-sm">{product.location}</span>
-                                        </div>
-
-                                        <div className="flex justify-between items-center mb-6">
-                                            <div className="text-2xl font-bold text-green-300">
-                                                R{product.price}
-                                                <span className="text-sm text-gray-300 font-normal">/{product.unit}</span>
-                                            </div>
-                                            <div className="text-sm text-gray-300">
-                                                {product.quantity} {product.unit} available
-                                            </div>
-                                        </div>
-
-                                        <Link href={`/products/${product.id}`}>
-                                            <motion.button
-                                                className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center group"
-                                                whileHover={{ scale: 1.02 }}
-                                                whileTap={{ scale: 0.98 }}
-                                            >
-                                                <ShoppingCart className="mr-2" size={20} />
-                                                Purchase
-                                            </motion.button>
-                                        </Link>
-                                    </div>
-                                </motion.div>
-                            );
-                        })}
+                        {featuredProducts.slice(0, 6).map((product, index) => (
+                            <ProductCard
+                                key={product._id}
+                                product={product}
+                                index={index}
+                                currentImageIndex={currentImageIndexes[product._id] || 0}
+                                farmers={farmers}
+                                showVideoBackground={true}
+                            />
+                        ))}
                     </div>
                 </motion.div>
 

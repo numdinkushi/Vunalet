@@ -1,4 +1,5 @@
 import { mutation } from "./_generated/server";
+import { allProducts } from "../constants/products";
 
 // Migration to update existing products from category to categoryId
 export const migrateProductsToCategoryId = mutation({
@@ -65,5 +66,159 @@ export const ensureAllProductsHaveCategoryId = mutation({
         }
 
         return { updatedCount, totalProducts: products.length };
+    },
+});
+
+// Migration to migrate dummy products to database and assign to real farmers
+export const migrateDummyProductsToDatabase = mutation({
+    args: {},
+    handler: async (ctx) => {
+        // First, get all existing farmers
+        const farmers = await ctx.db
+            .query("userProfiles")
+            .withIndex("by_role", (q) => q.eq("role", "farmer"))
+            .collect();
+
+        if (farmers.length === 0) {
+            throw new Error("No farmers found in database. Please create farmers first.");
+        }
+
+        // Get existing products to avoid duplicates
+        const existingProducts = await ctx.db.query("products").collect();
+        const existingProductNames = new Set(existingProducts.map(p => p.name));
+
+        let migratedCount = 0;
+        const farmerIds = farmers.map(f => f.clerkUserId);
+
+        // Flatten all products from all categories
+        const allProductsArray = Object.values(allProducts).flat();
+
+        for (const product of allProductsArray) {
+            // Skip if product already exists
+            if (existingProductNames.has(product.name)) {
+                continue;
+            }
+
+            // Assign product to a farmer (round-robin distribution)
+            const farmerId = farmerIds[migratedCount % farmerIds.length];
+
+            // Convert dummy product to database format
+            const dbProduct = {
+                farmerId,
+                categoryId: product.category,
+                name: product.name,
+                price: product.price,
+                unit: product.unit,
+                quantity: product.quantity,
+                description: `${product.name} - Fresh from ${product.farmer}`,
+                images: product.images,
+                harvestDate: product.harvestDate,
+                expiryDate: undefined, // Not provided in dummy data
+                isOrganic: product.name.toLowerCase().includes('organic'),
+                isFeatured: product.featured,
+                location: product.location,
+                coordinates: undefined, // Not provided in dummy data
+                status: "active" as const,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+            };
+
+            // Insert product into database
+            await ctx.db.insert("products", dbProduct);
+            migratedCount++;
+        }
+
+        return {
+            migratedCount,
+            totalProducts: allProductsArray.length,
+            farmersUsed: farmerIds,
+            productsPerFarmer: Math.ceil(migratedCount / farmerIds.length)
+        };
+    },
+});
+
+// Migration to update product prices for test tokens (0.1 to 1.0 R)
+export const updateProductPricesForTestTokens = mutation({
+    args: {},
+    handler: async (ctx) => {
+        // Get all active products
+        const products = await ctx.db
+            .query("products")
+            .withIndex("by_status", (q) => q.eq("status", "active"))
+            .collect();
+
+        let updatedCount = 0;
+
+        for (const product of products) {
+            // Generate a random price between 0.1 and 1.0
+            const newPrice = Math.round((Math.random() * 0.9 + 0.1) * 10) / 10; // Rounds to 1 decimal place
+
+            // Update the product price
+            await ctx.db.patch(product._id, {
+                price: newPrice,
+                updatedAt: Date.now(),
+            });
+
+            updatedCount++;
+        }
+
+        return {
+            updatedCount,
+            totalProducts: products.length,
+            priceRange: "0.1 to 1.0 R"
+        };
+    },
+});
+
+// Migration to randomly select featured products from different farmers
+export const randomizeFeaturedProducts = mutation({
+    args: {},
+    handler: async (ctx) => {
+        // Get all active products
+        const products = await ctx.db
+            .query("products")
+            .withIndex("by_status", (q) => q.eq("status", "active"))
+            .collect();
+
+        // First, unfeature all products
+        for (const product of products) {
+            await ctx.db.patch(product._id, {
+                isFeatured: false,
+                updatedAt: Date.now(),
+            });
+        }
+
+        // Get unique farmers
+        const farmerIds = [...new Set(products.map(p => p.farmerId))];
+
+        // Select 1-2 products per farmer to feature (ensuring fair distribution)
+        const featuredProducts: typeof products = [];
+        const maxFeaturedPerFarmer = Math.min(2, Math.floor(6 / farmerIds.length)); // Max 6 total featured products
+
+        for (const farmerId of farmerIds) {
+            const farmerProducts = products.filter(p => p.farmerId === farmerId);
+
+            // Randomly select 1-2 products from this farmer
+            const numToFeature = Math.min(maxFeaturedPerFarmer, farmerProducts.length);
+            const shuffled = farmerProducts.sort(() => 0.5 - Math.random());
+            const selected = shuffled.slice(0, numToFeature);
+
+            featuredProducts.push(...selected);
+        }
+
+        // Feature the selected products
+        for (const product of featuredProducts) {
+            await ctx.db.patch(product._id, {
+                isFeatured: true,
+                updatedAt: Date.now(),
+            });
+        }
+
+        return {
+            totalProducts: products.length,
+            featuredCount: featuredProducts.length,
+            farmersWithFeatured: farmerIds.length,
+            featuredPerFarmer: maxFeaturedPerFarmer
+        };
     },
 }); 

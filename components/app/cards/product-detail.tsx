@@ -3,22 +3,22 @@
 import { motion } from 'framer-motion';
 import { Star, Heart, MapPin, Truck, Calculator, User } from 'lucide-react';
 import { ProductCarousel } from '../../carousel/ProductCarousel';
-import { Product, PurchaseFormData } from '../../../app/types';
+import { PurchaseFormData } from '../../../app/types';
 
 interface ProductDetailCardProps {
-    product: Product;
+    product: any; // Database product type
     formData: PurchaseFormData;
     isCalculating: boolean;
     handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
     handleSubmit: (e: React.FormEvent) => void;
 }
 
-export function ProductDetailCard({ 
-    product, 
-    formData, 
-    isCalculating, 
-    handleInputChange, 
-    handleSubmit 
+export function ProductDetailCard({
+    product,
+    formData,
+    isCalculating,
+    handleInputChange,
+    handleSubmit
 }: ProductDetailCardProps) {
     return (
         <motion.div
@@ -32,7 +32,7 @@ export function ProductDetailCard({
                     images={product.images}
                     alt={product.name}
                     className="w-full h-80 object-cover rounded-2xl"
-                    productId={product.id}
+                    productId={product._id}
                 />
             </div>
 
@@ -43,7 +43,7 @@ export function ProductDetailCard({
                     <div className="flex items-center space-x-2">
                         <div className="flex items-center bg-yellow-500/30 backdrop-blur-sm px-3 py-1 rounded-full">
                             <Star className="text-yellow-300 fill-current" size={16} />
-                            <span className="text-sm font-semibold text-yellow-200 ml-1">{product.rating}</span>
+                            <span className="text-sm font-semibold text-yellow-200 ml-1">4.8</span>
                         </div>
                         <motion.button
                             className="p-2 bg-white/10 backdrop-blur-sm rounded-full hover:bg-white/20 transition-colors"
@@ -56,8 +56,8 @@ export function ProductDetailCard({
                 </div>
 
                 <div className="space-y-3">
-                    <p className="text-gray-300">By <span className="text-green-300 font-semibold">{product.farmer}</span></p>
-                    
+                    <p className="text-gray-300">By {product.farmerId}</p>
+
                     <div className="flex items-center text-gray-300">
                         <MapPin size={16} />
                         <span className="ml-2">{product.location}</span>
@@ -82,7 +82,7 @@ export function ProductDetailCard({
             {/* Purchase Form */}
             <div className="space-y-6">
                 <h2 className="text-2xl font-bold text-white">Purchase Details</h2>
-                
+
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Customer Details */}
                     <div className="space-y-4">
@@ -90,7 +90,7 @@ export function ProductDetailCard({
                             <User className="w-5 h-5 mr-2" />
                             Customer Information
                         </h3>
-                        
+
                         <div className="grid md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-gray-300 text-sm font-medium mb-2">
@@ -105,7 +105,7 @@ export function ProductDetailCard({
                                     required
                                 />
                             </div>
-                            
+
                             <div>
                                 <label className="block text-gray-300 text-sm font-medium mb-2">
                                     Email *
@@ -119,7 +119,7 @@ export function ProductDetailCard({
                                     required
                                 />
                             </div>
-                            
+
                             <div>
                                 <label className="block text-gray-300 text-sm font-medium mb-2">
                                     Phone *
@@ -133,7 +133,7 @@ export function ProductDetailCard({
                                     required
                                 />
                             </div>
-                            
+
                             <div>
                                 <label className="block text-gray-300 text-sm font-medium mb-2">
                                     Quantity *
@@ -150,7 +150,7 @@ export function ProductDetailCard({
                                 />
                             </div>
                         </div>
-                        
+
                         <div>
                             <label className="block text-gray-300 text-sm font-medium mb-2">
                                 Delivery Address *
@@ -173,7 +173,7 @@ export function ProductDetailCard({
                             <Truck className="w-5 h-5 mr-2" />
                             Delivery Information
                         </h3>
-                        
+
                         {formData.address && (
                             <div className="bg-black/30 rounded-lg p-4 border border-gray-600">
                                 <div className="space-y-2">
