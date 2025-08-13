@@ -18,6 +18,7 @@ import type * as categories from "../categories.js";
 import type * as migrations from "../migrations.js";
 import type * as orders from "../orders.js";
 import type * as products from "../products.js";
+import type * as ratings from "../ratings.js";
 import type * as users from "../users.js";
 
 /**
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   migrations: typeof migrations;
   orders: typeof orders;
   products: typeof products;
+  ratings: typeof ratings;
   users: typeof users;
 }>;
 export declare const api: FilterApi<

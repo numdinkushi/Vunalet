@@ -35,6 +35,32 @@ export const uploadImage = async (file: Buffer, folder: string = 'vunalet/produc
     });
 };
 
+// Helper function to upload profile picture
+export const uploadProfilePicture = async (file: Buffer): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+            {
+                folder: 'vunalet/profiles',
+                resource_type: 'image',
+                transformation: [
+                    { width: 400, height: 400, crop: 'fill', gravity: 'face' },
+                    { quality: 'auto' },
+                    { fetch_format: 'auto' }
+                ]
+            },
+            (error, result) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(result?.secure_url || '');
+                }
+            }
+        );
+
+        uploadStream.end(file);
+    });
+};
+
 // Helper function to delete image
 export const deleteImage = async (publicId: string): Promise<void> => {
     return new Promise((resolve, reject) => {

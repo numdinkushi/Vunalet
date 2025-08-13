@@ -18,6 +18,13 @@ export default defineSchema({
         })),
         businessName: v.optional(v.string()),
         businessLicense: v.optional(v.string()),
+        // Farmer-specific fields
+        bio: v.optional(v.string()),
+        farmSize: v.optional(v.string()),
+        experience: v.optional(v.string()),
+        specialties: v.optional(v.array(v.string())), // Category IDs
+        isOrganicCertified: v.optional(v.boolean()),
+        profilePicture: v.optional(v.string()),
         // Lisk ZAR API user data
         liskId: v.optional(v.string()),
         publicKey: v.optional(v.string()),
@@ -162,4 +169,19 @@ export default defineSchema({
         .index("by_user", ["userId"])
         .index("by_read_status", ["isRead"])
         .index("by_created_at", ["createdAt"]),
+
+    // Ratings table for farmer reviews
+    ratings: defineTable({
+        farmerId: v.string(), // clerkUserId of the farmer
+        buyerId: v.string(), // clerkUserId of the buyer
+        orderId: v.string(), // Reference to the order
+        rating: v.number(), // 1-5 stars
+        review: v.optional(v.string()),
+        createdAt: v.number(),
+        updatedAt: v.number(),
+    })
+        .index("by_farmer", ["farmerId"])
+        .index("by_buyer", ["buyerId"])
+        .index("by_order", ["orderId"])
+        .index("by_rating", ["rating"]),
 }); 

@@ -7,6 +7,13 @@ export interface RegistrationFormData {
     location: string;
     businessName?: string;
     businessLicense?: string;
+    // Farmer-specific fields
+    bio?: string;
+    farmSize?: string;
+    experience?: string;
+    specialties?: string[]; // Category IDs
+    isOrganicCertified?: boolean;
+    profilePicture?: string;
     coordinates?: {
         lat: number;
         lng: number;

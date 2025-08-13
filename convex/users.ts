@@ -63,6 +63,13 @@ export const createUserProfile = mutation({
         })),
         businessName: v.optional(v.string()),
         businessLicense: v.optional(v.string()),
+        // Farmer-specific fields
+        bio: v.optional(v.string()),
+        farmSize: v.optional(v.string()),
+        experience: v.optional(v.string()),
+        specialties: v.optional(v.array(v.string())),
+        isOrganicCertified: v.optional(v.boolean()),
+        profilePicture: v.optional(v.string()),
         // Lisk ZAR API user data
         liskId: v.optional(v.string()),
         publicKey: v.optional(v.string()),
@@ -129,6 +136,13 @@ export const updateUserProfile = mutation({
         })),
         businessName: v.optional(v.string()),
         businessLicense: v.optional(v.string()),
+        // Farmer-specific fields
+        bio: v.optional(v.string()),
+        farmSize: v.optional(v.string()),
+        experience: v.optional(v.string()),
+        specialties: v.optional(v.array(v.string())),
+        isOrganicCertified: v.optional(v.boolean()),
+        profilePicture: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
         const profile = await ctx.db
@@ -176,6 +190,60 @@ export const getFarmers = query({
             .withIndex("by_role", (q) => q.eq("role", "farmer"))
             .filter((q) => q.eq(q.field("isVerified"), true))
             .collect();
+    },
+});
+
+// Get farmers with comprehensive statistics
+export const getFarmersWithStats = query({
+    handler: async (ctx) => {
+        const farmers = await ctx.db
+            .query("userProfiles")
+            .withIndex("by_role", (q) => q.eq("role", "farmer"))
+            .filter((q) => q.eq(q.field("isVerified"), true))
+            .collect();
+
+        const farmersWithStats = await Promise.all(
+            farmers.map(async (farmer) => {
+                // Get products count
+                const products = await ctx.db
+                    .query("products")
+                    .withIndex("by_farmer", (q) => q.eq("farmerId", farmer.clerkUserId))
+                    .filter((q) => q.eq(q.field("status"), "active"))
+                    .collect();
+
+                // Get orders count (unique customers)
+                const orders = await ctx.db
+                    .query("orders")
+                    .withIndex("by_farmer", (q) => q.eq("farmerId", farmer.clerkUserId))
+                    .filter((q) => q.eq(q.field("orderStatus"), "delivered"))
+                    .collect();
+
+                // Get unique customers
+                const uniqueCustomers = new Set(orders.map(order => order.buyerId)).size;
+
+                // Get ratings
+                const ratings = await ctx.db
+                    .query("ratings")
+                    .withIndex("by_farmer", (q) => q.eq("farmerId", farmer.clerkUserId))
+                    .collect();
+
+                const averageRating = ratings.length > 0
+                    ? Math.round((ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length) * 10) / 10
+                    : 0;
+
+                return {
+                    ...farmer,
+                    stats: {
+                        totalProducts: products.length,
+                        totalCustomers: uniqueCustomers,
+                        averageRating,
+                        totalRatings: ratings.length,
+                    }
+                };
+            })
+        );
+
+        return farmersWithStats;
     },
 });
 
@@ -234,6 +302,13 @@ export const createUserWithStablecoinIntegration = mutation({
         })),
         businessName: v.optional(v.string()),
         businessLicense: v.optional(v.string()),
+        // Farmer-specific fields
+        bio: v.optional(v.string()),
+        farmSize: v.optional(v.string()),
+        experience: v.optional(v.string()),
+        specialties: v.optional(v.array(v.string())),
+        isOrganicCertified: v.optional(v.boolean()),
+        profilePicture: v.optional(v.string()),
         // Stablecoin API data
         liskId: v.optional(v.string()),
         publicKey: v.optional(v.string()),
