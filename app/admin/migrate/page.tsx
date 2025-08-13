@@ -22,7 +22,9 @@ export default function MigrationPage() {
                     <ol className="text-sm text-blue-800 space-y-1">
                         <li>1. First run the "Database Migration" to update existing data</li>
                         <li>2. Then run "Initialize Categories" if categories aren't created yet</li>
-                        <li>3. Check the farmer dashboard to ensure everything works</li>
+                        <li>3. Run "Migrate Products" to import dummy products and assign to farmers</li>
+                        <li>4. Check the products page to see real data from the database</li>
+                        <li>5. Check the farmer dashboard to ensure everything works</li>
                     </ol>
                 </div>
             </div>
