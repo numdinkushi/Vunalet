@@ -1,11 +1,11 @@
 'use client';
 
 import { useQuery } from 'convex/react';
-import { api } from '../../convex/_generated/api';
-import { FarmerCard } from '../app/cards/farmer-card';
-import { VideoBackground } from '../ui/VideoBackground';
+import { api } from '../../../../convex/_generated/api';
+import { FarmerCard } from '../../../app/cards/farmer-card';
+import { VideoBackground } from '../../../../components/ui/VideoBackground';
 import { motion } from 'framer-motion';
-import React from 'react';
+import { Farmer } from '../types';
 
 export function FarmersPageWithStats() {
     // Use the new query that includes all farmer statistics
@@ -32,7 +32,7 @@ export function FarmersPageWithStats() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-green-900 via-green-800 to-green-900">
-            <VideoBackground  />
+            <VideoBackground />
             <div className="relative z-10 container mx-auto px-4 py-16">
                 {/* Header */}
                 <motion.div

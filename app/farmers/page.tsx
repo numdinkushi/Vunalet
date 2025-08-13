@@ -1,5 +1,5 @@
 import { Header } from '@/components/layout/Header';
-import { FarmersPage } from '@/components/pages/FarmersPage';
+import { FarmersPage } from '@/components/pages/farmers/main';
 import { Footer } from '@/components/layout/Footer';
 
 export default function Farmers() {
