@@ -22,16 +22,46 @@ export function useRegistration() {
         location: '',
         businessName: '',
         businessLicense: '',
+        // Farmer-specific fields
+        bio: '',
+        farmSize: '',
+        experience: '',
+        specialties: [],
+        isOrganicCertified: false,
+        profilePicture: '',
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [step, setStep] = useState(1);
 
     const handleInputChange = (field: keyof RegistrationFormData, value: string) => {
-        setFormData(prev => ({
-            ...prev,
-            [field]: value
-        }));
+        setFormData(prev => {
+            let parsedValue: string | string[] | boolean | { lat: number; lng: number; } | undefined = value;
+
+            // Handle special field types
+            if (field === 'specialties') {
+                // Handle specialties as JSON array of category IDs
+                try {
+                    parsedValue = JSON.parse(value);
+                } catch {
+                    // Fallback to empty array if parsing fails
+                    parsedValue = [];
+                }
+            } else if (field === 'isOrganicCertified') {
+                parsedValue = value === 'true';
+            } else if (field === 'coordinates') {
+                try {
+                    parsedValue = JSON.parse(value) as { lat: number; lng: number; };
+                } catch {
+                    parsedValue = undefined;
+                }
+            }
+
+            return {
+                ...prev,
+                [field]: parsedValue
+            };
+        });
     };
 
     const handleRoleSelect = (role: 'farmer' | 'dispatcher' | 'buyer') => {
@@ -98,6 +128,13 @@ export function useRegistration() {
                 location: formData.location,
                 businessName: formData.businessName,
                 businessLicense: formData.businessLicense,
+                // Farmer-specific fields
+                bio: formData.bio,
+                farmSize: formData.farmSize,
+                experience: formData.experience,
+                specialties: formData.specialties,
+                isOrganicCertified: formData.isOrganicCertified,
+                profilePicture: formData.profilePicture,
                 coordinates: formData.coordinates,
                 liskId: integrationResult.stablecoinUser?.id,
                 publicKey: integrationResult.stablecoinUser?.publicKey,

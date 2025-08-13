@@ -2,26 +2,25 @@
 
 import { useState, useRef } from 'react';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
+import Image from 'next/image';
 import { Button } from './button';
 import { Label } from './label';
 
-interface ImageUploadProps {
+interface ProfileImageUploadProps {
     value?: string;
     onChange: (url: string) => void;
     label?: string;
     placeholder?: string;
     className?: string;
-    multiple?: boolean;
 }
 
-export function ImageUpload({
+export function ProfileImageUpload({
     value,
     onChange,
-    label = "Product Images",
-    placeholder = "Upload product images",
-    className = "",
-    multiple = true
-}: ImageUploadProps) {
+    label = "Profile Picture",
+    placeholder = "Upload your profile picture",
+    className = ""
+}: ProfileImageUploadProps) {
     const [isUploading, setIsUploading] = useState(false);
     const [preview, setPreview] = useState<string | null>(value && value.trim() !== '' ? value : null);
     const [isDragOver, setIsDragOver] = useState(false);
@@ -29,18 +28,9 @@ export function ImageUpload({
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const files = event.target.files;
-        if (!files || files.length === 0) return;
-
-        if (multiple) {
-            // Handle multiple files
-            for (let i = 0; i < files.length; i++) {
-                await handleFileUpload(files[i]);
-            }
-        } else {
-            // Handle single file
-            await handleFileUpload(files[0]);
-        }
+        const file = event.target.files?.[0];
+        if (!file) return;
+        await handleFileUpload(file);
     };
 
     const handleRemove = () => {
@@ -71,15 +61,8 @@ export function ImageUpload({
 
         const files = e.dataTransfer.files;
         if (files.length > 0) {
-            if (multiple) {
-                // Handle multiple files
-                for (let i = 0; i < files.length; i++) {
-                    handleFileUpload(files[i]);
-                }
-            } else {
-                // Handle single file
-                handleFileUpload(files[0]);
-            }
+            const file = files[0];
+            handleFileUpload(file);
         }
     };
 
@@ -100,9 +83,9 @@ export function ImageUpload({
 
         try {
             const formData = new FormData();
-            formData.append('images', file);
+            formData.append('image', file);
 
-            const response = await fetch('/api/upload-image', {
+            const response = await fetch('/api/upload-profile-picture', {
                 method: 'POST',
                 body: formData,
             });
@@ -114,9 +97,9 @@ export function ImageUpload({
 
             const data = await response.json();
 
-            if (data.success && data.urls && data.urls.length > 0) {
-                setPreview(data.urls[0]);
-                onChange(data.urls[0]);
+            if (data.success && data.url) {
+                setPreview(data.url);
+                onChange(data.url);
                 setUploadSuccess(true);
                 // Reset success state after 3 seconds
                 setTimeout(() => setUploadSuccess(false), 3000);
@@ -144,7 +127,7 @@ export function ImageUpload({
                 {preview && (
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                            <Label className="text-sm font-medium text-gray-700">Current Image</Label>
+                            <Label className="text-sm font-medium text-gray-700">Current Profile Picture</Label>
                             {uploadSuccess && (
                                 <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
                                     ✓ Uploaded successfully!
@@ -154,13 +137,16 @@ export function ImageUpload({
                         <div className="relative inline-block group">
                             <div className="relative">
                                 {preview ? (
-                                    <img
+                                    <Image
                                         src={preview}
-                                        alt="Preview"
-                                        className={`w-32 h-32 rounded-lg object-cover border-2 shadow-sm transition-all duration-200 ${uploadSuccess
+                                        alt="Profile preview"
+                                        width={128}
+                                        height={128}
+                                        className={`rounded-lg object-cover border-2 shadow-sm transition-all duration-200 ${uploadSuccess
                                             ? 'border-green-300 ring-2 ring-green-200'
                                             : 'border-gray-200'
                                             }`}
+                                        priority
                                     />
                                 ) : (
                                     <div className={`w-32 h-32 rounded-lg border-2 shadow-sm flex items-center justify-center bg-gray-100 ${uploadSuccess
@@ -210,14 +196,13 @@ export function ImageUpload({
                         onChange={handleFileSelect}
                         className="hidden"
                         disabled={isUploading}
-                        multiple={multiple}
                     />
 
                     <div className="space-y-3">
                         {isUploading ? (
                             <div className="flex flex-col items-center justify-center space-y-2">
                                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-                                <span className="text-sm text-gray-600">Uploading image...</span>
+                                <span className="text-sm text-gray-600">Uploading your profile picture...</span>
                                 <span className="text-xs text-gray-500">Please wait</span>
                             </div>
                         ) : preview ? (
