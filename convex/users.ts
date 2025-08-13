@@ -199,7 +199,6 @@ export const getFarmersWithStats = query({
         const farmers = await ctx.db
             .query("userProfiles")
             .withIndex("by_role", (q) => q.eq("role", "farmer"))
-            .filter((q) => q.eq(q.field("isVerified"), true))
             .collect();
 
         const farmersWithStats = await Promise.all(
@@ -244,6 +243,16 @@ export const getFarmersWithStats = query({
         );
 
         return farmersWithStats;
+    },
+});
+
+// Get all farmers (for debugging - not just verified)
+export const getAllFarmers = query({
+    handler: async (ctx) => {
+        return await ctx.db
+            .query("userProfiles")
+            .withIndex("by_role", (q) => q.eq("role", "farmer"))
+            .collect();
     },
 });
 
