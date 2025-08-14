@@ -23,22 +23,22 @@ const mission = [
 
 const team = [
     {
-        name: "Sarah Johnson",
-        role: "CEO & Founder",
-        image: "https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=400",
-        bio: "Agricultural economist passionate about sustainable farming"
+        name: "Kushi Numdin",
+        role: "Founder",
+        image: "/assets/founders/kushi.jpg",
+        bio: "Visionary leader passionate about revolutionizing agricultural commerce and empowering local farmers"
     },
     {
-        name: "Michael Chen",
-        role: "CTO",
-        image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400",
-        bio: "Tech innovator building solutions for modern agriculture"
+        name: "Gabriel Temtsen",
+        role: "Co-founder",
+        image: "/assets/founders/gabe.png",
+        bio: "Strategic innovator driving sustainable solutions and community development in agriculture"
     },
     {
-        name: "Emma Wilson",
-        role: "Head of Operations",
-        image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400",
-        bio: "Operations expert ensuring smooth farm-to-table delivery"
+        name: "Sophia A. Gabriel",
+        role: "Developer",
+        image: "/assets/founders/sophie.png",
+        bio: "Technical expert building cutting-edge solutions to connect farmers and consumers seamlessly"
     }
 ];
 
