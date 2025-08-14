@@ -17,6 +17,11 @@ interface ProductDetailCardProps {
         quantity: number;
         harvestDate: string;
     };
+    farmer?: {
+        firstName: string;
+        lastName: string;
+        businessName?: string;
+    } | null;
     formData: PurchaseFormData;
     isCalculating: boolean;
     handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
@@ -25,6 +30,7 @@ interface ProductDetailCardProps {
 
 export function ProductDetailCard({
     product,
+    farmer,
     formData,
     isCalculating,
     handleInputChange,
@@ -66,7 +72,9 @@ export function ProductDetailCard({
                 </div>
 
                 <div className="space-y-3">
-                    <p className="text-gray-300">By {product.farmerId}</p>
+                    <p className="text-gray-300">
+                        By {farmer ? (farmer.businessName || `${farmer.firstName} ${farmer.lastName}`) : product.farmerId}
+                    </p>
 
                     <div className="flex items-center text-gray-300">
                         <MapPin size={16} />

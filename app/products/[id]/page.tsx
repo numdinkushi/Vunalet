@@ -32,6 +32,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     // Get product from database
     const product = useQuery(api.products.getProductById, { productId: id });
 
+    // Get farmer profile if product exists
+    const farmer = useQuery(
+        api.users.getUserProfile,
+        { clerkUserId: product?.farmerId || "" }
+    );
+
     useEffect(() => {
         if (product) {
             calculateDeliveryCost();
@@ -136,6 +142,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                         {/* Left Card - Product Details & Purchase Form */}
                         <ProductDetailCard
                             product={product}
+                            farmer={farmer}
                             formData={formData}
                             isCalculating={isCalculating}
                             handleInputChange={handleInputChange}
