@@ -15,7 +15,7 @@ export function PushNotificationManager() {
             setIsSupported(true);
             checkSubscription();
         }
-    }, []);
+    }, []); 
 
     const checkSubscription = async () => {
         try {
