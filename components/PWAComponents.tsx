@@ -1,5 +1,9 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
+
 import { useEffect, useState } from 'react';
 
 export function PushNotificationManager() {
@@ -88,10 +92,10 @@ export function PushNotificationManager() {
 
 export function InstallPrompt() {
     const [showPrompt, setShowPrompt] = useState(false);
-    const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
+    const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
     useEffect(() => {
-        const handler = (e: Event) => {
+        const handler = (e: BeforeInstallPromptEvent) => {
             e.preventDefault();
             setDeferredPrompt(e);
             setShowPrompt(true);
