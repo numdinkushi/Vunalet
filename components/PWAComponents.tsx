@@ -4,6 +4,14 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 
+// Declare BeforeInstallPromptEvent type
+declare global {
+    interface BeforeInstallPromptEvent extends Event {
+        prompt(): Promise<void>;
+        userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; }>;
+    }
+}
+
 import { useEffect, useState } from 'react';
 
 export function PushNotificationManager() {
@@ -15,7 +23,7 @@ export function PushNotificationManager() {
             setIsSupported(true);
             checkSubscription();
         }
-    }, []); 
+    }, []);
 
     const checkSubscription = async () => {
         try {
@@ -95,9 +103,9 @@ export function InstallPrompt() {
     const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
     useEffect(() => {
-        const handler = (e: BeforeInstallPromptEvent) => {
+        const handler = (e: Event) => {
             e.preventDefault();
-            setDeferredPrompt(e);
+            setDeferredPrompt(e as BeforeInstallPromptEvent);
             setShowPrompt(true);
         };
 

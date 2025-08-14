@@ -46,7 +46,7 @@ export function CustomTable<T = Record<string, unknown>>({
         };
     }, [data, currentPage, pageSize, pagination]);
 
-    const currentData = pagination ? data : paginationState.data;
+    const currentData = pagination ? data : ('data' in paginationState ? paginationState.data : data);
 
     return (
         <div className={`space-y-4 ${className}`}>

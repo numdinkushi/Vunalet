@@ -151,7 +151,7 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
         _id: string;
         name: string;
         categoryId: string;
-        category: string;
+        category: { name: string; categoryId: string; };
         price: number;
         unit: string;
         quantity: number;
@@ -160,7 +160,7 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
         location: string;
         isOrganic: boolean;
         isFeatured: boolean;
-        status: string;
+        status: "active" | "inactive";
         images: string[];
     }>;
     const farmerOrders = mockFarmerOrders as Array<{

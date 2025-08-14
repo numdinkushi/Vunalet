@@ -1,5 +1,5 @@
 // Main farmers page
-export { FarmersPage } from './main';
+export { FarmersPage } from './main/index';
 
 // Stats farmers page
 export { FarmersPageWithStats } from './stats';
