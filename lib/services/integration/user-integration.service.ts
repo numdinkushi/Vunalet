@@ -128,7 +128,7 @@ export class UserIntegrationService {
                 await this.activatePayment(result.stablecoinUser.id);
             } catch (error) {
                 console.log('Payment activation failed:', error);
-            }
+            } 
 
             let mintedAmount = 0;
 
