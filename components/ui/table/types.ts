@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 
-export interface TableColumn<T = any> {
+export interface TableColumn<T = Record<string, unknown>> {
     key: string;
     header: string;
     cell: (item: T) => ReactNode;
@@ -17,7 +17,7 @@ export interface TableHeaderButton {
     disabled?: boolean;
 }
 
-export interface TableProps<T = any> {
+export interface TableProps<T = Record<string, unknown>> {
     data: T[];
     columns: TableColumn<T>[];
     title?: string;

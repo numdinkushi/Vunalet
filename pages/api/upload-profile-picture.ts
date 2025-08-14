@@ -34,7 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
         // Handle file upload with multer
         await new Promise((resolve, reject) => {
-            uploadMiddleware(req as any, res as any, (err: any) => {
+            uploadMiddleware(req as unknown as Express.Request, res as unknown as Express.Response, (err: unknown) => {
                 if (err) {
                     reject(err);
                 } else {
@@ -43,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             });
         });
 
-        const file = (req as any).file;
+        const file = (req as unknown as { file: Express.Multer.File; }).file;
 
         if (!file) {
             return res.status(400).json({ error: 'No image provided' });

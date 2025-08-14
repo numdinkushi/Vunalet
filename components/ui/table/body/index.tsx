@@ -9,7 +9,7 @@ import {
 import { TableColumn } from '../types';
 import { Loader2 } from 'lucide-react';
 
-interface TableBodyProps<T = any> {
+interface TableBodyProps<T = Record<string, unknown>> {
     data: T[];
     columns: TableColumn<T>[];
     onRowClick?: (item: T) => void;
@@ -18,7 +18,7 @@ interface TableBodyProps<T = any> {
     emptyMessage?: string;
 }
 
-export function TableBody<T = any>({
+export function TableBody<T = Record<string, unknown>>({
     data,
     columns,
     onRowClick,

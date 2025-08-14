@@ -6,7 +6,17 @@ import { ProductCarousel } from '../../carousel/ProductCarousel';
 import { PurchaseFormData } from '../../../app/types';
 
 interface ProductDetailCardProps {
-    product: any; // Database product type
+    product: {
+        _id: string;
+        name: string;
+        images: string[];
+        farmerId: string;
+        location: string;
+        price: number;
+        unit: string;
+        quantity: number;
+        harvestDate: string;
+    };
     formData: PurchaseFormData;
     isCalculating: boolean;
     handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;

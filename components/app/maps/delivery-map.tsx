@@ -12,9 +12,9 @@ declare global {
             marker: (coords: [number, number], options?: Record<string, unknown>) => LeafletMarker;
             polyline: (coords: [number, number][], options?: Record<string, unknown>) => LeafletPolyline;
             divIcon: (options: Record<string, unknown>) => LeafletDivIcon;
-            Map: typeof LeafletMap;
-            Marker: typeof LeafletMarker;
-            Polyline: typeof LeafletPolyline;
+            Map: new (element: HTMLElement) => LeafletMap;
+            Marker: new (coords: [number, number], options?: Record<string, unknown>) => LeafletMarker;
+            Polyline: new (coords: [number, number][], options?: Record<string, unknown>) => LeafletPolyline;
         };
     }
 }

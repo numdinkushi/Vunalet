@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { TableProps } from './types';
 
-export function CustomTable<T = any>({
+export function CustomTable<T = Record<string, unknown>>({
     data,
     columns,
     title,
