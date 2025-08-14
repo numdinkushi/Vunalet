@@ -55,9 +55,9 @@ export function AboutPage() {
                 >
                     <h1 className="text-5xl font-bold text-primary mb-6">About Vunalet</h1>
                     <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-                        We're revolutionizing the agricultural marketplace by connecting farmers directly
+                        We&apos;re revolutionizing the agricultural marketplace by connecting farmers directly
                         with consumers, ensuring fresh produce reaches your table while supporting
-                        sustainable farming practices across Nigeria.
+                        sustainable farming practices across South Africa.
                     </p>
                 </motion.div>
 

@@ -23,7 +23,7 @@ export interface RegistrationFormData {
 export interface RoleConfig {
     title: string;
     description: string;
-    icon: React.ComponentType<any>;
+    icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
     color: string;
     bgColor: string;
     borderColor: string;

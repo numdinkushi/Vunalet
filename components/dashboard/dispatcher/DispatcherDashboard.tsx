@@ -9,7 +9,8 @@ import {
     Truck,
     Clock,
     DollarSign,
-    CheckCircle} from 'lucide-react';
+    CheckCircle
+} from 'lucide-react';
 import { mockDispatcherStats, mockDispatcherOrders } from './data';
 import { StatCard, DeliveryCard } from './components';
 import { WalletCard } from '../shared/WalletCard';
@@ -18,7 +19,10 @@ import { useEffect } from 'react';
 import { LZC_TOKEN_NAME } from '../../../constants/tokens';
 
 interface DispatcherDashboardProps {
-    userProfile: any;
+    userProfile: {
+        clerkUserId: string;
+        liskId?: string;
+    };
 }
 
 export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
@@ -73,7 +77,7 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
         try {
             await updateOrderStatus({
                 orderId,
-                orderStatus: status as any,
+                orderStatus: status as "pending" | "confirmed" | "preparing" | "ready" | "in_transit" | "delivered" | "cancelled",
             });
         } catch (error) {
             console.error('Error updating order status:', error);
@@ -139,7 +143,7 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
                         {/* Today's Deliveries */}
                         <Card>
                             <CardHeader>
-                                <CardTitle>Today's Deliveries</CardTitle>
+                                <CardTitle>Today&apos;s Deliveries</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">

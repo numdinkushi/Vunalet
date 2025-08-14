@@ -1,5 +1,6 @@
 import { UserIntegrationData, IntegrationResult, } from '../api/types';
 import { toast } from 'sonner';
+import { PAYMENT_CONSTANTS } from '../../constants/payments';
 
 /**
  * User Integration Service following Single Responsibility Principle
@@ -83,7 +84,7 @@ export class UserIntegrationService {
         }
     }
 
-    async mintStablecoins(paymentIdentifier: string, amount: number = 30, notes?: string): Promise<void> {
+    async mintStablecoins(paymentIdentifier: string, amount: number = PAYMENT_CONSTANTS.ONBOARDING_AMOUNT, notes?: string): Promise<void> {
         try {
             const response = await fetch('/api/stablecoin/mint', {
                 method: 'POST',
@@ -93,7 +94,7 @@ export class UserIntegrationService {
                 body: JSON.stringify({
                     paymentIdentifier,
                     amount,
-                    notes: notes || 'Onboarding Token',
+                    notes: notes || PAYMENT_CONSTANTS.ONBOARDING_NOTES,
                 }),
             });
 
@@ -112,7 +113,7 @@ export class UserIntegrationService {
      * Complete user integration flow
      * 1. Create user in stablecoin system
      * 2. Activate payment for the user
-     * 3. Mint R30 stablecoins to user's payment identifier
+     * 3. Mint R${PAYMENT_CONSTANTS.ONBOARDING_AMOUNT} stablecoins to user's payment identifier
      * 4. Return data for Convex update with minted amount
      */
     async completeUserIntegration(userData: UserIntegrationData): Promise<IntegrationResult> {
@@ -127,13 +128,13 @@ export class UserIntegrationService {
                 await this.activatePayment(result.stablecoinUser.id);
             } catch (error) {
                 console.log('Payment activation failed:', error);
-            }
+            } 
 
             let mintedAmount = 0;
 
             try {
-                await this.mintStablecoins(result.stablecoinUser.paymentIdentifier, 30, 'Onboarding Token');
-                mintedAmount = 30;
+                await this.mintStablecoins(result.stablecoinUser.paymentIdentifier, PAYMENT_CONSTANTS.ONBOARDING_AMOUNT, PAYMENT_CONSTANTS.ONBOARDING_NOTES);
+                mintedAmount = PAYMENT_CONSTANTS.ONBOARDING_AMOUNT;
             } catch (error) {
                 console.log('Stablecoin minting failed:', error);
             }

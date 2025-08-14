@@ -1,9 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { stablecoinApi } from '../../lib/services/api/stablecoin-api';
+import { stablecoinApiService } from '../../lib/services/api/stablecoin-api';
 
 interface TestResponse {
     message: string;
-    testUser?: any;
+    testUser?: unknown;
     error?: string;
 }
 
@@ -31,7 +31,7 @@ export default async function handler(
                 });
             }
 
-            const testUser = await stablecoinApi.createUser({
+            const testUser = await stablecoinApiService.createUser({
                 email,
                 firstName,
                 lastName,
@@ -42,7 +42,7 @@ export default async function handler(
                 testUser,
             });
         }
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.log('Test API error:', error);
         return res.status(500).json({
             message: 'Test failed',
