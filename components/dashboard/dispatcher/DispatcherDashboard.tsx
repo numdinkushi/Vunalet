@@ -85,7 +85,20 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
     };
 
     const stats = mockDispatcherStats;
-    const dispatcherOrders = mockDispatcherOrders;
+    const dispatcherOrders = mockDispatcherOrders as Array<{
+        _id: string;
+        products: { name: string; quantity: number; price: number; }[];
+        totalCost: number;
+        orderStatus: "pending" | "confirmed" | "preparing" | "ready" | "in_transit" | "delivered" | "cancelled";
+        paymentStatus: "pending" | "paid" | "failed";
+        createdAt: string;
+        deliveryAddress: string;
+        estimatedDeliveryTime: string;
+        riderName: string;
+        farmName: string;
+        customerName: string;
+        customerPhone: string;
+    }>;
 
     return (
         <div className="space-y-6">

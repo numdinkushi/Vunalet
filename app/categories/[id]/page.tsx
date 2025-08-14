@@ -3,16 +3,17 @@ import { CategoryPage } from '@/components/pages/CategoryPage';
 import { Footer } from '@/components/layout/Footer';
 
 interface CategoryPageProps {
-    params: {
+    params: Promise<{
         id: string;
-    };
+    }>;
 }
 
-export default function Category({ params }: CategoryPageProps) {
+export default async function Category({ params }: CategoryPageProps) {
+    const { id } = await params;
     return (
         <div className="min-h-screen bg-white">
             <Header />
-            <CategoryPage categoryId={params.id} />
+            <CategoryPage categoryId={id} />
             <Footer />
         </div>
     );

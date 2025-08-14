@@ -85,7 +85,7 @@ export interface MintTransactionResponse {
     message: string;
     transaction: {
         _type: string;
-        accessList: any[];
+        accessList: unknown[];
         blockNumber: string | null;
         blockHash: string | null;
         blobVersionedHashes: string | null;
@@ -99,6 +99,6 @@ export interface MintTransactionResponse {
         maxPriorityFeePerGas: string;
         maxFeePerBlobGas: string | null;
         nonce: number;
-        signature: any;
+        signature: unknown;
     };
 } 

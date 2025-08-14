@@ -45,7 +45,7 @@ export interface OrderProduct {
 }
 
 export interface StatCardProps {
-    icon: React.ComponentType<any>;
+    icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
     title: string;
     value: string | number;
     trend?: string;
@@ -65,5 +65,5 @@ export interface OrderCardProps {
 export interface TabItem {
     id: string;
     label: string;
-    icon: React.ComponentType<any>;
+    icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
 } 

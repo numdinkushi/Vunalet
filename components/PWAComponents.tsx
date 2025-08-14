@@ -88,7 +88,7 @@ export function PushNotificationManager() {
 
 export function InstallPrompt() {
     const [showPrompt, setShowPrompt] = useState(false);
-    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+    const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
 
     useEffect(() => {
         const handler = (e: Event) => {

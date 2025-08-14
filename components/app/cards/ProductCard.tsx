@@ -7,10 +7,23 @@ import Link from 'next/link';
 import { VideoBackground } from '../../ui/VideoBackground';
 
 interface ProductCardProps {
-    product: any; // Database product type
+    product: {
+        _id: string;
+        name: string;
+        images: string[];
+        isFeatured?: boolean;
+        farmerId: string;
+        location: string;
+        price: number;
+        unit: string;
+        quantity: number;
+    };
     index?: number;
     currentImageIndex?: number;
-    farmers?: any[];
+    farmers?: Array<{
+        clerkUserId: string;
+        firstName: string;
+    }>;
     showVideoBackground?: boolean;
 }
 

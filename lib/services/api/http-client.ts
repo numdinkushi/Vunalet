@@ -86,8 +86,8 @@ export class HttpClient {
     async request<T>(
         method: HttpMethod,
         url: string,
-        data?: any,
-        config?: any
+        data?: unknown,
+        config?: Record<string, unknown>
     ): Promise<T> {
         try {
             const response = await this.client.request<T>({
@@ -105,35 +105,35 @@ export class HttpClient {
     /**
      * GET request
      */
-    async get<T>(url: string, config?: any): Promise<T> {
+    async get<T>(url: string, config?: Record<string, unknown>): Promise<T> {
         return this.request<T>('GET', url, undefined, config);
     }
 
     /**
      * POST request
      */
-    async post<T>(url: string, data?: any, config?: any): Promise<T> {
+    async post<T>(url: string, data?: unknown, config?: Record<string, unknown>): Promise<T> {
         return this.request<T>('POST', url, data, config);
     }
 
     /**
      * PUT request
      */
-    async put<T>(url: string, data?: any, config?: any): Promise<T> {
+    async put<T>(url: string, data?: unknown, config?: Record<string, unknown>): Promise<T> {
         return this.request<T>('PUT', url, data, config);
     }
 
     /**
      * DELETE request
      */
-    async delete<T>(url: string, config?: any): Promise<T> {
+    async delete<T>(url: string, config?: Record<string, unknown>): Promise<T> {
         return this.request<T>('DELETE', url, undefined, config);
     }
 
     /**
      * PATCH request
      */
-    async patch<T>(url: string, data?: any, config?: any): Promise<T> {
+    async patch<T>(url: string, data?: unknown, config?: Record<string, unknown>): Promise<T> {
         return this.request<T>('PATCH', url, data, config);
     }
 } 

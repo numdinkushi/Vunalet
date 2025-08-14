@@ -42,7 +42,11 @@ import { walletService } from '../../../lib/services/wallet/wallet.service';
 import { LZC_TOKEN_NAME } from '../../../constants/tokens';
 
 interface FarmerDashboardProps {
-    userProfile: any;
+    userProfile: {
+        clerkUserId: string;
+        liskId?: string;
+        location?: string;
+    };
 }
 
 export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
@@ -50,12 +54,12 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
     const [showAddProduct, setShowAddProduct] = useState(false);
     const { user } = useUser();
 
-    const balance = useQuery((api as unknown as any).balances.getUserBalance, {
+    const balance = useQuery((api as unknown as { balances: { getUserBalance: unknown; }; }).balances.getUserBalance, {
         clerkUserId: user?.id || '',
         token: LZC_TOKEN_NAME,
     });
 
-    const upsertBalance = useMutation((api as unknown as any).balances.upsertUserBalance);
+    const upsertBalance = useMutation((api as unknown as { balances: { upsertUserBalance: unknown; }; }).balances.upsertUserBalance);
 
     useEffect(() => {
         if (!user?.id) return;
