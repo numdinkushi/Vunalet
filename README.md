@@ -7,6 +7,7 @@ Vunalet is a revolutionary farm-to-consumer marketplace that connects local farm
 - **Direct Connection**: Connect farmers directly with consumers
 - **Quality Assured**: Certified organic produce with quality guarantees
 - **Fresh Delivery**: Farm-to-table delivery ensuring maximum freshness
+- **Secure Payments**: Integrated with Lisk ZAR stablecoins for secure transactions
 - **3D Animations**: Beautiful 3D background animations using Three.js
 - **Modern UI**: Built with Next.js, Tailwind CSS, and Framer Motion
 - **Authentication**: Secure authentication with Clerk
@@ -18,6 +19,7 @@ Vunalet is a revolutionary farm-to-consumer marketplace that connects local farm
 - **Styling**: Tailwind CSS, Framer Motion
 - **3D Graphics**: Three.js, @react-three/fiber
 - **Authentication**: Clerk
+- **Payments**:  Lisk ZAR Stablecoin
 - **UI Components**: Radix UI, shadcn/ui
 - **Icons**: Lucide React
 
@@ -97,7 +99,7 @@ NEXT_PUBLIC_CONVEX_URL=https://your-deployment-name.convex.cloud
 NEXT_PUBLIC_APP_NAME=Vunalet
 NEXT_PUBLIC_APP_DESCRIPTION=Harvesting the future through sustainable agriculture
 
-# Stablecoin API Configuration (for Lisk ZAR payments)
+# Stablecoin API Configuration (for Celo and Lisk ZAR payments)
 # Get these from your stablecoin service provider
 NEXT_PRIVATE_API_KEY=your_stablecoin_api_key_here
 STABLECOIN_API_KEY=your_stablecoin_api_key_here
@@ -247,7 +249,7 @@ export function ComponentName({ props }: ComponentProps) {
 
 ## 🎯 Hackathon Context
 
-This project was built for the **Lisk ZAR Stablecoin Payments Hackathon** hosted by HackersDAO and Lisk Africa. The goal is to solve the middleman problem between farmers and buyers in Nigeria's agricultural sector.
+This project was built for the **Lisk ZAR Stablecoin Payments Hackathon** hosted by HackersDAO and Lisk Africa. The goal is to solve the middleman problem between farmers and buyers in South Africa's agricultural sector.
 
 ### Problem Statement
 - Farmers often lose profits to middlemen

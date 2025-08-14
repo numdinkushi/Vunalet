@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { mutation } from "./_generated/server";
 import { allProducts } from "../constants/products";
 
@@ -13,7 +14,7 @@ export const migrateProductsToCategoryId = mutation({
         for (const product of products) {
             // Check if product has old category field and no categoryId
             if ('category' in product && !('categoryId' in product)) {
-                const oldCategory = (product as any).category;
+                const oldCategory = (product as { category: string; }).category;
 
                 // Map old category strings to new category IDs
                 const categoryMapping: { [key: string]: string; } = {
@@ -34,7 +35,7 @@ export const migrateProductsToCategoryId = mutation({
                 const categoryId = categoryMapping[oldCategory.toLowerCase()] || '1'; // Default to vegetables
 
                 // Update the product with categoryId and remove old category field
-                await ctx.db.patch(product._id, {
+                await ctx.db.patch((product as any)._id, {
                     categoryId,
                     // Remove the old category field by not including it
                 });
@@ -58,7 +59,7 @@ export const ensureAllProductsHaveCategoryId = mutation({
         for (const product of products) {
             if (!('categoryId' in product)) {
                 // Set default categoryId for products without it
-                await ctx.db.patch(product._id, {
+                await ctx.db.patch((product as any)._id, {
                     categoryId: '1', // Default to vegetables
                 });
                 updatedCount++;
