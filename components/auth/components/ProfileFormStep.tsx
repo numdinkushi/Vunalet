@@ -7,6 +7,7 @@ import { Textarea } from '../../ui/textarea';
 import { Checkbox } from '../../ui/checkbox';
 import { ProfileImageUpload } from '../../ui/profile-image-upload';
 import { MultiSelect } from '../../ui/multi-select';
+import { SouthAfricanAddress } from '../../ui/south-african-address';
 import { Loader2, Leaf } from 'lucide-react';
 import { roleConfig } from '../constants';
 import { RegistrationStepProps } from '../types';
@@ -94,32 +95,12 @@ export function ProfileFormStep({
                                 />
                             </div>
 
-                            <div>
-                                <Label htmlFor="address" className="text-sm font-medium text-gray-700 mb-2 block">
-                                    Address *
-                                </Label>
-                                <Textarea
-                                    id="address"
-                                    value={formData.address}
-                                    onChange={(e) => onInputChange('address', e.target.value)}
-                                    placeholder="Enter your full address"
-                                    required
-                                    className="min-h-[80px]"
-                                />
-                            </div>
-
-                            <div>
-                                <Label htmlFor="location" className="text-sm font-medium text-gray-700 mb-2 block">
-                                    Location/City *
-                                </Label>
-                                <Input
-                                    id="location"
-                                    value={formData.location}
-                                    onChange={(e) => onInputChange('location', e.target.value)}
-                                    required
-                                    className="h-11"
-                                />
-                            </div>
+                            {/* South African Address Component */}
+                            <SouthAfricanAddress
+                                value={formData.address}
+                                onChange={(address) => onInputChange('address', address)}
+                                label="Address"
+                            />
 
                             {formData.role === 'farmer' && (
                                 <>

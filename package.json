@@ -10,7 +10,8 @@
     "lint": "next lint",
     "build:pwa": "next build && cp public/manifest.json .next/static/ && cp public/sw.js .next/static/",
     "migrate:images": "tsx scripts/migrate-category-images.ts",
-    "init:categories": "tsx scripts/init-categories.ts"
+    "init:categories": "tsx scripts/init-categories.ts",
+    "update:addresses": "tsx scripts/update-user-addresses.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.28.1",
@@ -52,6 +53,7 @@
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.23.12",
+    "geolib": "^3.3.4",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.536.0",
     "multer": "^2.0.2",

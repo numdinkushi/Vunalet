@@ -10,7 +10,14 @@ export default defineSchema({
         firstName: v.string(),
         lastName: v.string(),
         phone: v.optional(v.string()),
+        // Legacy address field for backward compatibility
         address: v.optional(v.string()),
+        // New South African address structure
+        addressProvince: v.optional(v.string()),
+        addressCity: v.optional(v.string()),
+        addressStreet: v.optional(v.string()),
+        addressPostalCode: v.optional(v.string()),
+        addressFull: v.optional(v.string()),
         location: v.optional(v.string()),
         coordinates: v.optional(v.object({
             lat: v.number(),

@@ -1,7 +1,6 @@
 'use client';
-
-import { MapPin, Shield, Star, Users, Leaf, Package, Clock } from 'lucide-react';
 import Image from 'next/image';
+import { MapPin, Star, Shield, Leaf, Package } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
 import { Card, CardContent } from '../../ui/card';
@@ -54,13 +53,13 @@ export function FarmerCard({ farmer, onViewProducts }: FarmerCardProps) {
                                 />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                    <Users size={24} />
+                                    <Package className="w-8 h-8" />
                                 </div>
                             )}
                         </div>
                         {farmer.isOrganicCertified && (
                             <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-1">
-                                <Leaf size={12} className="text-white" />
+                                <Leaf className="w-3 h-3 text-white" />
                             </div>
                         )}
                     </div>
@@ -69,19 +68,19 @@ export function FarmerCard({ farmer, onViewProducts }: FarmerCardProps) {
                         <div className="flex items-center mb-2">
                             <h3 className="text-2xl font-bold text-white">{fullName}</h3>
                             {farmer.isOrganicCertified && (
-                                <Shield className="ml-2 text-green-500" size={16} />
+                                <Shield className="ml-2 w-5 h-5 text-green-500" />
                             )}
                         </div>
 
                         {farmer.location && (
                             <div className="flex items-center text-gray-200 mb-2">
-                                <MapPin size={16} />
+                                <MapPin className="w-4 h-4" />
                                 <span className="ml-1">{farmer.location}</span>
                             </div>
                         )}
 
                         <div className="flex items-center">
-                            <Star className="text-yellow-400 fill-current" size={16} />
+                            <Star className="w-4 h-4 text-yellow-400 fill-current" />
                             <span className="ml-1 font-semibold text-white">{rating}</span>
                             <span className="ml-2 text-sm text-gray-300">
                                 ({customerCount} customers)
@@ -145,7 +144,7 @@ export function FarmerCard({ farmer, onViewProducts }: FarmerCardProps) {
                     <div className="flex items-center">
                         {farmer.isOrganicCertified && (
                             <>
-                                <Leaf className="text-green-500 mr-2" size={16} />
+                                <Leaf className="w-4 h-4 text-green-500 mr-1" />
                                 <span className="text-green-500 text-sm font-medium">
                                     Organic Certified
                                 </span>
@@ -157,7 +156,7 @@ export function FarmerCard({ farmer, onViewProducts }: FarmerCardProps) {
                         onClick={() => onViewProducts?.(farmer.clerkUserId)}
                         className="bg-green-600 hover:bg-green-700 text-white"
                     >
-                        <Package className="mr-2" size={16} />
+                        <Package className="w-4 h-4 mr-2" />
                         View Products
                     </Button>
                 </div>

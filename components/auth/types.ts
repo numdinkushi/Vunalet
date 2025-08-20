@@ -1,9 +1,13 @@
+import { SouthAfricanAddressData } from '../ui/south-african-address';
+
 export interface RegistrationFormData {
     role: 'farmer' | 'dispatcher' | 'buyer';
     firstName: string;
     lastName: string;
     phone: string;
-    address: string;
+    // New South African address structure
+    address: SouthAfricanAddressData;
+    // Legacy fields for backward compatibility
     location: string;
     businessName?: string;
     businessLicense?: string;
@@ -31,7 +35,7 @@ export interface RoleConfig {
 
 export interface RegistrationStepProps {
     formData: RegistrationFormData;
-    onInputChange: (field: keyof RegistrationFormData, value: string) => void;
+    onInputChange: (field: keyof RegistrationFormData, value: string | SouthAfricanAddressData) => void;
     onRoleSelect: (role: 'farmer' | 'dispatcher' | 'buyer') => void;
     onNext: (e?: React.FormEvent) => void;
     onBack?: () => void;

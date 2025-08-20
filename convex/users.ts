@@ -304,6 +304,12 @@ export const createUserWithStablecoinIntegration = mutation({
         lastName: v.string(),
         phone: v.optional(v.string()),
         address: v.optional(v.string()),
+        // New South African address fields
+        addressProvince: v.optional(v.string()),
+        addressCity: v.optional(v.string()),
+        addressStreet: v.optional(v.string()),
+        addressPostalCode: v.optional(v.string()),
+        addressFull: v.optional(v.string()),
         location: v.optional(v.string()),
         coordinates: v.optional(v.object({
             lat: v.number(),

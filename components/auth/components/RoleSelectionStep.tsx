@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
+import { Badge } from '../../ui/badge';
+import { ShoppingCart, Info } from 'lucide-react';
 import { roleConfig } from '../constants';
 import { RegistrationStepProps } from '../types';
 
@@ -20,11 +22,14 @@ export function RoleSelectionStep({ formData, onRoleSelect, onNext }: Registrati
                         <CardDescription className="text-lg text-gray-600">
                             Select how you want to participate in the Vunalet community
                         </CardDescription>
+                        
+                
                     </CardHeader>
                     <CardContent>
                         <div className="grid md:grid-cols-3 gap-6">
                             {Object.entries(roleConfig).map(([role, config]) => {
                                 const Icon = config.icon;
+                                const isBuyer = role === 'buyer';
                                 return (
                                     <motion.div
                                         key={role}
@@ -32,7 +37,7 @@ export function RoleSelectionStep({ formData, onRoleSelect, onNext }: Registrati
                                         whileTap={{ scale: 0.98 }}
                                     >
                                         <Card
-                                            className={`cursor-pointer transition-all duration-200 ${formData.role === role
+                                            className={`cursor-pointer transition-all duration-200 relative ${formData.role === role
                                                     ? `${config.borderColor} border-2 ${config.bgColor}`
                                                     : 'hover:shadow-md'
                                                 }`}
@@ -45,9 +50,28 @@ export function RoleSelectionStep({ formData, onRoleSelect, onNext }: Registrati
                                                 <h3 className={`text-xl font-semibold ${config.color} mb-2`}>
                                                     {config.title}
                                                 </h3>
-                                                <p className="text-gray-600 text-sm">
+                                                <p className="text-gray-600 text-sm mb-3">
                                                     {config.description}
                                                 </p>
+                                                
+                                                {/* Purchase capability indicator for buyer */}
+                                                {isBuyer && (
+                                                    <div className="flex items-center justify-center">
+                                                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
+                                                            <ShoppingCart className="w-3 h-3 mr-1" />
+                                                            Can purchase products
+                                                        </Badge>
+                                                    </div>
+                                                )}
+                                                
+                                                {/* Non-purchase indicator for other roles */}
+                                                {!isBuyer && (
+                                                    <div className="flex items-center justify-center">
+                                                        <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200 text-xs">
+                                                            Cannot purchase products
+                                                        </Badge>
+                                                    </div>
+                                                )}
                                             </CardContent>
                                         </Card>
                                     </motion.div>

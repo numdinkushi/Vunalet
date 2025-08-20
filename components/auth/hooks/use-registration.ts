@@ -5,6 +5,7 @@ import { api } from '../../../convex/_generated/api';
 import { userIntegrationService } from '../../../lib/services/integration/user-integration.service';
 import { walletService } from '../../../lib/services/wallet/wallet.service';
 import { RegistrationFormData } from '../types';
+import { SouthAfricanAddressData } from '../../ui/south-african-address';
 import { toast } from 'sonner';
 
 export function useRegistration() {
@@ -18,7 +19,14 @@ export function useRegistration() {
         firstName: '',
         lastName: '',
         phone: '',
-        address: '',
+        address: {
+            province: '',
+            city: '',
+            streetAddress: '',
+            postalCode: '',
+            coordinates: null,
+            fullAddress: ''
+        },
         location: '',
         businessName: '',
         businessLicense: '',
@@ -34,15 +42,15 @@ export function useRegistration() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [step, setStep] = useState(1);
 
-    const handleInputChange = (field: keyof RegistrationFormData, value: string) => {
+    const handleInputChange = (field: keyof RegistrationFormData, value: string | SouthAfricanAddressData) => {
         setFormData(prev => {
-            let parsedValue: string | string[] | boolean | { lat: number; lng: number; } | undefined = value;
+            let parsedValue: string | string[] | boolean | { lat: number; lng: number; } | SouthAfricanAddressData | undefined = value;
 
             // Handle special field types
             if (field === 'specialties') {
                 // Handle specialties as JSON array of category IDs
                 try {
-                    parsedValue = JSON.parse(value);
+                    parsedValue = JSON.parse(value as string);
                 } catch {
                     // Fallback to empty array if parsing fails
                     parsedValue = [];
@@ -51,10 +59,13 @@ export function useRegistration() {
                 parsedValue = value === 'true';
             } else if (field === 'coordinates') {
                 try {
-                    parsedValue = JSON.parse(value) as { lat: number; lng: number; };
+                    parsedValue = JSON.parse(value as string) as { lat: number; lng: number; };
                 } catch {
                     parsedValue = undefined;
                 }
+            } else if (field === 'address') {
+                // Handle address as SouthAfricanAddressData object
+                parsedValue = value as SouthAfricanAddressData;
             }
 
             return {
@@ -90,8 +101,15 @@ export function useRegistration() {
     };
 
     const validateForm = () => {
-        const requiredFields = ['firstName', 'lastName', 'phone', 'address', 'location'];
-        return requiredFields.every(field => formData[field as keyof RegistrationFormData]);
+        const requiredFields = ['firstName', 'lastName', 'phone'];
+        const basicValidation = requiredFields.every(field => formData[field as keyof RegistrationFormData]);
+
+        // Validate address structure
+        const addressValidation = formData.address.province &&
+            formData.address.city &&
+            formData.address.streetAddress;
+
+        return basicValidation && addressValidation;
     };
 
     const handleSubmit = async (e?: React.FormEvent) => {
@@ -117,6 +135,9 @@ export function useRegistration() {
                 return;
             }
 
+            // Use coordinates from address if available, otherwise fall back to legacy coordinates
+            const coordinates = formData.address.coordinates || formData.coordinates;
+
             const convexData = {
                 clerkUserId: user.id,
                 email: user.emailAddresses[0].emailAddress,
@@ -124,8 +145,15 @@ export function useRegistration() {
                 firstName: formData.firstName,
                 lastName: formData.lastName,
                 phone: formData.phone,
-                address: formData.address,
-                location: formData.location,
+                // Legacy address field for backward compatibility
+                address: formData.address.fullAddress || formData.address.streetAddress,
+                // New South African address fields
+                addressProvince: formData.address.province,
+                addressCity: formData.address.city,
+                addressStreet: formData.address.streetAddress,
+                addressPostalCode: formData.address.postalCode,
+                addressFull: formData.address.fullAddress,
+                location: formData.address.city || formData.location,
                 businessName: formData.businessName,
                 businessLicense: formData.businessLicense,
                 // Farmer-specific fields
@@ -135,7 +163,7 @@ export function useRegistration() {
                 specialties: formData.specialties,
                 isOrganicCertified: formData.isOrganicCertified,
                 profilePicture: formData.profilePicture,
-                coordinates: formData.coordinates,
+                coordinates: coordinates,
                 liskId: integrationResult.stablecoinUser?.id,
                 publicKey: integrationResult.stablecoinUser?.publicKey,
                 paymentIdentifier: integrationResult.stablecoinUser?.paymentIdentifier,
@@ -158,6 +186,7 @@ export function useRegistration() {
                         toast.success(`Welcome! R${integrationResult.mintedAmount} has been added to your wallet.`);
                     }
                 } catch (balanceError) {
+                    console.log(balanceError);
                     // Don't fail the registration if balance update fails
                 }
             }
