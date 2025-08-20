@@ -7,6 +7,7 @@ export const createOrder = mutation({
     args: {
         buyerId: v.string(),
         farmerId: v.string(),
+        dispatcherId: v.optional(v.string()),
         products: v.array(v.object({
             productId: v.string(),
             name: v.string(),
@@ -15,8 +16,15 @@ export const createOrder = mutation({
             unit: v.string(),
         })),
         totalAmount: v.number(),
+        farmerAmount: v.number(),
+        dispatcherAmount: v.number(),
         deliveryAddress: v.string(),
         deliveryCoordinates: v.optional(v.object({
+            lat: v.number(),
+            lng: v.number()
+        })),
+        pickupLocation: v.optional(v.string()),
+        pickupCoordinates: v.optional(v.object({
             lat: v.number(),
             lng: v.number()
         })),
@@ -27,11 +35,41 @@ export const createOrder = mutation({
         paymentStatus: v.union(v.literal("pending"), v.literal("paid"), v.literal("failed")),
         orderStatus: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("delivered"), v.literal("cancelled")),
         specialInstructions: v.optional(v.string()),
+        estimatedPickupTime: v.optional(v.string()),
         estimatedDeliveryTime: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
         return await ctx.db.insert("orders", {
             ...args,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        });
+    },
+});
+
+// Create a delivery record
+export const createDelivery = mutation({
+    args: {
+        orderId: v.string(),
+        dispatcherId: v.string(),
+        pickupLocation: v.string(),
+        deliveryLocation: v.string(),
+        pickupCoordinates: v.optional(v.object({
+            lat: v.number(),
+            lng: v.number()
+        })),
+        deliveryCoordinates: v.optional(v.object({
+            lat: v.number(),
+            lng: v.number()
+        })),
+        estimatedPickupTime: v.optional(v.string()),
+        estimatedDeliveryTime: v.optional(v.string()),
+        notes: v.optional(v.string()),
+    },
+    handler: async (ctx, args) => {
+        return await ctx.db.insert("deliveries", {
+            ...args,
+            status: "assigned",
             createdAt: Date.now(),
             updatedAt: Date.now(),
         });
@@ -273,5 +311,50 @@ export const processPaymentTransfer = mutation({
             console.error("Failed to process payment transfer:", error);
             throw new Error("Failed to process payment transfer");
         }
+    },
+});
+
+// Get pending order total for buyer (sum of totalCost for pending orders)
+export const getBuyerPendingTotal = query({
+    args: { buyerId: v.string() },
+    handler: async (ctx, args) => {
+        const pendingOrders = await ctx.db
+            .query("orders")
+            .withIndex("by_buyer", (q) => q.eq("buyerId", args.buyerId))
+            .filter((q) => q.eq(q.field("orderStatus"), "pending"))
+            .collect();
+
+        const totalPending = pendingOrders.reduce((sum, order) => sum + order.totalCost, 0);
+        return totalPending;
+    },
+});
+
+// Get pending order total for farmer (sum of farmerAmount for pending orders)
+export const getFarmerPendingTotal = query({
+    args: { farmerId: v.string() },
+    handler: async (ctx, args) => {
+        const pendingOrders = await ctx.db
+            .query("orders")
+            .withIndex("by_farmer", (q) => q.eq("farmerId", args.farmerId))
+            .filter((q) => q.eq(q.field("orderStatus"), "pending"))
+            .collect();
+
+        const totalPending = pendingOrders.reduce((sum, order) => sum + order.farmerAmount, 0);
+        return totalPending;
+    },
+});
+
+// Get pending order total for dispatcher (sum of dispatcherAmount for pending orders)
+export const getDispatcherPendingTotal = query({
+    args: { dispatcherId: v.string() },
+    handler: async (ctx, args) => {
+        const pendingOrders = await ctx.db
+            .query("orders")
+            .withIndex("by_dispatcher", (q) => q.eq("dispatcherId", args.dispatcherId))
+            .filter((q) => q.eq(q.field("orderStatus"), "pending"))
+            .collect();
+
+        const totalPending = pendingOrders.reduce((sum, order) => sum + order.dispatcherAmount, 0);
+        return totalPending;
     },
 }); 

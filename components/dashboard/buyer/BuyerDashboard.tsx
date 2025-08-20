@@ -10,6 +10,7 @@ import { useUser } from '@clerk/nextjs';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { LZC_TOKEN_NAME } from '../../../constants/tokens';
+import { useOrderManagement } from '../../../hooks/use-order-management';
 
 export default function BuyerDashboard() {
     const [activeTab, setActiveTab] = useState('overview');
@@ -23,10 +24,11 @@ export default function BuyerDashboard() {
         clerkUserId: user?.id || '',
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const balance = useQuery((api as unknown as any).balances.getUserBalance, {
+    // Replace the existing balance query
+    const balance = useQuery(api.balances.getUserBalanceWithLedger, {
         clerkUserId: user?.id || '',
         token: LZC_TOKEN_NAME,
+        role: 'buyer',
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -40,11 +42,14 @@ export default function BuyerDashboard() {
                 const { walletService } = await import('../../../lib/services/wallet/wallet.service');
                 const balances = await walletService.fetchBalances(userProfile.liskId!);
 
+                // Only update wallet balance, preserve existing ledger balance
+                const currentBalance = await getCurrentBalance();
+
                 await upsertBalance({
                     clerkUserId: user.id,
                     token: LZC_TOKEN_NAME,
-                    walletBalance: balances.walletBalance,
-                    ledgerBalance: balances.ledgerBalance,
+                    walletBalance: balances.walletBalance, // Update from Lisk
+                    ledgerBalance: currentBalance?.ledgerBalance || 0, // Keep existing ledger balance
                 });
             } catch (error) {
                 console.log('Failed to refresh balances:', error);
@@ -53,6 +58,16 @@ export default function BuyerDashboard() {
 
         refreshBalances();
     }, [user?.id, userProfile?.liskId]);
+
+    // Helper function to get current balance
+    const getCurrentBalance = async () => {
+        try {
+            const balance = await fetch(`/api/balances/${user?.id}`).then(r => r.json());
+            return balance;
+        } catch (error) {
+            return null;
+        }
+    };
 
     const walletBalance = balance?.walletBalance ?? 0;
     const ledgerBalance = balance?.ledgerBalance ?? 0;
@@ -80,6 +95,22 @@ export default function BuyerDashboard() {
     const handleCloseModal = () => {
         setIsModalOpen(false);
         setSelectedOrder(null);
+    };
+
+    const { confirmDelivery, isProcessing } = useOrderManagement();
+
+    const handleConfirmDelivery = async (order: Order) => {
+        // Get farmer profile for payment identifier
+        const farmerProfile = await fetch(`/api/users/${order.farmerId}`).then(r => r.json());
+
+        await confirmDelivery(order._id, {
+            buyerId: user?.id,
+            buyerLiskId: userProfile?.liskId,
+            farmerId: order.farmerId,
+            farmerPaymentId: farmerProfile.paymentIdentifier,
+            totalCost: order.totalCost,
+            products: order.products,
+        });
     };
 
     return (

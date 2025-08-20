@@ -185,25 +185,26 @@ export const searchProducts = query({
     },
 });
 
-// Update product quantity (for order processing)
+// Update product quantity after order
 export const updateProductQuantity = mutation({
     args: {
         productId: v.string(),
-        quantity: v.number(),
+        quantityReduced: v.number(),
     },
     handler: async (ctx, args) => {
         const product = await ctx.db.get(args.productId as Id<"products">);
+
         if (!product) {
             throw new Error("Product not found");
         }
 
-        const newQuantity = product.quantity - args.quantity;
-        const newStatus = newQuantity <= 0 ? "out_of_stock" : product.status;
+        const newQuantity = Math.max(0, product.quantity - args.quantityReduced);
 
-        return await ctx.db.patch(args.productId as Id<"products">, {
-            quantity: Math.max(0, newQuantity),
-            status: newStatus,
+        await ctx.db.patch(args.productId as Id<"products">, {
+            quantity: newQuantity,
             updatedAt: Date.now(),
         });
+
+        return { success: true, newQuantity };
     },
 }); 

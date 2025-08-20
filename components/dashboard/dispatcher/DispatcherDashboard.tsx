@@ -17,6 +17,7 @@ import { WalletCard } from '../shared/WalletCard';
 import { useUser } from '@clerk/nextjs';
 import { useEffect } from 'react';
 import { LZC_TOKEN_NAME } from '../../../constants/tokens';
+import { useOrderManagement } from '../../../hooks/use-order-management';
 
 interface DispatcherDashboardProps {
     userProfile: {
@@ -30,9 +31,10 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
     const { user } = useUser();
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const balance = useQuery((api as unknown as any).balances.getUserBalance, {
+    const balance = useQuery(api.balances.getUserBalanceWithLedger, {
         clerkUserId: user?.id || '',
         token: LZC_TOKEN_NAME,
+        role: 'dispatcher',
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -46,11 +48,14 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
                 const { walletService } = await import('../../../lib/services/wallet/wallet.service');
                 const balances = await walletService.fetchBalances(userProfile?.liskId || user.id);
 
+                // Only update wallet balance, preserve existing ledger balance
+                const currentBalance = await getCurrentBalance();
+
                 await upsertBalance({
                     clerkUserId: user.id,
                     token: LZC_TOKEN_NAME,
-                    walletBalance: balances.walletBalance,
-                    ledgerBalance: balances.ledgerBalance,
+                    walletBalance: balances.walletBalance, // Update from Lisk
+                    ledgerBalance: currentBalance?.ledgerBalance || 0, // Keep existing ledger balance
                 });
             } catch (error) {
                 console.log('Failed to refresh balances:', error);
@@ -59,6 +64,16 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
 
         refreshBalances();
     }, [user?.id, userProfile?.liskId]);
+
+    // Helper function to get current balance
+    const getCurrentBalance = async () => {
+        try {
+            const balance = await fetch(`/api/balances/${user?.id}`).then(r => r.json());
+            return balance;
+        } catch (error) {
+            return null;
+        }
+    };
 
     const walletBalance = balance?.walletBalance ?? 0;
     const ledgerBalance = balance?.ledgerBalance ?? 0;
@@ -99,6 +114,12 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
         customerName: string;
         customerPhone: string;
     }>;
+
+    const { markAsDelivered, isProcessing } = useOrderManagement();
+
+    const handleMarkAsDelivered = async (orderId: string) => {
+        await markAsDelivered(orderId);
+    };
 
     return (
         <div className="space-y-6">
@@ -213,6 +234,39 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
                     </Card>
                 </TabsContent>
             </Tabs>
+
+            {/* Orders section */}
+            <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold mb-4">Active Deliveries</h3>
+                {orders?.map((order) => (
+                    <div key={order._id} className="border-b py-4 last:border-b-0">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <p className="font-medium">Order #{order._id.slice(-6)}</p>
+                                <p className="text-sm text-gray-600">
+                                    {order.products.map(p => p.name).join(', ')}
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                    To: {order.deliveryAddress}
+                                </p>
+                            </div>
+                            <div className="text-right">
+                                <p className="font-medium">R{order.totalCost.toFixed(2)}</p>
+                                <p className="text-sm text-gray-600">{order.orderStatus}</p>
+                                {order.orderStatus === 'in_transit' && (
+                                    <button
+                                        onClick={() => handleMarkAsDelivered(order._id)}
+                                        disabled={isProcessing}
+                                        className="mt-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm disabled:opacity-50"
+                                    >
+                                        {isProcessing ? 'Processing...' : 'Mark as Delivered'}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 } 

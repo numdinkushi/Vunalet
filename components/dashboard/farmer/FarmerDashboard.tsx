@@ -58,13 +58,13 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
     const [showAddProduct, setShowAddProduct] = useState(false);
     const { user } = useUser();
 
-     
+
     const balance = useQuery((api as any).balances.getUserBalance, {
         clerkUserId: user?.id || '',
         token: LZC_TOKEN_NAME,
     });
 
-     
+
     const upsertBalance = useMutation((api as any).balances.upsertUserBalance);
 
     useEffect(() => {
@@ -72,22 +72,37 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
 
         const refreshBalances = async () => {
             try {
+                if (!userProfile?.liskId) {
+                    toast.error('No payment account found for user');
+                    return;
+                }
+
                 const { walletService } = await import('../../../lib/services/wallet/wallet.service');
-                const balances = await walletService.fetchBalances(userProfile?.liskId || user.id);
+                const balances = await walletService.fetchBalances(userProfile.liskId);
 
                 await upsertBalance({
                     clerkUserId: user.id,
                     token: LZC_TOKEN_NAME,
                     walletBalance: balances.walletBalance,
-                    ledgerBalance: balances.ledgerBalance,
+                    ledgerBalance: 0,
                 });
             } catch (error) {
-                console.log('Failed to refresh balances:', error);
+                toast.error('Failed to refresh wallet balance');
             }
         };
 
         refreshBalances();
     }, [user?.id, userProfile?.liskId]);
+
+    // Helper function to get current balance
+    const getCurrentBalance = async () => {
+        try {
+            const balance = await fetch(`/api/balances/${user?.id}`).then(r => r.json());
+            return balance;
+        } catch (error) {
+            return null;
+        }
+    };
 
     const walletBalance = balance?.walletBalance ?? 0;
     const ledgerBalance = balance?.ledgerBalance ?? 0;
@@ -175,6 +190,32 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
         riderName: string;
         farmName: string;
     }>;
+
+    const handleRefreshBalance = async () => {
+        if (!userProfile?.liskId) {
+            toast.error('No Lisk ID found for user');
+            return;
+        }
+
+        try {
+            const { walletService } = await import('../../../lib/services/wallet/wallet.service');
+            const balances = await walletService.fetchBalances(userProfile.liskId);
+
+            console.log('Manual refresh - balances:', balances);
+
+            await upsertBalance({
+                clerkUserId: user.id,
+                token: LZC_TOKEN_NAME,
+                walletBalance: balances.walletBalance,
+                ledgerBalance: 0,
+            });
+
+            toast.success('Balance refreshed successfully');
+        } catch (error) {
+            console.error('Failed to refresh balance:', error);
+            toast.error('Failed to refresh balance');
+        }
+    };
 
     return (
         <div className="space-y-6">

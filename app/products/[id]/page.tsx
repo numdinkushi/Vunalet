@@ -15,6 +15,8 @@ import { DeliveryMap } from '../../../components/app/maps/delivery-map/index';
 import { PurchaseFormData } from '../../../app/types';
 import Link from 'next/link';
 import { DELIVERY_CONSTANTS } from '../../../constants/delivery';
+import { useOrderManagement } from '../../../hooks/use-order-management';
+import { toast } from 'sonner';
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string; }>; }) {
     // Unwrap params using React.use()
@@ -128,11 +130,63 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         }));
     };
 
+    const { initiateOrder, isProcessing } = useOrderManagement();
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Handle purchase submission
-        console.log('Purchase submitted:', { product, formData });
-        alert('Purchase submitted successfully!');
+
+        if (!user || !userProfile || !farmer) {
+            toast.error('Please sign in and ensure all user data is available');
+            return;
+        }
+
+        // Check if requested quantity is available
+        if (formData.quantity > product.quantity) {
+            toast.error(`Only ${product.quantity} ${product.unit} available`);
+            return;
+        }
+
+        // Check if product is out of stock
+        if (product.quantity <= 0) {
+            toast.error('This product is currently out of stock');
+            return;
+        }
+
+        const totalAmount = product.price * formData.quantity;
+        const farmerAmount = totalAmount; // Product cost goes to farmer
+        const dispatcherAmount = formData.deliveryCost; // Delivery cost goes to dispatcher
+
+        // Calculate estimated times
+        const estimatedPickupTime = new Date(Date.now() + 30 * 60 * 1000).toISOString(); // 30 minutes from now
+        const estimatedDeliveryTime = new Date(Date.now() + (30 + formData.deliveryDistance * 2) * 60 * 1000).toISOString(); // 30 min + 2 min per km
+
+        const orderData = {
+            buyerId: user.id,
+            farmerId: product.farmerId,
+            products: [{
+                productId: product._id,
+                name: product.name,
+                price: product.price,
+                quantity: formData.quantity,
+                unit: product.unit,
+            }],
+            totalAmount,
+            farmerAmount,
+            dispatcherAmount,
+            deliveryAddress: formData.address,
+            deliveryCoordinates: userProfile.coordinates,
+            pickupLocation: product.location || "Farm Location",
+            pickupCoordinates: product.coordinates,
+            deliveryDistance: formData.deliveryDistance,
+            deliveryCost: formData.deliveryCost,
+            totalCost: formData.totalCost,
+            paymentMethod: "lisk_zar" as const,
+            specialInstructions: formData.specialInstructions,
+            estimatedPickupTime,
+            estimatedDeliveryTime,
+        };
+
+        await initiateOrder(orderData);
     };
 
     // Show loading state
@@ -196,6 +250,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                             farmer={farmer}
                             formData={formData}
                             isCalculating={isCalculating}
+                            isProcessing={isProcessing} // Pass the processing state
                             handleInputChange={handleInputChange}
                             handleSubmit={handleSubmit}
                         />

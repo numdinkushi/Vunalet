@@ -96,8 +96,15 @@ export default defineSchema({
             unit: v.string(),
         })),
         totalAmount: v.number(),
+        farmerAmount: v.number(), // Required field - amount that goes to the farmer
+        dispatcherAmount: v.number(), // Required field - amount that goes to the dispatcher
         deliveryAddress: v.string(),
         deliveryCoordinates: v.optional(v.object({
+            lat: v.number(),
+            lng: v.number()
+        })),
+        pickupLocation: v.optional(v.string()), // Add this field
+        pickupCoordinates: v.optional(v.object({ // Add this field
             lat: v.number(),
             lng: v.number()
         })),
@@ -108,6 +115,7 @@ export default defineSchema({
         paymentStatus: v.union(v.literal("pending"), v.literal("paid"), v.literal("failed")),
         orderStatus: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("delivered"), v.literal("cancelled")),
         specialInstructions: v.optional(v.string()),
+        estimatedPickupTime: v.optional(v.string()), // Add this field
         estimatedDeliveryTime: v.optional(v.string()),
         actualDeliveryTime: v.optional(v.string()),
         createdAt: v.number(),
