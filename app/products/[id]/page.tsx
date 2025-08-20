@@ -6,16 +6,19 @@ import { use } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { useQuery } from 'convex/react';
+import { useUser } from '@clerk/nextjs';
+import { getDistance } from 'geolib';
 import { api } from '../../../convex/_generated/api';
 import { VideoBackground } from '../../../components/ui/VideoBackground';
 import { ProductDetailCard } from '../../../components/app/cards/product-detail';
-import { DeliveryMap } from '../../../components/app/maps/delivery-map';
+import { DeliveryMap } from '../../../components/app/maps/delivery-map/index';
 import { PurchaseFormData } from '../../../app/types';
 import Link from 'next/link';
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string; }>; }) {
     // Unwrap params using React.use()
     const { id } = use(params);
+    const { user, isLoaded } = useUser();
 
     const [formData, setFormData] = useState<PurchaseFormData>({
         name: '',
@@ -38,19 +41,68 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         { clerkUserId: product?.farmerId || "" }
     );
 
+    // Get current user's profile
+    const userProfile = useQuery(
+        api.users.getUserProfile,
+        { clerkUserId: user?.id || "" }
+    );
+
+    // Auto-populate form with user data when available
+    useEffect(() => {
+        if (user && userProfile && isLoaded) {
+            setFormData(prev => ({
+                ...prev,
+                name: `${userProfile.firstName} ${userProfile.lastName}`,
+                email: user.emailAddresses[0]?.emailAddress || '',
+                phone: userProfile.phone || '',
+                address: userProfile.addressFull || userProfile.address || '',
+            }));
+        }
+    }, [user, userProfile, isLoaded]);
+
     useEffect(() => {
         if (product) {
             calculateDeliveryCost();
         }
-    }, [product, formData.address, formData.quantity]);
+    }, [product, formData.address, formData.quantity, farmer, userProfile]);
 
     const calculateDeliveryCost = async () => {
         if (!product || !formData.address) return;
 
         setIsCalculating(true);
         try {
-            // Simulate distance calculation (in a real app, you'd use Google Maps API)
-            const distance = Math.floor(Math.random() * 50) + 5; // 5-55 km
+            let distance = 0;
+
+            // Get farmer coordinates from farmer profile
+            const farmerCoords = farmer?.coordinates;
+
+            // Get customer coordinates from user profile
+            const customerCoords = userProfile?.coordinates;
+
+            console.log('Farmer coords:', farmerCoords);
+            console.log('Customer coords:', customerCoords);
+
+            if (farmerCoords && customerCoords &&
+                typeof farmerCoords.lat === 'number' &&
+                typeof farmerCoords.lng === 'number' &&
+                typeof customerCoords.lat === 'number' &&
+                typeof customerCoords.lng === 'number') {
+
+                // Calculate actual distance using geolib
+                const distanceInMeters = getDistance(
+                    { latitude: farmerCoords.lat, longitude: farmerCoords.lng },
+                    { latitude: customerCoords.lat, longitude: customerCoords.lng }
+                );
+
+                distance = Math.round((distanceInMeters / 1000) * 10) / 10; // Convert to km and round to 1 decimal
+
+                console.log('Calculated distance:', distance, 'km');
+            } else {
+                console.log('Missing coordinates, using fallback');
+                // Fallback to a reasonable default distance
+                distance = 25; // Default 25km instead of random
+            }
+
             const deliveryCost = distance * 0.5; // 0.5 lisk per km
             const totalCost = (product.price * formData.quantity) + deliveryCost;
 
@@ -82,10 +134,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         alert('Purchase submitted successfully!');
     };
 
-
-
     // Show loading state
-    if (product === undefined) {
+    if (product === undefined || !isLoaded) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
@@ -159,6 +209,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                             <DeliveryMap
                                 farmerLocation={product.location}
                                 customerAddress={formData.address}
+                                customerCoordinates={userProfile?.coordinates}
                                 deliveryDistance={formData.deliveryDistance}
                                 deliveryCost={formData.deliveryCost}
                                 className="h-full"
