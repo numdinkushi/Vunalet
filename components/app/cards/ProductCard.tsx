@@ -4,6 +4,10 @@ import { motion } from 'framer-motion';
 import { Star, Heart, MapPin, ShoppingCart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
+import { useQuery } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 import { VideoBackground } from '../../ui/VideoBackground';
 
 interface ProductCardProps {
@@ -34,7 +38,26 @@ export function ProductCard({
     farmers,
     showVideoBackground = true
 }: ProductCardProps) {
+    const { user } = useUser();
+    const router = useRouter();
+    const userProfile = useQuery(api.users.getUserProfile, {
+        clerkUserId: user?.id || '',
+    });
+
     const farmerName = farmers?.find(f => f.clerkUserId === product.farmerId)?.firstName || 'Unknown Farmer';
+    const isBuyer = userProfile?.role === 'buyer';
+    const hasNoRole = !userProfile?.role;
+
+    const handlePurchaseClick = () => {
+        if (isBuyer) {
+            // Buyer can proceed to product page
+            router.push(`/products/${product._id}`);
+        } else if (hasNoRole) {
+            // User with no role gets redirected to dashboard
+            router.push('/dashboard');
+        }
+        // Other roles (farmer, dispatcher) won't see the button
+    };
 
     return (
         <motion.div
@@ -112,16 +135,18 @@ export function ProductCard({
                     </div>
                 </div>
 
-                <Link href={`/products/${product._id}`}>
+                {/* Show Purchase button for buyers and users with no role */}
+                {(isBuyer || hasNoRole) && (
                     <motion.button
+                        onClick={handlePurchaseClick}
                         className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center group"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                     >
                         <ShoppingCart className="mr-2" size={20} />
-                        Purchase
+                        {isBuyer ? 'Purchase' : 'Set Up Account'}
                     </motion.button>
-                </Link>
+                )}
             </div>
         </motion.div>
     );
