@@ -101,4 +101,39 @@ export interface MintTransactionResponse {
         nonce: number;
         signature: unknown;
     };
+}
+
+// Transfer transaction types
+export interface TransferRequest {
+    transactionAmount: number;
+    transactionRecipient: string;
+    transactionNotes?: string;
+}
+
+export interface TransferTransactionResponse {
+    message: string;
+    transaction: {
+        _type: string;
+        accessList: unknown[];
+        blockNumber: string | null;
+        blockHash: string | null;
+        blobVersionedHashes: string | null;
+        chainId: string;
+        data: string;
+        from: string;
+        gasLimit: string;
+        gasPrice: string | null;
+        hash: string;
+        maxFeePerGas: string;
+        maxPriorityFeePerGas: string;
+        maxFeePerBlobGas: string | null;
+        nonce: number;
+        signature: {
+            _type: string;
+            networkV: string | null;
+            r: string;
+            s: string;
+            v: number;
+        };
+    };
 } 

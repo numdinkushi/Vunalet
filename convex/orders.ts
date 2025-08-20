@@ -243,4 +243,35 @@ export const getOrderStats = query({
 
         return stats;
     },
+});
+
+// Process payment transfer for order
+export const processPaymentTransfer = mutation({
+    args: {
+        orderId: v.string(),
+        buyerLiskId: v.string(),
+        farmerPaymentId: v.string(),
+        amount: v.number(),
+        notes: v.optional(v.string()),
+    },
+    handler: async (ctx, args) => {
+        try {
+            // First, update the order payment status to paid
+            await ctx.db.patch(args.orderId as Id<"orders">, {
+                paymentStatus: "paid",
+                updatedAt: Date.now(),
+            });
+
+            // Return success - the actual transfer will be handled by the frontend
+            // calling the API endpoint
+            return {
+                success: true,
+                message: "Payment status updated successfully",
+                orderId: args.orderId,
+            };
+        } catch (error) {
+            console.error("Failed to process payment transfer:", error);
+            throw new Error("Failed to process payment transfer");
+        }
+    },
 }); 

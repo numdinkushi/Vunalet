@@ -14,6 +14,7 @@ import { ProductDetailCard } from '../../../components/app/cards/product-detail'
 import { DeliveryMap } from '../../../components/app/maps/delivery-map/index';
 import { PurchaseFormData } from '../../../app/types';
 import Link from 'next/link';
+import { DELIVERY_CONSTANTS } from '../../../constants/delivery';
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string; }>; }) {
     // Unwrap params using React.use()
@@ -103,7 +104,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 distance = 25; // Default 25km instead of random
             }
 
-            const deliveryCost = distance * 0.5; // 0.5 lisk per km
+            const deliveryCost = distance * DELIVERY_CONSTANTS.COST_PER_KM; // 0.005 lisk per km
             const totalCost = (product.price * formData.quantity) + deliveryCost;
 
             setFormData(prev => ({
