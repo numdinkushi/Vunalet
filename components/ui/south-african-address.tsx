@@ -11,46 +11,24 @@ export interface SouthAfricanAddressData {
     city: string;
     streetAddress: string;
     postalCode: string;
-    coordinates: {
-        lat: number;
-        lng: number;
-    } | null;
+    coordinates: { lat: number; lng: number; } | null;
     fullAddress: string;
 }
 
 interface SouthAfricanAddressProps {
     value: SouthAfricanAddressData;
-    onChange: (address: SouthAfricanAddressData) => void;
+    onChange: (value: SouthAfricanAddressData) => void;
     label?: string;
-    required?: boolean;
     className?: string;
 }
 
-export function SouthAfricanAddress({
-    value,
-    onChange,
-    label = "Address",
-    required = false,
-    className = ""
-}: SouthAfricanAddressProps) {
-    const [availableCities, setAvailableCities] = useState<Array<{ name: string; coordinates: { lat: number; lng: number; }; }>>([]);
+export function SouthAfricanAddress({ value, onChange, label, className }: SouthAfricanAddressProps) {
+    const handleAddressChange = (field: keyof SouthAfricanAddressData, newValue: string | { lat: number; lng: number; } | null) => {
+        const updatedValue = { ...value, [field]: newValue };
+        onChange(updatedValue);
+    };
 
-    // Update available cities when province changes
-    useEffect(() => {
-        if (value.province) {
-            const cities = getCitiesByProvince(value.province);
-            setAvailableCities(cities);
-
-            // Reset city if it's not in the new province
-            if (value.city && !cities.find(c => c.name === value.city)) {
-                handleAddressChange('city', '');
-            }
-        } else {
-            setAvailableCities([]);
-        }
-    }, [value.province]);
-
-    // Update coordinates when city changes
+    // Update coordinates when city or province changes
     useEffect(() => {
         if (value.city && value.province) {
             const coordinates = getCityCoordinates(value.city, value.province);
@@ -62,28 +40,26 @@ export function SouthAfricanAddress({
 
     // Update full address when any field changes
     useEffect(() => {
-        const addressParts = [
-            value.streetAddress,
-            value.city,
-            value.province,
-            value.postalCode
-        ].filter(Boolean);
-
-        const fullAddress = addressParts.join(', ');
-        if (fullAddress !== value.fullAddress) {
-            handleAddressChange('fullAddress', fullAddress);
-        }
+        const fullAddress = [value.streetAddress, value.city, value.province, value.postalCode]
+            .filter(Boolean)
+            .join(', ');
+        handleAddressChange('fullAddress', fullAddress);
     }, [value.streetAddress, value.city, value.province, value.postalCode]);
 
-    const handleAddressChange = (field: keyof typeof value, newValue: string) => {
-        const updatedValue = { ...value, [field]: newValue };
-        onChange(updatedValue);
-    };
+    // Update full address when coordinates change
+    useEffect(() => {
+        if (value.coordinates) {
+            const fullAddress = [value.streetAddress, value.city, value.province, value.postalCode]
+                .filter(Boolean)
+                .join(', ');
+            handleAddressChange('fullAddress', fullAddress);
+        }
+    }, [value.coordinates]);
 
     return (
         <div className={`space-y-4 ${className}`}>
             <Label className="text-sm font-medium text-gray-700">
-                {label} {required && '*'}
+                {label} {value.required && '*'}
             </Label>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -144,7 +120,7 @@ export function SouthAfricanAddress({
                     onChange={(e) => handleAddressChange('streetAddress', e.target.value)}
                     placeholder="e.g., 123 Main Street, Apartment 4B"
                     className="h-11"
-                    required={required}
+                    required={value.required}
                 />
             </div>
 
