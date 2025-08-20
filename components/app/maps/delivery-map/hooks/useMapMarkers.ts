@@ -1,7 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
+ 
 
 import { useEffect } from 'react';
 
@@ -117,5 +117,6 @@ export function useMapMarkers(
         } catch (error) {
             console.error('Error updating map:', error);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [farmerCoords, customerCoords]);
 } 

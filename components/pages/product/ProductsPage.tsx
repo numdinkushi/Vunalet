@@ -1,21 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
     Search,
-    MapPin,
-    Star,
-    Heart,
-    Filter,
     ShoppingCart,
     ArrowRight
 } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
-import { VideoBackground } from '../../ui/VideoBackground';
 import { categories } from '../../../constants/categories';
 import { ProductCard } from '../../app/cards/ProductCard';
 

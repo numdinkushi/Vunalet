@@ -1,27 +1,27 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Users, Shield, Truck, Leaf, Star, Globe, TrendingUp, Award, Clock, Heart } from 'lucide-react';
+import { Shield, Truck, Leaf, Zap } from 'lucide-react';
 import Image from 'next/image';
 import { VideoBackground } from '../../components/ui/VideoBackground';
 
 const features = [
     {
-        icon: <Users className="w-8 h-8" />,
+        icon: <Shield className="w-8 h-8" />,
         title: "Direct Connection",
         description: "Connect directly with South African farmers, eliminating middlemen and ensuring fair prices for both farmers and consumers",
         image: '/assets/background_images/image4.jpg',
         color: 'from-green-500 to-green-600'
     },
     {
-        icon: <Shield className="w-8 h-8" />,
+        icon: <Truck className="w-8 h-8" />,
         title: "Quality Assured",
         description: "Every product is carefully selected and quality-tested, with organic certification and freshness guarantees",
         image: '/assets/background_images/image5.jpg',
         color: 'from-blue-500 to-blue-600'
     },
     {
-        icon: <Truck className="w-8 h-8" />,
+        icon: <Leaf className="w-8 h-8" />,
         title: "Fresh Delivery",
         description: "Farm-to-table delivery across South Africa, ensuring maximum freshness and supporting local communities",
         image: '/assets/background_images/image6.jpg',
@@ -45,7 +45,7 @@ const stats = [
         number: "10K+",
         label: "Happy Customers",
         description: "Satisfied consumers nationwide",
-        icon: <Heart className="w-6 h-6" />,
+        icon: <Zap className="w-6 h-6" />,
         color: "from-rose-500 to-pink-600",
         bgColor: "bg-rose-50",
         textColor: "text-rose-700",
@@ -56,7 +56,7 @@ const stats = [
         number: "50+",
         label: "Cities Served",
         description: "Major cities and towns covered",
-        icon: <Globe className="w-6 h-6" />,
+        icon: <Zap className="w-6 h-6" />,
         color: "from-blue-500 to-indigo-600",
         bgColor: "bg-blue-50",
         textColor: "text-blue-700",
@@ -67,7 +67,7 @@ const stats = [
         number: "99%",
         label: "Fresh Guarantee",
         description: "Quality assurance rate",
-        icon: <Award className="w-6 h-6" />,
+        icon: <Zap className="w-6 h-6" />,
         color: "from-amber-500 to-yellow-600",
         bgColor: "bg-amber-50",
         textColor: "text-amber-700",
@@ -274,7 +274,7 @@ export function FeaturesSection() {
                             transition={{ delay: 0.5, duration: 0.8 }}
                         >
                             <div className="flex items-center justify-center space-x-2 mb-4">
-                                <TrendingUp className="w-6 h-6 text-green-300" />
+                                <Zap className="w-6 h-6 text-green-300" />
                                 <h4 className="text-2xl font-bold text-white">Growing Fast</h4>
                             </div>
                             <p className="text-lg text-gray-200 max-w-2xl mx-auto">

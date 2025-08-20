@@ -1,7 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
+ 
 
 'use client';
 
@@ -14,13 +14,13 @@ interface MapLegendProps {
     deliveryCost: number;
 }
 
-export function MapLegend({ 
-    farmerCoords, 
-    customerCoords, 
-    deliveryDistance, 
-    deliveryCost 
+export function MapLegend({
+    farmerCoords,
+    customerCoords,
+    deliveryDistance,
+    deliveryCost
 }: MapLegendProps) {
-    const hasValidCoords = (coords: any) => 
+    const hasValidCoords = (coords: any) =>
         coords && typeof coords.lat === 'number' && typeof coords.lng === 'number';
 
     if (!hasValidCoords(farmerCoords) && !hasValidCoords(customerCoords)) {

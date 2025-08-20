@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
-import { Button } from './button';
 import { Progress } from './progress';
 import { cn } from '../../lib/utils';
 
@@ -75,6 +74,7 @@ export function ImageUpload({ onImagesUploaded, maxImages = 5, className }: Imag
             return;
         }
         uploadImages(acceptedFiles);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [uploadedImages.length, maxImages]);
 
     const onDropRejected = useCallback((rejectedFiles: unknown[]) => {

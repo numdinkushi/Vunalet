@@ -75,11 +75,9 @@ export function SouthAfricanAddress({
         }
     }, [value.streetAddress, value.city, value.province, value.postalCode]);
 
-    const handleAddressChange = (field: keyof SouthAfricanAddressData, fieldValue: any) => {
-        onChange({
-            ...value,
-            [field]: fieldValue
-        });
+    const handleAddressChange = (field: keyof typeof value, newValue: string) => {
+        const updatedValue = { ...value, [field]: newValue };
+        onChange(updatedValue);
     };
 
     return (

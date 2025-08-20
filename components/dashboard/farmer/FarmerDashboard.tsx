@@ -58,13 +58,13 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
     const [showAddProduct, setShowAddProduct] = useState(false);
     const { user } = useUser();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const balance = useQuery((api as any).balances.getUserBalance, {
         clerkUserId: user?.id || '',
         token: LZC_TOKEN_NAME,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const upsertBalance = useMutation((api as any).balances.upsertUserBalance);
 
     useEffect(() => {

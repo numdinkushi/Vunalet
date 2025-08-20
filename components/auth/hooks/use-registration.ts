@@ -186,6 +186,7 @@ export function useRegistration() {
                         toast.success(`Welcome! R${integrationResult.mintedAmount} has been added to your wallet.`);
                     }
                 } catch (balanceError) {
+                    console.log(balanceError);
                     // Don't fail the registration if balance update fails
                 }
             }

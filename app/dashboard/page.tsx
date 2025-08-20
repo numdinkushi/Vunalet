@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser, SignInButton } from '@clerk/nextjs';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Dashboard } from '../../components/dashboard/Dashboard';
 import { UserRegistration } from '../../components/auth/UserRegistration';
