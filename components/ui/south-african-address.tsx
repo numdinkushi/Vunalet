@@ -28,6 +28,9 @@ export function SouthAfricanAddress({ value, onChange, label, className }: South
         onChange(updatedValue);
     };
 
+    // Get available cities based on selected province
+    const availableCities = value.province ? getCitiesByProvince(value.province) : [];
+
     // Update coordinates when city or province changes
     useEffect(() => {
         if (value.city && value.province) {
@@ -59,7 +62,7 @@ export function SouthAfricanAddress({ value, onChange, label, className }: South
     return (
         <div className={`space-y-4 ${className}`}>
             <Label className="text-sm font-medium text-gray-700">
-                {label} {value.required && '*'}
+                {label}
             </Label>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -120,7 +123,6 @@ export function SouthAfricanAddress({ value, onChange, label, className }: South
                     onChange={(e) => handleAddressChange('streetAddress', e.target.value)}
                     placeholder="e.g., 123 Main Street, Apartment 4B"
                     className="h-11"
-                    required={value.required}
                 />
             </div>
 

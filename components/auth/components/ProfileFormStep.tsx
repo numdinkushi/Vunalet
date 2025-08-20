@@ -100,7 +100,6 @@ export function ProfileFormStep({
                                 value={formData.address}
                                 onChange={(address) => onInputChange('address', address)}
                                 label="Address"
-                                required={true}
                             />
 
                             {formData.role === 'farmer' && (
