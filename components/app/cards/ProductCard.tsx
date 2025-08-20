@@ -3,7 +3,6 @@
 import { motion } from 'framer-motion';
 import { Star, Heart, MapPin, ShoppingCart } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { useQuery } from 'convex/react';
