@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { mutation } from "./_generated/server";
 import { allProducts } from "../constants/products";
+import { SOUTH_AFRICAN_PROVINCES } from "../constants/south-africa-addresses";
 
 // Migration to update existing products from category to categoryId
 export const migrateProductsToCategoryId = mutation({
@@ -220,6 +221,88 @@ export const randomizeFeaturedProducts = mutation({
             featuredCount: featuredProducts.length,
             farmersWithFeatured: farmerIds.length,
             featuredPerFarmer: maxFeaturedPerFarmer
+        };
+    },
+});
+
+// Migration to update user profiles with random South African addresses and coordinates
+export const updateUserProfilesWithSouthAfricanAddresses = mutation({
+    args: {},
+    handler: async (ctx) => {
+        // Get all user profiles
+        const userProfiles = await ctx.db.query("userProfiles").collect();
+
+        let updatedCount = 0;
+        const addressStats = {
+            provinces: new Set<string>(),
+            cities: new Set<string>(),
+        };
+
+        for (const profile of userProfiles) {
+            // Randomly select a province
+            const randomProvince = SOUTH_AFRICAN_PROVINCES[Math.floor(Math.random() * SOUTH_AFRICAN_PROVINCES.length)];
+
+            // Randomly select a city from that province
+            const randomCity = randomProvince.cities[Math.floor(Math.random() * randomProvince.cities.length)];
+
+            // Generate random street address components
+            const streetNumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100];
+            const streetNames = [
+                "Main Street", "Oak Avenue", "Pine Road", "Cedar Lane", "Maple Drive",
+                "Elm Street", "Willow Way", "Birch Boulevard", "Spruce Street", "Cypress Court",
+                "Acacia Avenue", "Jacaranda Drive", "Protea Road", "Strelitzia Street", "Aloe Lane",
+                "King Street", "Queen Avenue", "Victoria Road", "Nelson Drive", "Mandela Street",
+                "Freedom Avenue", "Liberty Road", "Peace Street", "Hope Lane", "Unity Drive",
+                "Shaka Street", "Zulu Avenue", "Xhosa Road", "Ndebele Drive", "Sotho Lane",
+                "Venda Boulevard", "Tsonga Court", "Swazi Way", "Tswana Street", "Pedi Avenue"
+            ];
+            const streetTypes = ["Street", "Avenue", "Road", "Drive", "Lane", "Boulevard", "Court", "Way"];
+
+            const randomStreetNumber = streetNumbers[Math.floor(Math.random() * streetNumbers.length)];
+            const randomStreetName = streetNames[Math.floor(Math.random() * streetNames.length)];
+            const randomStreetType = streetTypes[Math.floor(Math.random() * streetTypes.length)];
+
+            // Generate postal code (South African format: 4 digits)
+            const postalCode = Math.floor(Math.random() * 9000) + 1000; // 1000-9999
+
+            // Create full address
+            const streetAddress = `${randomStreetNumber} ${randomStreetName} ${randomStreetType}`;
+            const fullAddress = `${streetAddress}, ${randomCity.name}, ${randomProvince.name} ${postalCode}, South Africa`;
+
+            // Add small random offset to coordinates for variety (within ~5km radius)
+            const latOffset = (Math.random() - 0.5) * 0.05; // ±0.025 degrees ≈ ±2.5km
+            const lngOffset = (Math.random() - 0.5) * 0.05;
+
+            const coordinates = {
+                lat: randomCity.coordinates.lat + latOffset,
+                lng: randomCity.coordinates.lng + lngOffset
+            };
+
+            // Update the user profile - ensuring ALL address fields are properly set
+            await ctx.db.patch(profile._id, {
+                address: fullAddress, // Legacy address field - now properly formatted
+                addressProvince: randomProvince.name,
+                addressCity: randomCity.name,
+                addressStreet: streetAddress,
+                addressPostalCode: postalCode.toString(),
+                addressFull: fullAddress,
+                location: `${randomCity.name}, ${randomProvince.name}`,
+                coordinates: coordinates,
+                updatedAt: Date.now(),
+            });
+
+            updatedCount++;
+            addressStats.provinces.add(randomProvince.name);
+            addressStats.cities.add(randomCity.name);
+        }
+
+        return {
+            updatedCount,
+            totalProfiles: userProfiles.length,
+            provincesUsed: Array.from(addressStats.provinces),
+            citiesUsed: Array.from(addressStats.cities),
+            uniqueProvinces: addressStats.provinces.size,
+            uniqueCities: addressStats.cities.size
         };
     },
 }); 
