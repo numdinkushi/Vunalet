@@ -29,14 +29,8 @@ const team = [
         bio: "Visionary leader passionate about revolutionizing agricultural commerce and empowering local farmers"
     },
     {
-        name: "Gabriel Temtsen",
-        role: "Co-founder",
-        image: "/assets/founders/gabe.png",
-        bio: "Strategic innovator driving sustainable solutions and community development in agriculture"
-    },
-    {
         name: "Sophia A. Gabriel",
-        role: "Developer",
+        role: "Co-founder",
         image: "/assets/founders/sophie.png",
         bio: "Technical expert building cutting-edge solutions to connect farmers and consumers seamlessly"
     }
@@ -117,7 +111,7 @@ export function AboutPage() {
                         </p>
                     </motion.div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
                         {team.map((member, index) => (
                             <motion.div
                                 key={index}
