@@ -99,6 +99,7 @@ interface FarmerDashboardProps {
         clerkUserId: string;
         liskId?: string;
         location?: string;
+        specialties?: string[];
     };
 }
 
@@ -434,7 +435,9 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
                                                 <SelectValue placeholder="Select category" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {categories?.map((category: any) => (
+                                                {categories?.filter((category: any) =>
+                                                    userProfile.specialties?.includes(category.categoryId)
+                                                ).map((category: any) => (
                                                     <SelectItem key={category.categoryId} value={category.categoryId}>
                                                         {category.name}
                                                     </SelectItem>
