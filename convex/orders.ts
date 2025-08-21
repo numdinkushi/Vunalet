@@ -202,9 +202,10 @@ export const getOrdersByDispatcherWithUserInfo = query({
             .order("desc")
             .collect();
 
-        // Get unique buyer and farmer IDs from orders
+        // Get unique buyer, farmer, and dispatcher IDs from orders
         const buyerIds = [...new Set(orders.map(order => order.buyerId))];
         const farmerIds = [...new Set(orders.map(order => order.farmerId))];
+        const dispatcherIds = [...new Set(orders.map(order => order.dispatcherId).filter((id): id is string => id !== undefined))];
 
         // Fetch buyer profiles
         const buyerProfiles = await Promise.all(
@@ -228,6 +229,17 @@ export const getOrdersByDispatcherWithUserInfo = query({
             })
         );
 
+        // Fetch dispatcher profiles
+        const dispatcherProfiles = await Promise.all(
+            dispatcherIds.map(async (dispatcherId) => {
+                const profile = await ctx.db
+                    .query("userProfiles")
+                    .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", dispatcherId))
+                    .first();
+                return { dispatcherId, profile };
+            })
+        );
+
         // Create maps of ID to profile
         const buyerMap = new Map();
         buyerProfiles.forEach(({ buyerId, profile }) => {
@@ -243,11 +255,19 @@ export const getOrdersByDispatcherWithUserInfo = query({
             }
         });
 
+        const dispatcherMap = new Map();
+        dispatcherProfiles.forEach(({ dispatcherId, profile }) => {
+            if (profile) {
+                dispatcherMap.set(dispatcherId, profile);
+            }
+        });
+
         // Add user information to orders
         return orders.map(order => ({
             ...order,
             buyerInfo: buyerMap.get(order.buyerId) || null,
-            farmerInfo: farmerMap.get(order.farmerId) || null
+            farmerInfo: farmerMap.get(order.farmerId) || null,
+            dispatcherInfo: dispatcherMap.get(order.dispatcherId) || null
         }));
     },
 });
@@ -416,7 +436,17 @@ export const getOrderStats = query({
             inTransit: orders.filter(o => o.orderStatus === "in_transit").length,
             delivered: orders.filter(o => o.orderStatus === "delivered").length,
             cancelled: orders.filter(o => o.orderStatus === "cancelled").length,
-            totalRevenue: orders.reduce((sum, order) => sum + order.totalAmount, 0),
+            totalRevenue: orders
+                .filter(o => o.orderStatus === "delivered")
+                .reduce((sum, order) => {
+                    if (args.role === "farmer") {
+                        return sum + order.farmerAmount;
+                    } else if (args.role === "dispatcher") {
+                        return sum + order.dispatcherAmount;
+                    } else {
+                        return sum + order.totalAmount;
+                    }
+                }, 0),
         };
 
         return stats;

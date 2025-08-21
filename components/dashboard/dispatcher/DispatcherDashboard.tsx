@@ -9,7 +9,10 @@ import {
     Truck,
     Clock,
     DollarSign,
-    CheckCircle
+    CheckCircle,
+    Package,
+    MapPin,
+    User
 } from 'lucide-react';
 import { StatCard, DeliveryCard } from './components';
 import { WalletCard } from '../shared/WalletCard';
@@ -17,6 +20,7 @@ import { useUser } from '@clerk/nextjs';
 import { useEffect } from 'react';
 import { LZC_TOKEN_NAME } from '../../../constants/tokens';
 import { useOrderManagement } from '../../../hooks/use-order-management';
+import { Badge } from '../../ui/badge';
 
 // Type for Convex order structure with user info
 interface ConvexOrder {
@@ -66,6 +70,11 @@ interface ConvexOrder {
         firstName: string;
         lastName: string;
         businessName?: string;
+        email: string;
+    } | null;
+    dispatcherInfo?: {
+        firstName: string;
+        lastName: string;
         email: string;
     } | null;
 }
@@ -174,7 +183,9 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
             deliveryAddress: order.deliveryAddress,
             estimatedDeliveryTime: order.estimatedDeliveryTime,
             riderId: order.dispatcherId,
-            riderName: order.dispatcherId || '',
+            riderName: order.dispatcherInfo ?
+                `${order.dispatcherInfo.firstName} ${order.dispatcherInfo.lastName}` :
+                order.dispatcherId || '',
             farmName: order.farmerInfo ?
                 (order.farmerInfo.businessName || `${order.farmerInfo.firstName} ${order.farmerInfo.lastName}`) :
                 order.farmerId,
@@ -280,7 +291,9 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
-                                {transformedOrders.filter(order => order.orderStatus === 'in_transit' || order.orderStatus === 'ready').map((order) => (
+                                {transformedOrders.filter(order =>
+                                    ['pending', 'confirmed', 'preparing', 'ready', 'in_transit'].includes(order.orderStatus)
+                                ).map((order) => (
                                     <DeliveryCard key={order._id} order={order} />
                                 ))}
                             </div>
@@ -303,45 +316,6 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
                     </Card>
                 </TabsContent>
             </Tabs>
-
-            {/* Orders section */}
-            <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold mb-4">Active Deliveries</h3>
-                {orders?.map((order) => (
-                    <div key={order._id} className="border-b py-4 last:border-b-0">
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <p className="font-medium">Order #{order._id.slice(-6)}</p>
-                                <p className="text-sm text-gray-600">
-                                    {order.products.map(p => p.name).join(', ')}
-                                </p>
-                                <p className="text-sm text-gray-600">
-                                    To: {order.deliveryAddress}
-                                </p>
-                                <p className="text-sm text-gray-600">
-                                    Customer: {order.buyerInfo ? `${order.buyerInfo.firstName} ${order.buyerInfo.lastName}` : order.buyerId}
-                                </p>
-                                <p className="text-sm text-gray-600">
-                                    Farm: {order.farmerInfo ? (order.farmerInfo.businessName || `${order.farmerInfo.firstName} ${order.farmerInfo.lastName}`) : order.farmerId}
-                                </p>
-                            </div>
-                            <div className="text-right">
-                                <p className="font-medium">R{order.totalCost.toFixed(2)}</p>
-                                <p className="text-sm text-gray-600">{order.orderStatus}</p>
-                                {order.orderStatus === 'in_transit' && (
-                                    <button
-                                        onClick={() => handleMarkAsDelivered(order._id)}
-                                        disabled={isProcessing}
-                                        className="mt-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm disabled:opacity-50"
-                                    >
-                                        {isProcessing ? 'Processing...' : 'Mark as Delivered'}
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
         </div>
     );
 } 
