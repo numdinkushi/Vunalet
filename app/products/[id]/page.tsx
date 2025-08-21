@@ -135,8 +135,23 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!user || !userProfile || !farmer) {
-            toast.error('Please sign in and ensure all user data is available');
+        if (!product) {
+            toast.error('Product not found');
+            return;
+        }
+
+        if (!user) {
+            toast.error('Please sign in to place an order');
+            return;
+        }
+
+        if (!userProfile) {
+            toast.error('Please complete your profile to place an order');
+            return;
+        }
+
+        if (!farmer) {
+            toast.error('Farmer information not available');
             return;
         }
 
