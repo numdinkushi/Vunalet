@@ -41,10 +41,7 @@ export interface PaginationState {
     productsPerPage: number;
 }
 
-export interface ProductsPageProps {
-    // This interface is intentionally empty as no props are currently needed
-    // but may be added in the future for extensibility
-}
+
 
 export interface ProductCardProps {
     product: Product;
