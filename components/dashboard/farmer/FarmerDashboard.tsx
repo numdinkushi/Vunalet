@@ -7,9 +7,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
-import { Badge } from '../../ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
@@ -22,26 +21,17 @@ import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover';
 import {
     Plus,
     Package,
-    TrendingUp,
     DollarSign,
-    MapPin,
     Clock,
-    Edit,
-    Trash2,
-    Eye,
-    Upload,
-    Leaf,
     Star,
     Calendar as CalendarIcon
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { StatCard, ProductCard, OrderCard } from './components';
 import { cn } from '../../../lib/utils';
 import { WalletCard } from '../shared/WalletCard';
 import { useUser } from '@clerk/nextjs';
 import { useEffect } from 'react';
-import { walletService } from '../../../lib/services/wallet/wallet.service';
 import { LZC_TOKEN_NAME } from '../../../constants/tokens';
 
 // Type for Convex order structure with buyer info
