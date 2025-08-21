@@ -1,6 +1,23 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+import { api } from './_generated/api';
+
+interface DispatcherAssignmentResult {
+    dispatcherId: string;
+    isAssigned: boolean;
+    reason?: string;
+}
+
+interface DispatcherWorkload {
+    dispatcherId: string;
+    pendingOrders: number;
+    totalOrders: number;
+}
+
+interface Dispatcher {
+    clerkUserId: string;
+}
 
 // Create basic user profile (without role)
 export const createBasicUserProfile = mutation({
@@ -391,5 +408,150 @@ export const getUserProfileDebug = query({
 
         console.log('Debug - User profile data:', profile);
         return profile;
+    },
+});
+
+/**
+ * Utility to find the best dispatcher for assignment based on workload
+ */
+export class DispatcherAssignmentService {
+    /**
+     * Get dispatcher workload from Convex
+     */
+    static async getDispatcherWorkload(dispatchers: Dispatcher[]): Promise<DispatcherWorkload[]> {
+        const workloads: DispatcherWorkload[] = [];
+
+        for (const dispatcher of dispatchers) {
+            // This will be called from the Convex mutation
+            // For now, we'll return a placeholder structure
+            workloads.push({
+                dispatcherId: dispatcher.clerkUserId,
+                pendingOrders: 0, // Will be populated by Convex query
+                totalOrders: 0,   // Will be populated by Convex query
+            });
+        }
+
+        return workloads;
+    }
+
+    /**
+     * Find the best dispatcher for assignment
+     */
+    static findBestDispatcher(workloads: DispatcherWorkload[]): DispatcherAssignmentResult {
+        if (workloads.length === 0) {
+            return {
+                dispatcherId: '',
+                isAssigned: false,
+                reason: 'No dispatchers available'
+            };
+        }
+
+        // Sort by pending orders (ascending) and then by total orders (ascending)
+        const sortedWorkloads = workloads.sort((a, b) => {
+            if (a.pendingOrders !== b.pendingOrders) {
+                return a.pendingOrders - b.pendingOrders;
+            }
+            return a.totalOrders - b.totalOrders;
+        });
+
+        const bestDispatcher = sortedWorkloads[0];
+
+        return {
+            dispatcherId: bestDispatcher.dispatcherId,
+            isAssigned: true,
+            reason: `Assigned to dispatcher with ${bestDispatcher.pendingOrders} pending orders`
+        };
+    }
+
+    /**
+     * Get random dispatcher (fallback method)
+     */
+    static getRandomDispatcher(dispatchers: Dispatcher[]): DispatcherAssignmentResult {
+        if (dispatchers.length === 0) {
+            return {
+                dispatcherId: '',
+                isAssigned: false,
+                reason: 'No dispatchers available'
+            };
+        }
+
+        const randomIndex = Math.floor(Math.random() * dispatchers.length);
+        const selectedDispatcher = dispatchers[randomIndex];
+
+        return {
+            dispatcherId: selectedDispatcher.clerkUserId,
+            isAssigned: true,
+            reason: 'Randomly assigned'
+        };
+    }
+}
+
+// Get dispatcher workload for assignment
+export const getDispatcherWorkload = query({
+    args: { dispatcherIds: v.array(v.string()) },
+    handler: async (ctx, args): Promise<DispatcherWorkload[]> => {
+        const workloads: DispatcherWorkload[] = [];
+
+        for (const dispatcherId of args.dispatcherIds) {
+            // Get pending orders for this dispatcher
+            const pendingOrders = await ctx.db
+                .query("orders")
+                .withIndex("by_dispatcher", (q) => q.eq("dispatcherId", dispatcherId))
+                .filter((q) => q.eq(q.field("orderStatus"), "pending"))
+                .collect();
+
+            // Get total orders for this dispatcher
+            const totalOrders = await ctx.db
+                .query("orders")
+                .withIndex("by_dispatcher", (q) => q.eq("dispatcherId", dispatcherId))
+                .collect();
+
+            workloads.push({
+                dispatcherId,
+                pendingOrders: pendingOrders.length,
+                totalOrders: totalOrders.length,
+            });
+        }
+
+        return workloads;
+    },
+});
+
+// Auto-assign dispatcher to order
+export const autoAssignDispatcher = mutation({
+    args: {},
+    handler: async (ctx): Promise<{ dispatcherId: string; pendingOrders: number; reason: string; }> => {
+        // Get all dispatchers (remove verification check)
+        const dispatchers = await ctx.db
+            .query("userProfiles")
+            .withIndex("by_role", (q) => q.eq("role", "dispatcher"))
+            .collect();
+
+        if (dispatchers.length === 0) {
+            throw new Error("No dispatchers available");
+        }
+
+        const dispatcherIds = dispatchers.map(d => d.clerkUserId);
+
+        // Get workload for all dispatchers
+        const workloads: DispatcherWorkload[] = await ctx.runQuery(api.users.getDispatcherWorkload, {
+            dispatcherIds
+        });
+
+        // Find dispatcher with least pending orders
+        const sortedWorkloads: DispatcherWorkload[] = workloads.sort((a: DispatcherWorkload, b: DispatcherWorkload) => {
+            if (a.pendingOrders !== b.pendingOrders) {
+                return a.pendingOrders - b.pendingOrders;
+            }
+            return a.totalOrders - b.totalOrders;
+        });
+
+        const bestDispatcher: DispatcherWorkload = sortedWorkloads[0];
+
+        return {
+            dispatcherId: bestDispatcher.dispatcherId,
+            pendingOrders: bestDispatcher.pendingOrders,
+            reason: `Assigned to dispatcher with ${bestDispatcher.pendingOrders} pending orders`
+        };
     },
 }); 

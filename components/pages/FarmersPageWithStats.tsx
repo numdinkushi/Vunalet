@@ -7,6 +7,30 @@ import { VideoBackground } from '../ui/VideoBackground';
 import { motion } from 'framer-motion';
 import React from 'react';
 
+interface FarmerStats {
+    totalProducts: number;
+    totalCustomers: number;
+    averageRating: number;
+    totalRatings: number;
+}
+
+interface Farmer {
+    _id: string;
+    clerkUserId: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    businessName?: string;
+    bio?: string;
+    farmSize?: string;
+    experience?: string;
+    specialties?: string[];
+    isOrganicCertified?: boolean;
+    profilePicture?: string;
+    location?: string;
+    stats: FarmerStats;
+}
+
 export function FarmersPageWithStats() {
     // Use the new query that includes all farmer statistics
     const farmersWithStats = useQuery(api.users.getFarmersWithStats);
@@ -32,7 +56,7 @@ export function FarmersPageWithStats() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-green-900 via-green-800 to-green-900">
-            <VideoBackground  />
+            <VideoBackground />
             <div className="relative z-10 container mx-auto px-4 py-16">
                 {/* Header */}
                 <motion.div
@@ -52,7 +76,7 @@ export function FarmersPageWithStats() {
 
                 {/* Farmers Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {farmersWithStats.map((farmer, index) => (
+                    {farmersWithStats.map((farmer: Farmer, index: number) => (
                         <motion.div
                             key={farmer.clerkUserId}
                             initial={{ opacity: 0, y: 20 }}
@@ -103,21 +127,21 @@ export function FarmersPageWithStats() {
 
                         <div className="bg-black/50 rounded-lg p-6 text-center">
                             <div className="text-3xl font-bold text-white mb-2">
-                                {farmersWithStats.reduce((sum, farmer) => sum + farmer.stats.totalProducts, 0)}
+                                {farmersWithStats.reduce((sum: number, farmer: Farmer) => sum + farmer.stats.totalProducts, 0)}
                             </div>
                             <div className="text-gray-300">Total Products</div>
                         </div>
 
                         <div className="bg-black/50 rounded-lg p-6 text-center">
                             <div className="text-3xl font-bold text-white mb-2">
-                                {farmersWithStats.reduce((sum, farmer) => sum + farmer.stats.totalCustomers, 0)}
+                                {farmersWithStats.reduce((sum: number, farmer: Farmer) => sum + farmer.stats.totalCustomers, 0)}
                             </div>
                             <div className="text-gray-300">Happy Customers</div>
                         </div>
 
                         <div className="bg-black/50 rounded-lg p-6 text-center">
                             <div className="text-3xl font-bold text-white mb-2">
-                                {farmersWithStats.filter(f => f.isOrganicCertified).length}
+                                {farmersWithStats.filter((f: Farmer) => f.isOrganicCertified).length}
                             </div>
                             <div className="text-gray-300">Organic Certified</div>
                         </div>

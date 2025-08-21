@@ -1,13 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
-import { Wallet, BookOpen, TrendingUp, TrendingDown } from 'lucide-react';
-import { formatCurrency } from '../buyer/utils';
 import { useBalanceDisplay } from '../../../hooks/use-balance-display';
 
-interface WalletCardProps {
-    className?: string;
-}
-
-export function WalletCard({ className = '' }: WalletCardProps) {
+export function BalanceDisplay() {
     const { 
         walletBalance, 
         ledgerBalance, 
@@ -18,24 +11,24 @@ export function WalletCard({ className = '' }: WalletCardProps) {
     } = useBalanceDisplay();
 
     return (
-        <div className={`bg-white rounded-lg shadow p-6 ${className}`}>
-            <h3 className="text-lg font-semibold mb-4">Wallet Overview</h3>
-            <div className="space-y-4">
+        <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold mb-4">Wallet Balance</h3>
+            <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                    <span className="flex items-center text-gray-600">
+                    <span className="flex items-center">
                         <span className="mr-2">{getBalanceIcon('wallet', walletBalance)}</span>
-                        Available Balance:
+                        Wallet Balance:
                     </span>
-                    <span className={`font-bold text-lg ${getBalanceColor('wallet', walletBalance)}`}>
+                    <span className={`font-bold ${getBalanceColor('wallet', walletBalance)}`}>
                         R{walletBalance.toFixed(2)}
                     </span>
                 </div>
                 <div className="flex justify-between items-center">
-                    <span className="flex items-center text-gray-600">
+                    <span className="flex items-center">
                         <span className="mr-2">{getBalanceIcon('ledger', ledgerBalance, userRole)}</span>
                         {userRole === 'buyer' ? 'Pending Payment:' : 'Pending Earnings:'}
                     </span>
-                    <span className={`font-bold text-lg ${getBalanceColor('ledger', ledgerBalance, userRole)}`}>
+                    <span className={`font-bold ${getBalanceColor('ledger', ledgerBalance, userRole)}`}>
                         {formatLedgerBalance(ledgerBalance, userRole)}
                     </span>
                 </div>

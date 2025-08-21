@@ -7,6 +7,7 @@ export const createOrder = mutation({
     args: {
         buyerId: v.string(),
         farmerId: v.string(),
+        dispatcherId: v.optional(v.string()),
         products: v.array(v.object({
             productId: v.string(),
             name: v.string(),
@@ -15,8 +16,15 @@ export const createOrder = mutation({
             unit: v.string(),
         })),
         totalAmount: v.number(),
+        farmerAmount: v.number(),
+        dispatcherAmount: v.number(),
         deliveryAddress: v.string(),
         deliveryCoordinates: v.optional(v.object({
+            lat: v.number(),
+            lng: v.number()
+        })),
+        pickupLocation: v.optional(v.string()),
+        pickupCoordinates: v.optional(v.object({
             lat: v.number(),
             lng: v.number()
         })),
@@ -27,11 +35,41 @@ export const createOrder = mutation({
         paymentStatus: v.union(v.literal("pending"), v.literal("paid"), v.literal("failed")),
         orderStatus: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("delivered"), v.literal("cancelled")),
         specialInstructions: v.optional(v.string()),
+        estimatedPickupTime: v.optional(v.string()),
         estimatedDeliveryTime: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
         return await ctx.db.insert("orders", {
             ...args,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        });
+    },
+});
+
+// Create a delivery record
+export const createDelivery = mutation({
+    args: {
+        orderId: v.string(),
+        dispatcherId: v.string(),
+        pickupLocation: v.string(),
+        deliveryLocation: v.string(),
+        pickupCoordinates: v.optional(v.object({
+            lat: v.number(),
+            lng: v.number()
+        })),
+        deliveryCoordinates: v.optional(v.object({
+            lat: v.number(),
+            lng: v.number()
+        })),
+        estimatedPickupTime: v.optional(v.string()),
+        estimatedDeliveryTime: v.optional(v.string()),
+        notes: v.optional(v.string()),
+    },
+    handler: async (ctx, args) => {
+        return await ctx.db.insert("deliveries", {
+            ...args,
+            status: "assigned",
             createdAt: Date.now(),
             updatedAt: Date.now(),
         });
@@ -47,6 +85,146 @@ export const getOrdersByBuyer = query({
             .withIndex("by_buyer", (q) => q.eq("buyerId", args.buyerId))
             .order("desc")
             .collect();
+    },
+});
+
+// Get orders by buyer with farmer information
+export const getOrdersByBuyerWithFarmerInfo = query({
+    args: { buyerId: v.string() },
+    handler: async (ctx, args) => {
+        const orders = await ctx.db
+            .query("orders")
+            .withIndex("by_buyer", (q) => q.eq("buyerId", args.buyerId))
+            .order("desc")
+            .collect();
+
+        // Get unique farmer IDs from orders
+        const farmerIds = [...new Set(orders.map(order => order.farmerId))];
+
+        // Fetch farmer profiles
+        const farmerProfiles = await Promise.all(
+            farmerIds.map(async (farmerId) => {
+                const profile = await ctx.db
+                    .query("userProfiles")
+                    .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", farmerId))
+                    .first();
+                return { farmerId, profile };
+            })
+        );
+
+        // Create a map of farmer ID to profile
+        const farmerMap = new Map();
+        farmerProfiles.forEach(({ farmerId, profile }) => {
+            if (profile) {
+                farmerMap.set(farmerId, profile);
+            }
+        });
+
+        // Add farmer information to orders
+        return orders.map(order => ({
+            ...order,
+            farmerInfo: farmerMap.get(order.farmerId) || null
+        }));
+    },
+});
+
+// Get orders by farmer with buyer and dispatcher information
+export const getOrdersByFarmerWithUserInfo = query({
+    args: { farmerId: v.string() },
+    handler: async (ctx, args) => {
+        const orders = await ctx.db
+            .query("orders")
+            .withIndex("by_farmer", (q) => q.eq("farmerId", args.farmerId))
+            .order("desc")
+            .collect();
+
+        // Get unique buyer and dispatcher IDs from orders
+        const buyerIds = [...new Set(orders.map(order => order.buyerId))];
+        const dispatcherIds = [...new Set(orders.map(order => order.dispatcherId).filter((id): id is string => id !== undefined))];
+
+        // Fetch buyer profiles
+        const buyerProfiles = await Promise.all(
+            buyerIds.map(async (buyerId) => {
+                const profile = await ctx.db
+                    .query("userProfiles")
+                    .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", buyerId))
+                    .first();
+                return { buyerId, profile };
+            })
+        );
+
+        // Fetch dispatcher profiles
+        const dispatcherProfiles = await Promise.all(
+            dispatcherIds.map(async (dispatcherId) => {
+                const profile = await ctx.db
+                    .query("userProfiles")
+                    .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", dispatcherId))
+                    .first();
+                return { dispatcherId, profile };
+            })
+        );
+
+        // Create maps of ID to profile
+        const buyerMap = new Map();
+        buyerProfiles.forEach(({ buyerId, profile }) => {
+            if (profile) {
+                buyerMap.set(buyerId, profile);
+            }
+        });
+
+        const dispatcherMap = new Map();
+        dispatcherProfiles.forEach(({ dispatcherId, profile }) => {
+            if (profile) {
+                dispatcherMap.set(dispatcherId, profile);
+            }
+        });
+
+        // Add user information to orders
+        return orders.map(order => ({
+            ...order,
+            buyerInfo: buyerMap.get(order.buyerId) || null,
+            dispatcherInfo: dispatcherMap.get(order.dispatcherId) || null
+        }));
+    },
+});
+
+// Get orders by farmer with buyer information
+export const getOrdersByFarmerWithBuyerInfo = query({
+    args: { farmerId: v.string() },
+    handler: async (ctx, args) => {
+        const orders = await ctx.db
+            .query("orders")
+            .withIndex("by_farmer", (q) => q.eq("farmerId", args.farmerId))
+            .order("desc")
+            .collect();
+
+        // Get unique buyer IDs from orders
+        const buyerIds = [...new Set(orders.map(order => order.buyerId))];
+
+        // Fetch buyer profiles
+        const buyerProfiles = await Promise.all(
+            buyerIds.map(async (buyerId) => {
+                const profile = await ctx.db
+                    .query("userProfiles")
+                    .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", buyerId))
+                    .first();
+                return { buyerId, profile };
+            })
+        );
+
+        // Create a map of buyer ID to profile
+        const buyerMap = new Map();
+        buyerProfiles.forEach(({ buyerId, profile }) => {
+            if (profile) {
+                buyerMap.set(buyerId, profile);
+            }
+        });
+
+        // Add buyer information to orders
+        return orders.map(order => ({
+            ...order,
+            buyerInfo: buyerMap.get(order.buyerId) || null
+        }));
     },
 });
 
@@ -71,6 +249,86 @@ export const getOrdersByDispatcher = query({
             .withIndex("by_dispatcher", (q) => q.eq("dispatcherId", args.dispatcherId))
             .order("desc")
             .collect();
+    },
+});
+
+// Get orders by dispatcher with buyer and farmer information
+export const getOrdersByDispatcherWithUserInfo = query({
+    args: { dispatcherId: v.string() },
+    handler: async (ctx, args) => {
+        const orders = await ctx.db
+            .query("orders")
+            .withIndex("by_dispatcher", (q) => q.eq("dispatcherId", args.dispatcherId))
+            .order("desc")
+            .collect();
+
+        // Get unique buyer, farmer, and dispatcher IDs from orders
+        const buyerIds = [...new Set(orders.map(order => order.buyerId))];
+        const farmerIds = [...new Set(orders.map(order => order.farmerId))];
+        const dispatcherIds = [...new Set(orders.map(order => order.dispatcherId).filter((id): id is string => id !== undefined))];
+
+        // Fetch buyer profiles
+        const buyerProfiles = await Promise.all(
+            buyerIds.map(async (buyerId) => {
+                const profile = await ctx.db
+                    .query("userProfiles")
+                    .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", buyerId))
+                    .first();
+                return { buyerId, profile };
+            })
+        );
+
+        // Fetch farmer profiles
+        const farmerProfiles = await Promise.all(
+            farmerIds.map(async (farmerId) => {
+                const profile = await ctx.db
+                    .query("userProfiles")
+                    .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", farmerId))
+                    .first();
+                return { farmerId, profile };
+            })
+        );
+
+        // Fetch dispatcher profiles
+        const dispatcherProfiles = await Promise.all(
+            dispatcherIds.map(async (dispatcherId) => {
+                const profile = await ctx.db
+                    .query("userProfiles")
+                    .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", dispatcherId))
+                    .first();
+                return { dispatcherId, profile };
+            })
+        );
+
+        // Create maps of ID to profile
+        const buyerMap = new Map();
+        buyerProfiles.forEach(({ buyerId, profile }) => {
+            if (profile) {
+                buyerMap.set(buyerId, profile);
+            }
+        });
+
+        const farmerMap = new Map();
+        farmerProfiles.forEach(({ farmerId, profile }) => {
+            if (profile) {
+                farmerMap.set(farmerId, profile);
+            }
+        });
+
+        const dispatcherMap = new Map();
+        dispatcherProfiles.forEach(({ dispatcherId, profile }) => {
+            if (profile) {
+                dispatcherMap.set(dispatcherId, profile);
+            }
+        });
+
+        // Add user information to orders
+        return orders.map(order => ({
+            ...order,
+            buyerInfo: buyerMap.get(order.buyerId) || null,
+            farmerInfo: farmerMap.get(order.farmerId) || null,
+            dispatcherInfo: dispatcherMap.get(order.dispatcherId) || null
+        }));
     },
 });
 
@@ -238,9 +496,95 @@ export const getOrderStats = query({
             inTransit: orders.filter(o => o.orderStatus === "in_transit").length,
             delivered: orders.filter(o => o.orderStatus === "delivered").length,
             cancelled: orders.filter(o => o.orderStatus === "cancelled").length,
-            totalRevenue: orders.reduce((sum, order) => sum + order.totalAmount, 0),
+            totalRevenue: orders
+                .filter(o => o.orderStatus === "delivered")
+                .reduce((sum, order) => {
+                    if (args.role === "farmer") {
+                        return sum + order.farmerAmount;
+                    } else if (args.role === "dispatcher") {
+                        return sum + order.dispatcherAmount;
+                    } else {
+                        return sum + order.totalAmount;
+                    }
+                }, 0),
         };
 
         return stats;
+    },
+});
+
+// Process payment transfer for order
+export const processPaymentTransfer = mutation({
+    args: {
+        orderId: v.string(),
+        buyerLiskId: v.string(),
+        farmerPaymentId: v.string(),
+        amount: v.number(),
+        notes: v.optional(v.string()),
+    },
+    handler: async (ctx, args) => {
+        try {
+            // First, update the order payment status to paid
+            await ctx.db.patch(args.orderId as Id<"orders">, {
+                paymentStatus: "paid",
+                updatedAt: Date.now(),
+            });
+
+            // Return success - the actual transfer will be handled by the frontend
+            // calling the API endpoint
+            return {
+                success: true,
+                message: "Payment status updated successfully",
+                orderId: args.orderId,
+            };
+        } catch (error) {
+            console.error("Failed to process payment transfer:", error);
+            throw new Error("Failed to process payment transfer");
+        }
+    },
+});
+
+// Get pending order total for buyer (sum of totalCost for pending orders)
+export const getBuyerPendingTotal = query({
+    args: { buyerId: v.string() },
+    handler: async (ctx, args) => {
+        const pendingOrders = await ctx.db
+            .query("orders")
+            .withIndex("by_buyer", (q) => q.eq("buyerId", args.buyerId))
+            .filter((q) => q.eq(q.field("orderStatus"), "pending"))
+            .collect();
+
+        const totalPending = pendingOrders.reduce((sum, order) => sum + order.totalCost, 0);
+        return totalPending;
+    },
+});
+
+// Get pending order total for farmer (sum of farmerAmount for pending orders)
+export const getFarmerPendingTotal = query({
+    args: { farmerId: v.string() },
+    handler: async (ctx, args) => {
+        const pendingOrders = await ctx.db
+            .query("orders")
+            .withIndex("by_farmer", (q) => q.eq("farmerId", args.farmerId))
+            .filter((q) => q.eq(q.field("orderStatus"), "pending"))
+            .collect();
+
+        const totalPending = pendingOrders.reduce((sum, order) => sum + order.farmerAmount, 0);
+        return totalPending;
+    },
+});
+
+// Get pending order total for dispatcher (sum of dispatcherAmount for pending orders)
+export const getDispatcherPendingTotal = query({
+    args: { dispatcherId: v.string() },
+    handler: async (ctx, args) => {
+        const pendingOrders = await ctx.db
+            .query("orders")
+            .withIndex("by_dispatcher", (q) => q.eq("dispatcherId", args.dispatcherId))
+            .filter((q) => q.eq(q.field("orderStatus"), "pending"))
+            .collect();
+
+        const totalPending = pendingOrders.reduce((sum, order) => sum + order.dispatcherAmount, 0);
+        return totalPending;
     },
 }); 

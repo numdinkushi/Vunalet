@@ -22,12 +22,14 @@ export interface PurchaseFormData {
     deliveryDistance: number;
     deliveryCost: number;
     totalCost: number;
+    specialInstructions?: string;
 }
 
 export interface ProductDetailPageProps {
     product: Product;
     formData: PurchaseFormData;
     isCalculating: boolean;
+    isProcessing: boolean; // Add this
     handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
     handleSubmit: (e: React.FormEvent) => void;
 } 

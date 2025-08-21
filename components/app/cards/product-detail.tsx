@@ -24,6 +24,7 @@ interface ProductDetailCardProps {
     } | null;
     formData: PurchaseFormData;
     isCalculating: boolean;
+    isProcessing: boolean; // Add this prop
     handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
     handleSubmit: (e: React.FormEvent) => void;
 }
@@ -33,6 +34,7 @@ export function ProductDetailCard({
     farmer,
     formData,
     isCalculating,
+    isProcessing, // Add this prop
     handleInputChange,
     handleSubmit
 }: ProductDetailCardProps) {
@@ -221,15 +223,20 @@ export function ProductDetailCard({
                     {/* Submit Button */}
                     <motion.button
                         type="submit"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        disabled={isCalculating || !formData.address}
+                        whileHover={{ scale: isProcessing ? 1 : 1.02 }}
+                        whileTap={{ scale: isProcessing ? 1 : 0.98 }}
+                        disabled={isCalculating || isProcessing || !formData.address}
                         className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center"
                     >
                         {isCalculating ? (
                             <>
                                 <Calculator className="w-5 h-5 mr-2 animate-spin" />
                                 Calculating...
+                            </>
+                        ) : isProcessing ? (
+                            <>
+                                <div className="w-5 h-5 mr-2 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                                Processing Order...
                             </>
                         ) : (
                             <>

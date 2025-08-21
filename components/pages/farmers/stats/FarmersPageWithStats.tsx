@@ -52,7 +52,7 @@ export function FarmersPageWithStats() {
 
                 {/* Farmers Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {farmersWithStats.map((farmer, index) => (
+                    {farmersWithStats.map((farmer: Farmer, index: number) => (
                         <motion.div
                             key={farmer.clerkUserId}
                             initial={{ opacity: 0, y: 20 }}
@@ -103,21 +103,21 @@ export function FarmersPageWithStats() {
 
                         <div className="bg-black/50 rounded-lg p-6 text-center">
                             <div className="text-3xl font-bold text-white mb-2">
-                                {farmersWithStats.reduce((sum, farmer) => sum + farmer.stats.totalProducts, 0)}
+                                {farmersWithStats.reduce((sum: number, farmer: Farmer) => sum + farmer.stats.totalProducts, 0)}
                             </div>
                             <div className="text-gray-300">Total Products</div>
                         </div>
 
                         <div className="bg-black/50 rounded-lg p-6 text-center">
                             <div className="text-3xl font-bold text-white mb-2">
-                                {farmersWithStats.reduce((sum, farmer) => sum + farmer.stats.totalCustomers, 0)}
+                                {farmersWithStats.reduce((sum: number, farmer: Farmer) => sum + farmer.stats.totalCustomers, 0)}
                             </div>
                             <div className="text-gray-300">Happy Customers</div>
                         </div>
 
                         <div className="bg-black/50 rounded-lg p-6 text-center">
                             <div className="text-3xl font-bold text-white mb-2">
-                                {farmersWithStats.filter(f => f.isOrganicCertified).length}
+                                {farmersWithStats.filter((f: Farmer) => f.isOrganicCertified).length}
                             </div>
                             <div className="text-gray-300">Organic Certified</div>
                         </div>

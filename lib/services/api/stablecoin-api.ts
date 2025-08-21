@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { CreateUserRequest, CreateUserResponse, ApiError, MintTransactionResponse } from './types';
+import { CreateUserRequest, CreateUserResponse, ApiError, MintTransactionResponse, TransferRequest, TransferTransactionResponse } from './types';
 
 // API Configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://seal-app-qp9cc.ondigitalocean.app/api/v1';
@@ -134,6 +134,14 @@ class StablecoinApiService {
         };
 
         const response = await this.api.post<MintTransactionResponse>('/mint', mintData);
+        return response.data;
+    }
+
+    /**
+     * Transfer stablecoins from one user to another
+     */
+    async transferStablecoins(userId: string, transferData: TransferRequest): Promise<TransferTransactionResponse> {
+        const response = await this.api.post<TransferTransactionResponse>(`/transfer/${userId}`, transferData);
         return response.data;
     }
 }

@@ -13,6 +13,25 @@ interface CategoryPageProps {
     categoryId: string;
 }
 
+interface Product {
+    _id: string;
+    images: string[];
+    name: string;
+    price: number;
+    unit: string;
+    quantity: number;
+    description?: string;
+    harvestDate: string;
+    isOrganic?: boolean;
+    isFeatured: boolean;
+    location: string;
+    status: string;
+    farmerId: string;
+    categoryId: string;
+    createdAt: number;
+    updatedAt: number;
+}
+
 export function CategoryPage({ categoryId }: CategoryPageProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState('newest');
@@ -29,7 +48,7 @@ export function CategoryPage({ categoryId }: CategoryPageProps) {
         const interval = setInterval(() => {
             setCurrentImageIndexes(prev => {
                 const newIndexes = { ...prev };
-                products.forEach(product => {
+                products.forEach((product: Product) => {
                     if (product.images.length > 1) {
                         const currentIndex = newIndexes[product._id] || 0;
                         newIndexes[product._id] = (currentIndex + 1) % product.images.length;
@@ -121,7 +140,7 @@ export function CategoryPage({ categoryId }: CategoryPageProps) {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3, duration: 0.6 }}
                 >
-                    {products.map((product, index) => (
+                    {products.map((product: Product, index: number) => (
                         <ProductCard
                             key={product._id}
                             product={product}

@@ -28,6 +28,7 @@ export class WalletService {
                 const statusCode = res.status;
 
                 if (statusCode === 404 || errorMessage.includes('not found') || errorMessage.includes('User not found')) {
+                    toast.error('User not found in payment system');
                     return { walletBalance: 0, ledgerBalance: 0 };
                 }
 
@@ -37,10 +38,11 @@ export class WalletService {
                 }
 
                 if (statusCode >= 500) {
-                    toast.error('Unable to load wallet balance. Please try again later.');
+                    toast.error('Payment system is temporarily unavailable. Please try again later.');
                     return { walletBalance: 0, ledgerBalance: 0 };
                 }
 
+                toast.error(`Failed to fetch balance: ${errorMessage}`);
                 return { walletBalance: 0, ledgerBalance: 0 };
             }
 
@@ -48,8 +50,8 @@ export class WalletService {
             const tokens: Array<{ name: string; balance: string | number; }> = data?.tokens || [];
             const zarToken = tokens.find(t => t.name === LZC_TOKEN_NAME);
             const walletBalance = zarToken ? Number(zarToken.balance) : 0;
-            const ledgerBalance = walletBalance;
-            return { walletBalance, ledgerBalance };
+
+            return { walletBalance, ledgerBalance: 0 };
         } catch (error) {
             toast.error('Unable to load wallet balance. Please check your connection and try again.');
             return { walletBalance: 0, ledgerBalance: 0 };

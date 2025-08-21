@@ -1,5 +1,5 @@
 import { stablecoinApiService } from '../api/stablecoin-api';
-import { PaymentRequest, PaymentResponse } from '../api/types';
+import { PaymentRequest, PaymentResponse, TransferTransactionResponse } from '../api/types';
 import { toast } from 'sonner';
 
 /**
@@ -135,6 +135,42 @@ export class PaymentService {
                 return 'Payment was cancelled';
             default:
                 return 'Payment status unknown';
+        }
+    }
+
+    /**
+     * Transfer stablecoins from one user to another
+     */
+    async transferStablecoins(
+        senderLiskId: string,
+        recipientPaymentId: string,
+        amount: number,
+        notes?: string
+    ): Promise<TransferTransactionResponse> {
+        try {
+            console.log('Processing transfer:', {
+                senderLiskId,
+                recipientPaymentId,
+                amount,
+                notes
+            });
+
+            const transferData = {
+                transactionAmount: amount,
+                transactionRecipient: recipientPaymentId,
+                transactionNotes: notes || 'Payment transfer'
+            };
+
+            const result = await stablecoinApiService.transferStablecoins(senderLiskId, transferData);
+            console.log('Transfer processed successfully:', result);
+
+            toast.success('Transfer completed successfully!');
+            return result;
+        } catch (error) {
+            console.log('Transfer processing failed:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Transfer failed';
+            toast.error(`Transfer failed: ${errorMessage}`);
+            throw error;
         }
     }
 }

@@ -179,7 +179,7 @@ export function useRegistration() {
                         clerkUserId: user.id,
                         token: 'L ZAR Coin',
                         walletBalance: balances.walletBalance,
-                        ledgerBalance: balances.ledgerBalance,
+                        ledgerBalance: 0, // Start with 0 ledger balance
                     });
 
                     if (integrationResult.mintedAmount > 0) {

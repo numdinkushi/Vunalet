@@ -305,4 +305,33 @@ export const updateUserProfilesWithSouthAfricanAddresses = mutation({
             uniqueCities: addressStats.cities.size
         };
     },
+});
+
+export const clearTestData = mutation({
+    args: {},
+    handler: async (ctx) => {
+        // Clear notifications
+        const notifications = await ctx.db.query("notifications").collect();
+        for (const notification of notifications) {
+            await ctx.db.delete(notification._id);
+        }
+
+        // Clear orders
+        const orders = await ctx.db.query("orders").collect();
+        for (const order of orders) {
+            await ctx.db.delete(order._id);
+        }
+
+        // Clear deliveries
+        const deliveries = await ctx.db.query("deliveries").collect();
+        for (const delivery of deliveries) {
+            await ctx.db.delete(delivery._id);
+        }
+
+        return {
+            deletedNotifications: notifications.length,
+            deletedOrders: orders.length,
+            deletedDeliveries: deliveries.length,
+        };
+    },
 }); 

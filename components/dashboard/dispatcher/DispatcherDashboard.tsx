@@ -9,14 +9,75 @@ import {
     Truck,
     Clock,
     DollarSign,
-    CheckCircle
+    CheckCircle,
+    Package,
+    MapPin,
+    User
 } from 'lucide-react';
-import { mockDispatcherStats, mockDispatcherOrders } from './data';
 import { StatCard, DeliveryCard } from './components';
 import { WalletCard } from '../shared/WalletCard';
 import { useUser } from '@clerk/nextjs';
 import { useEffect } from 'react';
 import { LZC_TOKEN_NAME } from '../../../constants/tokens';
+import { useOrderManagement } from '../../../hooks/use-order-management';
+import { Badge } from '../../ui/badge';
+
+// Type for Convex order structure with user info
+interface ConvexOrder {
+    _id: string;
+    buyerId: string;
+    farmerId: string;
+    dispatcherId?: string;
+    products: Array<{
+        productId: string;
+        name: string;
+        price: number;
+        quantity: number;
+        unit: string;
+    }>;
+    totalAmount: number;
+    farmerAmount: number;
+    dispatcherAmount: number;
+    deliveryAddress: string;
+    deliveryCoordinates?: {
+        lat: number;
+        lng: number;
+    };
+    pickupLocation?: string;
+    pickupCoordinates?: {
+        lat: number;
+        lng: number;
+    };
+    deliveryDistance: number;
+    deliveryCost: number;
+    totalCost: number;
+    paymentMethod: 'lisk_zar' | 'cash';
+    paymentStatus: 'pending' | 'paid' | 'failed';
+    orderStatus: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'delivered' | 'cancelled';
+    specialInstructions?: string;
+    estimatedPickupTime?: string;
+    estimatedDeliveryTime?: string;
+    actualDeliveryTime?: string;
+    createdAt: number;
+    updatedAt: number;
+    buyerInfo?: {
+        firstName: string;
+        lastName: string;
+        email: string;
+        phone?: string;
+    } | null;
+    farmerInfo?: {
+        firstName: string;
+        lastName: string;
+        businessName?: string;
+        email: string;
+    } | null;
+    dispatcherInfo?: {
+        firstName: string;
+        lastName: string;
+        email: string;
+    } | null;
+}
 
 interface DispatcherDashboardProps {
     userProfile: {
@@ -30,13 +91,21 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
     const { user } = useUser();
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const balance = useQuery((api as unknown as any).balances.getUserBalance, {
+    const balance = useQuery(api.balances.getUserBalanceWithLedger, {
         clerkUserId: user?.id || '',
         token: LZC_TOKEN_NAME,
+        role: 'dispatcher',
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const upsertBalance = useMutation((api as unknown as any).balances.upsertUserBalance);
+
+    // Fetch real data from Convex
+    const orders = useQuery(api.orders.getOrdersByDispatcherWithUserInfo, { dispatcherId: userProfile.clerkUserId });
+    const orderStats = useQuery(api.orders.getOrderStats, {
+        role: 'dispatcher',
+        userId: userProfile.clerkUserId
+    });
 
     useEffect(() => {
         if (!user?.id) return;
@@ -46,11 +115,14 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
                 const { walletService } = await import('../../../lib/services/wallet/wallet.service');
                 const balances = await walletService.fetchBalances(userProfile?.liskId || user.id);
 
+                // Only update wallet balance, preserve existing ledger balance
+                const currentBalance = await getCurrentBalance();
+
                 await upsertBalance({
                     clerkUserId: user.id,
                     token: LZC_TOKEN_NAME,
-                    walletBalance: balances.walletBalance,
-                    ledgerBalance: balances.ledgerBalance,
+                    walletBalance: balances.walletBalance, // Update from Lisk
+                    ledgerBalance: currentBalance?.ledgerBalance || 0, // Keep existing ledger balance
                 });
             } catch (error) {
                 console.log('Failed to refresh balances:', error);
@@ -60,15 +132,18 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
         refreshBalances();
     }, [user?.id, userProfile?.liskId]);
 
+    // Helper function to get current balance
+    const getCurrentBalance = async () => {
+        try {
+            const balance = await fetch(`/api/balances/${user?.id}`).then(r => r.json());
+            return balance;
+        } catch (error) {
+            return null;
+        }
+    };
+
     const walletBalance = balance?.walletBalance ?? 0;
     const ledgerBalance = balance?.ledgerBalance ?? 0;
-
-    // Queries
-    const orders = useQuery(api.orders.getOrdersByDispatcher, { dispatcherId: userProfile.clerkUserId });
-    const orderStats = useQuery(api.orders.getOrderStats, {
-        role: 'dispatcher',
-        userId: userProfile.clerkUserId
-    });
 
     // Mutations
     const updateOrderStatus = useMutation(api.orders.updateOrderStatus);
@@ -84,21 +159,50 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
         }
     };
 
-    const stats = mockDispatcherStats;
-    const dispatcherOrders = mockDispatcherOrders as Array<{
-        _id: string;
-        products: { name: string; quantity: number; price: number; }[];
-        totalCost: number;
-        orderStatus: "pending" | "confirmed" | "preparing" | "ready" | "in_transit" | "delivered" | "cancelled";
-        paymentStatus: "pending" | "paid" | "failed";
-        createdAt: string;
-        deliveryAddress: string;
-        estimatedDeliveryTime: string;
-        riderName: string;
-        farmName: string;
-        customerName: string;
-        customerPhone: string;
-    }>;
+    // Calculate real stats from data
+    const stats = {
+        totalDeliveries: orderStats?.total ?? 0,
+        activeDeliveries: orderStats ? (orderStats.pending + orderStats.confirmed + orderStats.preparing + orderStats.ready + orderStats.inTransit) : 0,
+        completedDeliveries: orderStats?.delivered ?? 0,
+        totalEarnings: orderStats?.totalRevenue ?? 0,
+    };
+
+    // Transform Convex orders to match the expected interface
+    const transformOrders = (convexOrders: ConvexOrder[]) => {
+        return convexOrders?.map((order: ConvexOrder) => ({
+            _id: order._id,
+            products: order.products.map((p: { name: string; quantity: number; price: number; unit: string; productId: string; }) => ({
+                name: p.name,
+                quantity: p.quantity,
+                price: p.price,
+            })),
+            totalCost: order.totalCost,
+            orderStatus: order.orderStatus,
+            paymentStatus: order.paymentStatus,
+            createdAt: new Date(order.createdAt).toISOString(),
+            deliveryAddress: order.deliveryAddress,
+            estimatedDeliveryTime: order.estimatedDeliveryTime,
+            riderId: order.dispatcherId,
+            riderName: order.dispatcherInfo ?
+                `${order.dispatcherInfo.firstName} ${order.dispatcherInfo.lastName}` :
+                order.dispatcherId || '',
+            farmName: order.farmerInfo ?
+                (order.farmerInfo.businessName || `${order.farmerInfo.firstName} ${order.farmerInfo.lastName}`) :
+                order.farmerId,
+            customerName: order.buyerInfo ?
+                `${order.buyerInfo.firstName} ${order.buyerInfo.lastName}` :
+                order.buyerId,
+            customerPhone: order.buyerInfo?.phone || '',
+        })) || [];
+    };
+
+    const transformedOrders = transformOrders(orders || []);
+
+    const { markAsDelivered, isProcessing } = useOrderManagement();
+
+    const handleMarkAsDelivered = async (orderId: string) => {
+        await markAsDelivered(orderId);
+    };
 
     return (
         <div className="space-y-6">
@@ -138,10 +242,7 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
             </div>
 
             {/* Wallet & Ledger */}
-            <WalletCard
-                walletBalance={walletBalance}
-                ledgerBalance={ledgerBalance}
-            />
+            <WalletCard />
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -160,7 +261,7 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
-                                    {dispatcherOrders.slice(0, 3).map((order) => (
+                                    {transformedOrders.slice(0, 3).map((order) => (
                                         <DeliveryCard key={order._id} order={order} showActions={false} />
                                     ))}
                                 </div>
@@ -174,7 +275,7 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
-                                    {dispatcherOrders.slice(0, 3).map((order) => (
+                                    {transformedOrders.slice(0, 3).map((order) => (
                                         <DeliveryCard key={order._id} order={order} showActions={false} />
                                     ))}
                                 </div>
@@ -190,7 +291,9 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
-                                {dispatcherOrders.filter(order => order.orderStatus === 'in_transit' || order.orderStatus === 'ready').map((order) => (
+                                {transformedOrders.filter(order =>
+                                    ['pending', 'confirmed', 'preparing', 'ready', 'in_transit'].includes(order.orderStatus)
+                                ).map((order) => (
                                     <DeliveryCard key={order._id} order={order} />
                                 ))}
                             </div>
@@ -205,7 +308,7 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
-                                {dispatcherOrders.filter(order => order.orderStatus === 'delivered').map((order) => (
+                                {transformedOrders.filter(order => order.orderStatus === 'delivered').map((order) => (
                                     <DeliveryCard key={order._id} order={order} />
                                 ))}
                             </div>

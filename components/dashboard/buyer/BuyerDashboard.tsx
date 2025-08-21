@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { DashboardHeader, StatsGrid, TabNavigation, OrderList, OrderModal } from './components';
-import { mockOrderStats, mockOrders } from './data';
 import { filterOrdersByStatus } from './utils';
 import { Order } from './types';
 import { WalletCard } from '../shared/WalletCard';
@@ -10,6 +9,52 @@ import { useUser } from '@clerk/nextjs';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { LZC_TOKEN_NAME } from '../../../constants/tokens';
+import { useOrderManagement } from '../../../hooks/use-order-management';
+
+// Type for Convex order structure
+interface ConvexOrder {
+    _id: string;
+    buyerId: string;
+    farmerId: string;
+    dispatcherId?: string;
+    products: Array<{
+        productId: string;
+        name: string;
+        price: number;
+        quantity: number;
+        unit: string;
+    }>;
+    totalAmount: number;
+    farmerAmount: number;
+    dispatcherAmount: number;
+    deliveryAddress: string;
+    deliveryCoordinates?: {
+        lat: number;
+        lng: number;
+    };
+    pickupLocation?: string;
+    pickupCoordinates?: {
+        lat: number;
+        lng: number;
+    };
+    deliveryDistance: number;
+    deliveryCost: number;
+    totalCost: number;
+    paymentMethod: 'lisk_zar' | 'cash';
+    paymentStatus: 'pending' | 'paid' | 'failed';
+    orderStatus: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'delivered' | 'cancelled';
+    specialInstructions?: string;
+    estimatedPickupTime?: string;
+    estimatedDeliveryTime?: string;
+    actualDeliveryTime?: string;
+    createdAt: number;
+    updatedAt: number;
+    farmerInfo?: {
+        firstName: string;
+        lastName: string;
+        businessName?: string;
+    } | null;
+}
 
 export default function BuyerDashboard() {
     const [activeTab, setActiveTab] = useState('overview');
@@ -23,10 +68,22 @@ export default function BuyerDashboard() {
         clerkUserId: user?.id || '',
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const balance = useQuery((api as unknown as any).balances.getUserBalance, {
+    // Fetch real orders from Convex
+    const buyerOrders = useQuery(api.orders.getOrdersByBuyerWithFarmerInfo, {
+        buyerId: user?.id || '',
+    });
+
+    // Fetch order stats from Convex
+    const orderStats = useQuery(api.orders.getOrderStats, {
+        role: 'buyer',
+        userId: user?.id || '',
+    });
+
+    // Replace the existing balance query
+    const balance = useQuery(api.balances.getUserBalanceWithLedger, {
         clerkUserId: user?.id || '',
         token: LZC_TOKEN_NAME,
+        role: 'buyer',
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -40,11 +97,14 @@ export default function BuyerDashboard() {
                 const { walletService } = await import('../../../lib/services/wallet/wallet.service');
                 const balances = await walletService.fetchBalances(userProfile.liskId!);
 
+                // Only update wallet balance, preserve existing ledger balance
+                const currentBalance = await getCurrentBalance();
+
                 await upsertBalance({
                     clerkUserId: user.id,
                     token: LZC_TOKEN_NAME,
-                    walletBalance: balances.walletBalance,
-                    ledgerBalance: balances.ledgerBalance,
+                    walletBalance: balances.walletBalance, // Update from Lisk
+                    ledgerBalance: currentBalance?.ledgerBalance || 0, // Keep existing ledger balance
                 });
             } catch (error) {
                 console.log('Failed to refresh balances:', error);
@@ -54,22 +114,58 @@ export default function BuyerDashboard() {
         refreshBalances();
     }, [user?.id, userProfile?.liskId]);
 
+    // Helper function to get current balance
+    const getCurrentBalance = async () => {
+        try {
+            const balance = await fetch(`/api/balances/${user?.id}`).then(r => r.json());
+            return balance;
+        } catch (error) {
+            return null;
+        }
+    };
+
     const walletBalance = balance?.walletBalance ?? 0;
     const ledgerBalance = balance?.ledgerBalance ?? 0;
 
+    // Calculate stats from real data
     const stats = {
-        totalOrders: mockOrderStats.total,
-        activeOrders: mockOrderStats.pending + mockOrderStats.confirmed + mockOrderStats.preparing + mockOrderStats.ready + mockOrderStats.inTransit,
-        completedOrders: mockOrderStats.delivered,
-        totalSpent: mockOrderStats.totalRevenue,
+        totalOrders: orderStats?.total ?? 0,
+        activeOrders: orderStats ? (orderStats.pending + orderStats.confirmed + orderStats.preparing + orderStats.ready + orderStats.inTransit) : 0,
+        completedOrders: orderStats?.delivered ?? 0,
+        totalSpent: orderStats?.totalRevenue ?? 0,
     };
 
+    // Transform Convex orders to match the Order interface
+    const transformOrders = (convexOrders: ConvexOrder[]): Order[] => {
+        return convexOrders?.map(order => ({
+            _id: order._id,
+            products: order.products.map((p) => ({
+                name: p.name,
+                quantity: p.quantity,
+                price: p.price,
+            })),
+            totalCost: order.totalCost,
+            orderStatus: order.orderStatus,
+            paymentStatus: order.paymentStatus,
+            createdAt: new Date(order.createdAt).toISOString(),
+            deliveryAddress: order.deliveryAddress,
+            estimatedDeliveryTime: order.estimatedDeliveryTime,
+            riderId: order.dispatcherId,
+            riderName: order.dispatcherId || '', // You might want to fetch dispatcher name separately
+            farmName: order.farmerInfo ?
+                (order.farmerInfo.businessName || `${order.farmerInfo.firstName} ${order.farmerInfo.lastName}`) :
+                order.farmerId, // Fallback to ID if no farmer info
+        })) || [];
+    };
+
+    const transformedOrders = transformOrders(buyerOrders || []);
+
     const getActiveOrders = () => {
-        return filterOrdersByStatus(mockOrders, ['pending', 'confirmed', 'preparing', 'ready', 'in_transit']);
+        return filterOrdersByStatus(transformedOrders, ['pending', 'confirmed', 'preparing', 'ready', 'in_transit']);
     };
 
     const getHistoryOrders = () => {
-        return filterOrdersByStatus(mockOrders, ['delivered', 'cancelled']);
+        return filterOrdersByStatus(transformedOrders, ['delivered', 'cancelled']);
     };
 
     const handleRowClick = (order: Order) => {
@@ -82,6 +178,8 @@ export default function BuyerDashboard() {
         setSelectedOrder(null);
     };
 
+    const { confirmDelivery, isProcessing } = useOrderManagement();
+
     return (
         <div className="min-h-screen bg-gray-50">
             <DashboardHeader />
@@ -90,11 +188,7 @@ export default function BuyerDashboard() {
                 <StatsGrid stats={stats} />
 
                 {/* Wallet Card */}
-                <WalletCard
-                    walletBalance={walletBalance}
-                    ledgerBalance={ledgerBalance}
-                    className="mt-4"
-                />
+                <WalletCard className="mt-4" />
                 <div className="mt-8">
                     <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
                 </div>
@@ -104,7 +198,7 @@ export default function BuyerDashboard() {
                     <div className="space-y-6">
                         <OrderList
                             title="Recent Orders"
-                            orders={mockOrders.slice(0, 3)}
+                            orders={transformedOrders.slice(0, 3)}
                             searchTerm={searchTerm}
                             onSearchChange={setSearchTerm}
                             onRowClick={handleRowClick}
