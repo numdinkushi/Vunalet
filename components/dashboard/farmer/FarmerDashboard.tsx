@@ -87,6 +87,11 @@ interface ConvexOrder {
         lastName: string;
         email: string;
     } | null;
+    dispatcherInfo?: {
+        firstName: string;
+        lastName: string;
+        email: string;
+    } | null;
 }
 
 interface FarmerDashboardProps {
@@ -111,7 +116,7 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
 
     // Fetch real data from Convex
     const products = useQuery(api.products.getProductsByFarmer, { farmerId: userProfile.clerkUserId });
-    const orders = useQuery(api.orders.getOrdersByFarmerWithBuyerInfo, { farmerId: userProfile.clerkUserId });
+    const orders = useQuery(api.orders.getOrdersByFarmerWithUserInfo, { farmerId: userProfile.clerkUserId });
     const categories = useQuery(api.categories.getActiveCategories);
     const orderStats = useQuery(api.orders.getOrderStats, {
         role: 'farmer',
@@ -218,9 +223,9 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
 
     // Transform Convex orders to match the Order interface
     const transformOrders = (convexOrders: ConvexOrder[]) => {
-        return convexOrders?.map(order => ({
+        return convexOrders?.map((order: ConvexOrder) => ({
             _id: order._id,
-            products: order.products.map((p) => ({
+            products: order.products.map((p: { name: string; quantity: number; price: number; unit: string; productId: string; }) => ({
                 name: p.name,
                 quantity: p.quantity,
                 price: p.price,
@@ -232,7 +237,9 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
             deliveryAddress: order.deliveryAddress,
             estimatedDeliveryTime: order.estimatedDeliveryTime,
             riderId: order.dispatcherId,
-            riderName: order.dispatcherId || '',
+            riderName: order.dispatcherInfo ?
+                `${order.dispatcherInfo.firstName} ${order.dispatcherInfo.lastName}` :
+                order.dispatcherId || '',
             farmName: order.buyerInfo ?
                 `${order.buyerInfo.firstName} ${order.buyerInfo.lastName}` :
                 order.buyerId,
@@ -427,7 +434,7 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
                                                 <SelectValue placeholder="Select category" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {categories?.map((category) => (
+                                                {categories?.map((category: any) => (
                                                     <SelectItem key={category.categoryId} value={category.categoryId}>
                                                         {category.name}
                                                     </SelectItem>

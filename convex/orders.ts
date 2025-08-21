@@ -128,6 +128,66 @@ export const getOrdersByBuyerWithFarmerInfo = query({
     },
 });
 
+// Get orders by farmer with buyer and dispatcher information
+export const getOrdersByFarmerWithUserInfo = query({
+    args: { farmerId: v.string() },
+    handler: async (ctx, args) => {
+        const orders = await ctx.db
+            .query("orders")
+            .withIndex("by_farmer", (q) => q.eq("farmerId", args.farmerId))
+            .order("desc")
+            .collect();
+
+        // Get unique buyer and dispatcher IDs from orders
+        const buyerIds = [...new Set(orders.map(order => order.buyerId))];
+        const dispatcherIds = [...new Set(orders.map(order => order.dispatcherId).filter((id): id is string => id !== undefined))];
+
+        // Fetch buyer profiles
+        const buyerProfiles = await Promise.all(
+            buyerIds.map(async (buyerId) => {
+                const profile = await ctx.db
+                    .query("userProfiles")
+                    .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", buyerId))
+                    .first();
+                return { buyerId, profile };
+            })
+        );
+
+        // Fetch dispatcher profiles
+        const dispatcherProfiles = await Promise.all(
+            dispatcherIds.map(async (dispatcherId) => {
+                const profile = await ctx.db
+                    .query("userProfiles")
+                    .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", dispatcherId))
+                    .first();
+                return { dispatcherId, profile };
+            })
+        );
+
+        // Create maps of ID to profile
+        const buyerMap = new Map();
+        buyerProfiles.forEach(({ buyerId, profile }) => {
+            if (profile) {
+                buyerMap.set(buyerId, profile);
+            }
+        });
+
+        const dispatcherMap = new Map();
+        dispatcherProfiles.forEach(({ dispatcherId, profile }) => {
+            if (profile) {
+                dispatcherMap.set(dispatcherId, profile);
+            }
+        });
+
+        // Add user information to orders
+        return orders.map(order => ({
+            ...order,
+            buyerInfo: buyerMap.get(order.buyerId) || null,
+            dispatcherInfo: dispatcherMap.get(order.dispatcherId) || null
+        }));
+    },
+});
+
 // Get orders by farmer with buyer information
 export const getOrdersByFarmerWithBuyerInfo = query({
     args: { farmerId: v.string() },
