@@ -41,23 +41,25 @@ export function ProductCard({
     farmers,
     showVideoBackground = true
 }: ProductCardProps) {
-    const router = useRouter();
     const { user } = useUser();
+    const router = useRouter();
     const userProfile = useQuery(api.users.getUserProfile, {
         clerkUserId: user?.id || '',
     });
 
     const farmerName = farmers?.find(f => f.clerkUserId === product.farmerId)?.firstName || 'Unknown Farmer';
     const isBuyer = userProfile?.role === 'buyer';
+    const hasNoRole = !userProfile?.role;
 
     const handlePurchaseClick = () => {
         if (isBuyer) {
             // Buyer can proceed to product page
             router.push(`/products/${product._id}`);
-        } else {
-            // User with no role or other roles gets redirected to dashboard
+        } else if (hasNoRole) {
+            // User with no role gets redirected to dashboard
             router.push('/dashboard');
         }
+        // Other roles (farmer, dispatcher) won't see the button
     };
 
     const getStorageMethodIcon = (method?: string) => {
@@ -106,21 +108,13 @@ export function ProductCard({
     return (
         <motion.div
             key={product._id}
-            className={`group relative bg-white rounded-3xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500 grid grid-rows-[auto_1fr_auto] ${product.isFeatured ? 'ring-2 ring-green-500' : ''}`}
+            className="group relative bg-white rounded-3xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500 border border-gray-100"
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1, duration: 0.6 }}
             whileHover={{ y: -10, scale: 1.02 }}
         >
-            {product.isFeatured && (
-                <div className="absolute top-4 left-4 z-10">
-                    <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                        Featured
-                    </span>
-                </div>
-            )}
-
-            {/* Image Section - Fixed Height */}
+            {/* Product Image */}
             <div className="relative h-64 overflow-hidden">
                 {product.images && product.images.length > 0 ? (
                     <Image
@@ -134,13 +128,27 @@ export function ProductCard({
                         <span className="text-gray-400">No image</span>
                     </div>
                 )}
-                <motion.button
-                    className="absolute top-4 right-4 p-3 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white transition-all duration-300 z-20"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                >
-                    <Heart size={20} className="text-gray-600" />
-                </motion.button>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+                {/* Featured Badge */}
+                {product.isFeatured && (
+                    <div className="absolute top-4 left-4 z-10">
+                        <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg">
+                            Featured
+                        </span>
+                    </div>
+                )}
+
+                {/* Heart Icon */}
+                <div className="absolute top-4 right-4 z-10">
+                    <motion.button
+                        className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white transition-all duration-300"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                    >
+                        <Heart size={16} className="text-gray-600" />
+                    </motion.button>
+                </div>
             </div>
 
             {/* Video Background for Product Content */}
@@ -150,19 +158,20 @@ export function ProductCard({
                 </div>
             )}
 
-            {/* Content Section - Flexible Height */}
-            <div className={`relative p-6 ${showVideoBackground ? 'bg-transparent backdrop-blur-sm z-10' : ''}`}>
+            {/* Content */}
+            <div className={`relative p-6 ${showVideoBackground ? 'bg-transparent backdrop-blur-sm z-10' : 'bg-gradient-to-br from-white to-gray-50'}`}>
                 <div className="flex justify-between items-start mb-3">
-                    <h3 className={`text-xl font-bold ${showVideoBackground ? 'text-white' : 'text-gray-900'}`}>{product.name}</h3>
-                    <div className="flex items-center bg-yellow-500/30 backdrop-blur-sm px-2 py-1 rounded-full">
-                        <Star className="text-yellow-300 fill-current" size={16} />
-                        <span className="text-sm font-semibold text-yellow-200 ml-1">4.8</span>
+                    <h3 className={`text-xl font-bold ${showVideoBackground ? 'text-white group-hover:text-green-300' : 'text-gray-900 group-hover:text-green-600'} transition-colors duration-300`}>
+                        {product.name}
+                    </h3>
+                    <div className={`flex items-center ${showVideoBackground ? 'bg-yellow-500/30 backdrop-blur-sm' : 'bg-yellow-500/30'} px-2 py-1 rounded-full`}>
+                        <Star className={`${showVideoBackground ? 'text-yellow-300' : 'text-yellow-500'} fill-current`} size={16} />
+                        <span className={`text-sm font-semibold ${showVideoBackground ? 'text-yellow-200' : 'text-yellow-600'} ml-1`}>4.8</span>
                     </div>
                 </div>
 
                 <p className={`${showVideoBackground ? 'text-gray-200' : 'text-gray-600'} mb-3`}>By {farmerName}</p>
-
-                <div className="flex items-center text-gray-300 mb-4">
+                <div className={`flex items-center ${showVideoBackground ? 'text-gray-300' : 'text-gray-500'} mb-4`}>
                     <MapPin size={16} />
                     <span className="ml-1 text-sm">{product.location}</span>
                 </div>
@@ -189,7 +198,7 @@ export function ProductCard({
                     )}
                 </div>
 
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center mb-6">
                     <div className={`text-2xl font-bold ${showVideoBackground ? 'text-green-300' : 'text-green-600'}`}>
                         R{product.price}
                         <span className={`text-sm ${showVideoBackground ? 'text-gray-300' : 'text-gray-500'} font-normal`}>/{product.unit}</span>
@@ -198,19 +207,19 @@ export function ProductCard({
                         {product.quantity} {product.unit} available
                     </div>
                 </div>
-            </div>
 
-            {/* Button Section - Fixed at Bottom */}
-            <div className="p-6 pt-0">
-                <motion.button
-                    onClick={handlePurchaseClick}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center group"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                >
-                    <ShoppingCart className="mr-2" size={20} />
-                    {isBuyer ? 'Purchase' : 'Set Up Account'}
-                </motion.button>
+                {/* Show Purchase button for buyers and users with no role */}
+                {(isBuyer || hasNoRole) && (
+                    <motion.button
+                        onClick={handlePurchaseClick}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center group"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                    >
+                        <ShoppingCart className="mr-2" size={20} />
+                        {isBuyer ? 'Purchase' : 'Set Up Account'}
+                    </motion.button>
+                )}
             </div>
         </motion.div>
     );
