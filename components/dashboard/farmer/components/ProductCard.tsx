@@ -1,17 +1,19 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Leaf, Package, MapPin, Clock, Edit, Trash2, Eye, Star, Thermometer, Snowflake } from 'lucide-react';
+import { Leaf, Package, MapPin, Clock, Edit, Eye, Star, Thermometer, Snowflake } from 'lucide-react';
 import { Product } from '../types';
 import { formatCurrency, formatDate } from '../utils';
 import { getExpiryStatus, getDaysUntilExpiry } from '../../../../lib/utils/product-utils';
+import { DeleteProductButton } from './delete-product-button';
 
 interface ProductCardProps {
     product: Product;
     showActions?: boolean;
+    onProductDeleted?: () => void;
 }
 
-export function ProductCard({ product, showActions = true }: ProductCardProps) {
+export function ProductCard({ product, showActions = true, onProductDeleted }: ProductCardProps) {
     const getStorageMethodIcon = (method?: string) => {
         switch (method) {
             case 'refrigerated':
@@ -153,15 +155,14 @@ export function ProductCard({ product, showActions = true }: ProductCardProps) {
                                 {product.status}
                             </Badge>
                             <div className="flex space-x-2">
-                                <Button size="sm" variant="outline">
-                                    <Edit className="w-4 h-4" />
-                                </Button>
-                                <Button size="sm" variant="outline">
-                                    <Eye className="w-4 h-4" />
-                                </Button>
-                                <Button size="sm" variant="outline" className="text-red-600">
-                                    <Trash2 className="w-4 h-4" />
-                                </Button>
+                                <DeleteProductButton
+                                    productId={product._id}
+                                    productName={product.name}
+                                    onSuccess={onProductDeleted}
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-red-600 hover:text-red-700"
+                                />
                             </div>
                         </div>
                     )}
