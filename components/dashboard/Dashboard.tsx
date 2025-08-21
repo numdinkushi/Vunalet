@@ -16,6 +16,7 @@ import {
 import { FarmerDashboard } from './farmer/FarmerDashboard';
 import { DispatcherDashboard } from './dispatcher/DispatcherDashboard';
 import BuyerDashboard from './buyer/BuyerDashboard';
+import { FarmerUserProfile } from './farmer/types/dashboard-types';
 
 export function Dashboard() {
     const { user } = useUser();
@@ -116,8 +117,8 @@ export function Dashboard() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
                 >
-                    {userProfile.role === 'farmer' && <FarmerDashboard userProfile={userProfile} />}
-                    {userProfile.role === 'dispatcher' && <DispatcherDashboard userProfile={userProfile} />}
+                    {userProfile.role === 'farmer' && <FarmerDashboard userProfile={userProfile as FarmerUserProfile} />}
+                    {userProfile.role === 'dispatcher' && <DispatcherDashboard userProfile={{ clerkUserId: userProfile.clerkUserId, liskId: userProfile.liskId }} />}
                     {userProfile.role === 'buyer' && <BuyerDashboard />}
                 </motion.div>
             </div>
