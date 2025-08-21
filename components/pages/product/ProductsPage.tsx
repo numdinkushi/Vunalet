@@ -5,7 +5,9 @@ import { motion } from 'framer-motion';
 import {
     Search,
     ShoppingCart,
-    ArrowRight
+    ArrowRight,
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react';
 import Image from 'next/image';
 import { useQuery } from 'convex/react';
@@ -36,7 +38,10 @@ export function ProductsPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [sortBy, setSortBy] = useState('newest');
+    const [currentPage, setCurrentPage] = useState(1);
     const [currentImageIndexes, setCurrentImageIndexes] = useState<{ [key: string]: number; }>({});
+
+    const PRODUCTS_PER_PAGE = 6;
 
     // Get products from database
     const allProducts = useQuery(api.products.getActiveProducts);
@@ -62,6 +67,11 @@ export function ProductsPage() {
 
         return () => clearInterval(interval);
     }, [featuredProducts]);
+
+    // Reset to first page when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, selectedCategory, sortBy]);
 
     if (!allProducts || !featuredProducts) {
         return (
@@ -98,18 +108,104 @@ export function ProductsPage() {
         }
     });
 
+    // Pagination
+    const totalPages = Math.ceil(sortedProducts.length / PRODUCTS_PER_PAGE);
+    const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
+    const endIndex = startIndex + PRODUCTS_PER_PAGE;
+    const paginatedProducts = sortedProducts.slice(startIndex, endIndex);
+
     return (
         <div className="min-h-screen pt-20 bg-gradient-to-br from-gray-50 to-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 {/* Header */}
                 <motion.div
-                    className="mb-12 text-center"
+                    className="mb-16 text-center relative overflow-hidden"
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
                 >
-                    <h1 className="text-5xl font-bold text-gray-900 mb-4">Fresh Products</h1>
-                    <p className="text-xl text-gray-600">Discover the freshest produce from South African farmers</p>
+                    {/* Background decorative elements */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-white to-blue-50 opacity-60"></div>
+                    <div className="absolute top-0 left-1/4 w-32 h-32 bg-green-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+                    <div className="absolute top-0 right-1/4 w-32 h-32 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+                    <div className="absolute -bottom-8 left-1/3 w-32 h-32 bg-yellow-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+
+                    {/* Main content */}
+                    <div className="relative z-10 bg-white/80 backdrop-blur-sm rounded-3xl p-12 shadow-xl border border-white/20">
+                        <motion.div
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 0.2, duration: 0.6 }}
+                            className="inline-block mb-6"
+                        >
+                            <div className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-6 py-3 rounded-full text-sm font-semibold shadow-lg">
+                                🌱 Fresh from the Farm
+                            </div>
+                        </motion.div>
+
+                        <motion.h1
+                            className="text-6xl font-bold bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 bg-clip-text text-transparent mb-6"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3, duration: 0.6 }}
+                        >
+                            Fresh Products
+                        </motion.h1>
+
+                        <motion.p
+                            className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.4, duration: 0.6 }}
+                        >
+                            Discover the freshest produce from South African farmers, delivered straight from the farm to your table
+                        </motion.p>
+
+                        <motion.div
+                            className="flex justify-center items-center space-x-8 text-sm text-gray-500"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.5, duration: 0.6 }}
+                        >
+                            <div className="flex items-center">
+                                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                                <span>100% Fresh</span>
+                            </div>
+                            <div className="flex items-center">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                                <span>Local Farmers</span>
+                            </div>
+                            <div className="flex items-center">
+                                <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
+                                <span>Quality Assured</span>
+                            </div>
+                        </motion.div>
+                    </div>
+                </motion.div>
+
+                {/* Featured Products */}
+                <motion.div
+                    className="mb-16"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2, duration: 0.6 }}
+                >
+                    <div className="text-center mb-12">
+                        <h2 className="text-4xl font-bold text-gray-900 mb-4">Featured Products</h2>
+                        <p className="text-lg text-gray-600">Handpicked fresh produce from our trusted farmers</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {featuredProducts.slice(0, 6).map((product: Product, index: number) => (
+                            <ProductCard
+                                key={product._id}
+                                product={product}
+                                index={index}
+                                currentImageIndex={currentImageIndexes[product._id] || 0}
+                                farmers={farmers}
+                                showVideoBackground={true}
+                            />
+                        ))}
+                    </div>
                 </motion.div>
 
                 {/* Search and Filters */}
@@ -117,7 +213,7 @@ export function ProductsPage() {
                     className="bg-white rounded-3xl shadow-xl p-8 mb-12"
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2, duration: 0.6 }}
+                    transition={{ delay: 0.3, duration: 0.6 }}
                 >
                     <div className="flex flex-col lg:flex-row gap-6">
                         <div className="flex-1 relative">
@@ -160,7 +256,7 @@ export function ProductsPage() {
                     className="mb-16"
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3, duration: 0.6 }}
+                    transition={{ delay: 0.4, duration: 0.6 }}
                 >
                     <div className="text-center mb-12">
                         <h2 className="text-4xl font-bold text-gray-900 mb-4">All Products</h2>
@@ -169,19 +265,59 @@ export function ProductsPage() {
                         </p>
                     </div>
 
-                    {sortedProducts.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {sortedProducts.map((product: Product, index: number) => (
-                                <ProductCard
-                                    key={product._id}
-                                    product={product}
-                                    index={index}
-                                    currentImageIndex={currentImageIndexes[product._id] || 0}
-                                    farmers={farmers}
-                                    showVideoBackground={true}
-                                />
-                            ))}
-                        </div>
+                    {paginatedProducts.length > 0 ? (
+                        <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                {paginatedProducts.map((product: Product, index: number) => (
+                                    <ProductCard
+                                        key={product._id}
+                                        product={product}
+                                        index={index}
+                                        currentImageIndex={currentImageIndexes[product._id] || 0}
+                                        farmers={farmers}
+                                        showVideoBackground={true}
+                                    />
+                                ))}
+                            </div>
+
+                            {/* Pagination */}
+                            {totalPages > 1 && (
+                                <div className="flex justify-center items-center mt-12 space-x-4">
+                                    <button
+                                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                        disabled={currentPage === 1}
+                                        className="flex items-center px-4 py-2 text-green-600 hover:text-green-700 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
+                                    >
+                                        <ChevronLeft className="w-4 h-4 mr-1" />
+                                        Previous
+                                    </button>
+
+                                    <div className="flex space-x-2">
+                                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                            <button
+                                                key={page}
+                                                onClick={() => setCurrentPage(page)}
+                                                className={`px-3 py-2 rounded-lg transition-colors duration-200 ${currentPage === page
+                                                    ? 'bg-green-600 text-white'
+                                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                    }`}
+                                            >
+                                                {page}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <button
+                                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                        disabled={currentPage === totalPages}
+                                        className="flex items-center px-4 py-2 text-green-600 hover:text-green-700 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
+                                    >
+                                        Next
+                                        <ChevronRight className="w-4 h-4 ml-1" />
+                                    </button>
+                                </div>
+                            )}
+                        </>
                     ) : (
                         <div className="text-center py-16">
                             <h3 className="text-2xl font-bold text-gray-900 mb-4">No Products Found</h3>
@@ -200,31 +336,6 @@ export function ProductsPage() {
                             </button>
                         </div>
                     )}
-                </motion.div>
-
-                {/* Featured Products */}
-                <motion.div
-                    className="mb-16"
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4, duration: 0.6 }}
-                >
-                    <div className="text-center mb-12">
-                        <h2 className="text-4xl font-bold text-gray-900 mb-4">Featured Products</h2>
-                        <p className="text-lg text-gray-600">Handpicked fresh produce from our trusted farmers</p>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {featuredProducts.slice(0, 6).map((product: Product, index: number) => (
-                            <ProductCard
-                                key={product._id}
-                                product={product}
-                                index={index}
-                                currentImageIndex={currentImageIndexes[product._id] || 0}
-                                farmers={farmers}
-                                showVideoBackground={true}
-                            />
-                        ))}
-                    </div>
                 </motion.div>
 
                 {/* Categories Section */}
