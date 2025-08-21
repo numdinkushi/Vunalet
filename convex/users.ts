@@ -120,10 +120,20 @@ export const createUserProfile = mutation({
 export const getUserProfile = query({
     args: { clerkUserId: v.string() },
     handler: async (ctx, args) => {
-        return await ctx.db
-            .query("userProfiles")
-            .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", args.clerkUserId))
-            .first();
+        // Return null if no clerkUserId provided or if it's empty
+        if (!args.clerkUserId || args.clerkUserId.trim() === '') {
+            return null;
+        }
+
+        try {
+            return await ctx.db
+                .query("userProfiles")
+                .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", args.clerkUserId))
+                .first();
+        } catch (error) {
+            console.error('Error fetching user profile:', error);
+            return null;
+        }
     },
 });
 
@@ -554,4 +564,4 @@ export const autoAssignDispatcher = mutation({
             reason: `Assigned to dispatcher with ${bestDispatcher.pendingOrders} pending orders`
         };
     },
-}); 
+});

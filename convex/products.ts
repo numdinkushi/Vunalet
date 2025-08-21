@@ -62,18 +62,25 @@ export const getProductsByFarmer = query({
 // Get all active products (excluding expired)
 export const getActiveProducts = query({
     handler: async (ctx) => {
-        const now = new Date().toISOString().split('T')[0];
-        return await ctx.db
-            .query("products")
-            .withIndex("by_status", (q) => q.eq("status", "active"))
-            .filter((q) =>
-                q.or(
-                    q.eq(q.field("expiryDate"), undefined),
-                    q.gt(q.field("expiryDate"), now)
+        try {
+            const now = new Date().toISOString().split('T')[0];
+
+            return await ctx.db
+                .query("products")
+                .withIndex("by_status", (q) => q.eq("status", "active"))
+                .filter((q) =>
+                    q.or(
+                        q.eq(q.field("expiryDate"), undefined),
+                        q.gt(q.field("expiryDate"), now)
+                    )
                 )
-            )
-            .order("desc")
-            .collect();
+                .order("desc")
+                .collect();
+        } catch (error) {
+            console.error('Error in getActiveProducts:', error);
+            // Return empty array instead of throwing
+            return [];
+        }
     },
 });
 

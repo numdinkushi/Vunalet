@@ -30,9 +30,17 @@ const navItems = [
 export function Header() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
+    const [mounted, setMounted] = useState(false);
     const pathname = usePathname();
 
+    // Prevent hydration mismatch by only rendering after mount
     useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    useEffect(() => {
+        if (!mounted) return;
+
         // Only apply scroll effects on the home page
         const isHomePage = window.location.pathname === '/';
 
@@ -44,7 +52,29 @@ export function Header() {
             // For non-home pages, always show the scrolled state
             setIsScrolled(true);
         }
-    }, []);
+    }, [mounted]);
+
+    // Show a loading state during SSR to prevent hydration mismatch
+    if (!mounted) {
+        return (
+            <header className="fixed top-0 w-full z-50 bg-white/95 backdrop-blur-lg shadow-lg">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex justify-between items-center h-20">
+                        <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-gray-200 rounded-lg animate-pulse"></div>
+                            <div className="h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
+                        </div>
+                        <div className="hidden md:flex items-center space-x-8">
+                            {[1, 2, 3, 4, 5].map((i) => (
+                                <div key={i} className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
+                            ))}
+                        </div>
+                        <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+                    </div>
+                </div>
+            </header>
+        );
+    }
 
     return (
         <motion.header

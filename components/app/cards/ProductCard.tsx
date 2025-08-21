@@ -50,13 +50,14 @@ export function ProductCard({
     const farmerName = farmers?.find(f => f.clerkUserId === product.farmerId)?.firstName || 'Unknown Farmer';
     const isBuyer = userProfile?.role === 'buyer';
     const hasNoRole = !userProfile?.role;
+    const isSignedInButNoProfile = user && userProfile === null;
 
     const handlePurchaseClick = () => {
         if (isBuyer) {
             // Buyer can proceed to product page
             router.push(`/products/${product._id}`);
-        } else if (hasNoRole) {
-            // User with no role gets redirected to dashboard
+        } else if (hasNoRole || isSignedInButNoProfile) {
+            // User with no role or no profile gets redirected to dashboard (which will redirect to registration)
             router.push('/dashboard');
         }
         // Other roles (farmer, dispatcher) won't see the button
@@ -209,7 +210,7 @@ export function ProductCard({
                 </div>
 
                 {/* Show Purchase button for buyers and users with no role */}
-                {(isBuyer || hasNoRole) && (
+                {(isBuyer || hasNoRole || isSignedInButNoProfile) && (
                     <motion.button
                         onClick={handlePurchaseClick}
                         className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center group"
@@ -217,7 +218,7 @@ export function ProductCard({
                         whileTap={{ scale: 0.98 }}
                     >
                         <ShoppingCart className="mr-2" size={20} />
-                        {isBuyer ? 'Purchase' : 'Set Up Account'}
+                        {isBuyer ? 'Purchase' : isSignedInButNoProfile ? 'Complete Profile' : 'Set Up Account'}
                     </motion.button>
                 )}
             </div>
