@@ -1,5 +1,3 @@
-import { api } from '../../convex/_generated/api';
-
 export interface DispatcherWorkload {
     dispatcherId: string;
     pendingOrders: number;
@@ -12,6 +10,10 @@ export interface DispatcherAssignmentResult {
     reason?: string;
 }
 
+export interface Dispatcher {
+    clerkUserId: string;
+}
+
 /**
  * Utility to find the best dispatcher for assignment based on workload
  */
@@ -19,9 +21,9 @@ export class DispatcherAssignmentService {
     /**
      * Get dispatcher workload from Convex
      */
-    static async getDispatcherWorkload(dispatchers: any[]): Promise<DispatcherWorkload[]> {
+    static async getDispatcherWorkload(dispatchers: Dispatcher[]): Promise<DispatcherWorkload[]> {
         const workloads: DispatcherWorkload[] = [];
-        
+
         for (const dispatcher of dispatchers) {
             // This will be called from the Convex mutation
             // For now, we'll return a placeholder structure
@@ -31,7 +33,7 @@ export class DispatcherAssignmentService {
                 totalOrders: 0,   // Will be populated by Convex query
             });
         }
-        
+
         return workloads;
     }
 
@@ -56,7 +58,7 @@ export class DispatcherAssignmentService {
         });
 
         const bestDispatcher = sortedWorkloads[0];
-        
+
         return {
             dispatcherId: bestDispatcher.dispatcherId,
             isAssigned: true,
@@ -67,7 +69,7 @@ export class DispatcherAssignmentService {
     /**
      * Get random dispatcher (fallback method)
      */
-    static getRandomDispatcher(dispatchers: any[]): DispatcherAssignmentResult {
+    static getRandomDispatcher(dispatchers: Dispatcher[]): DispatcherAssignmentResult {
         if (dispatchers.length === 0) {
             return {
                 dispatcherId: '',
