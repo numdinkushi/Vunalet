@@ -40,49 +40,81 @@ export const createProduct = mutation({
     },
 });
 
-// Get products by farmer
+// Get products by farmer (excluding expired)
 export const getProductsByFarmer = query({
     args: { farmerId: v.string() },
     handler: async (ctx, args) => {
+        const now = new Date().toISOString().split('T')[0];
         return await ctx.db
             .query("products")
             .withIndex("by_farmer", (q) => q.eq("farmerId", args.farmerId))
+            .filter((q) =>
+                q.or(
+                    q.eq(q.field("expiryDate"), undefined),
+                    q.gt(q.field("expiryDate"), now)
+                )
+            )
             .order("desc")
             .collect();
     },
 });
 
-// Get all active products
+// Get all active products (excluding expired)
 export const getActiveProducts = query({
     handler: async (ctx) => {
+        const now = new Date().toISOString().split('T')[0];
         return await ctx.db
             .query("products")
             .withIndex("by_status", (q) => q.eq("status", "active"))
+            .filter((q) =>
+                q.or(
+                    q.eq(q.field("expiryDate"), undefined),
+                    q.gt(q.field("expiryDate"), now)
+                )
+            )
             .order("desc")
             .collect();
     },
 });
 
-// Get products by category
+// Get products by category (excluding expired)
 export const getProductsByCategory = query({
     args: { categoryId: v.string() },
     handler: async (ctx, args) => {
+        const now = new Date().toISOString().split('T')[0];
         return await ctx.db
             .query("products")
             .withIndex("by_category", (q) => q.eq("categoryId", args.categoryId))
-            .filter((q) => q.eq(q.field("status"), "active"))
+            .filter((q) =>
+                q.and(
+                    q.eq(q.field("status"), "active"),
+                    q.or(
+                        q.eq(q.field("expiryDate"), undefined),
+                        q.gt(q.field("expiryDate"), now)
+                    )
+                )
+            )
             .order("desc")
             .collect();
     },
 });
 
-// Get featured products
+// Get featured products (excluding expired)
 export const getFeaturedProducts = query({
     handler: async (ctx) => {
+        const now = new Date().toISOString().split('T')[0];
         return await ctx.db
             .query("products")
             .withIndex("by_featured", (q) => q.eq("isFeatured", true))
-            .filter((q) => q.eq(q.field("status"), "active"))
+            .filter((q) =>
+                q.and(
+                    q.eq(q.field("status"), "active"),
+                    q.or(
+                        q.eq(q.field("expiryDate"), undefined),
+                        q.gt(q.field("expiryDate"), now)
+                    )
+                )
+            )
             .order("desc")
             .collect();
     },
@@ -148,7 +180,7 @@ export const deleteProduct = mutation({
     },
 });
 
-// Search products
+// Search products (excluding expired)
 export const searchProducts = query({
     args: {
         searchTerm: v.string(),
@@ -157,9 +189,16 @@ export const searchProducts = query({
         maxPrice: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
+        const now = new Date().toISOString().split('T')[0];
         let products = await ctx.db
             .query("products")
             .withIndex("by_status", (q) => q.eq("status", "active"))
+            .filter((q) =>
+                q.or(
+                    q.eq(q.field("expiryDate"), undefined),
+                    q.gt(q.field("expiryDate"), now)
+                )
+            )
             .collect();
 
         // Filter by search term

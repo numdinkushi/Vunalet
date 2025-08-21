@@ -29,8 +29,7 @@ interface ProductCardProps {
 export function ProductCard({ product, index }: ProductCardProps) {
     return (
         <motion.div
-            className={`group relative bg-white rounded-3xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500 ${product.featured ? 'ring-2 ring-green-500' : ''
-                }`}
+            className={`group relative bg-white rounded-3xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500 grid grid-rows-[auto_1fr_auto] ${product.featured ? 'ring-2 ring-green-500' : ''}`}
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1, duration: 0.6 }}
@@ -44,6 +43,7 @@ export function ProductCard({ product, index }: ProductCardProps) {
                 </div>
             )}
 
+            {/* Image Section - Fixed Height */}
             <div className="relative h-64 overflow-hidden">
                 <ProductCarousel
                     images={product.images}
@@ -65,6 +65,7 @@ export function ProductCard({ product, index }: ProductCardProps) {
                 <VideoBackground videoUrl="/assets/video/falling_leaves.mp4" fallbackImage="/assets/background_images/image4.jpg" />
             </div>
 
+            {/* Content Section - Flexible Height */}
             <div className="relative p-6 bg-transparent backdrop-blur-sm z-10">
                 <div className="flex justify-between items-start mb-3">
                     <h3 className="text-xl font-bold text-white">{product.name}</h3>
@@ -80,7 +81,7 @@ export function ProductCard({ product, index }: ProductCardProps) {
                     <span className="ml-1 text-sm">{product.location}</span>
                 </div>
 
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex justify-between items-center">
                     <div className="text-2xl font-bold text-green-300">
                         R{product.price}
                         <span className="text-sm text-gray-300 font-normal">/{product.unit}</span>
@@ -89,7 +90,10 @@ export function ProductCard({ product, index }: ProductCardProps) {
                         {product.quantity} {product.unit} available
                     </div>
                 </div>
+            </div>
 
+            {/* Button Section - Fixed at Bottom */}
+            <div className="p-6 pt-0">
                 <Link href={`/products/${product.id}`}>
                     <motion.button
                         className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center group"

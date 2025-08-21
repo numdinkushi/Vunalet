@@ -1,9 +1,10 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Star, Heart, MapPin, Truck, Calculator, User } from 'lucide-react';
+import { Star, Heart, MapPin, Truck, Calculator, User, Clock, Thermometer, Snowflake, Package } from 'lucide-react';
 import { ProductCarousel } from '../../carousel/ProductCarousel';
 import { PurchaseFormData } from '../../../app/types';
+import { getExpiryStatus, getDaysUntilExpiry } from '../../../lib/utils/product-utils';
 
 interface ProductDetailCardProps {
     product: {
@@ -16,6 +17,8 @@ interface ProductDetailCardProps {
         unit: string;
         quantity: number;
         harvestDate: string;
+        expiryDate?: string;
+        storageMethod?: 'room_temp' | 'refrigerated' | 'frozen';
     };
     farmer?: {
         firstName: string;
@@ -24,7 +27,7 @@ interface ProductDetailCardProps {
     } | null;
     formData: PurchaseFormData;
     isCalculating: boolean;
-    isProcessing: boolean; // Add this prop
+    isProcessing: boolean;
     handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
     handleSubmit: (e: React.FormEvent) => void;
 }
@@ -34,10 +37,53 @@ export function ProductDetailCard({
     farmer,
     formData,
     isCalculating,
-    isProcessing, // Add this prop
+    isProcessing,
     handleInputChange,
     handleSubmit
 }: ProductDetailCardProps) {
+    const getStorageMethodIcon = (method?: string) => {
+        switch (method) {
+            case 'refrigerated':
+                return <Thermometer className="w-4 h-4" />;
+            case 'frozen':
+                return <Snowflake className="w-4 h-4" />;
+            default:
+                return <Package className="w-4 h-4" />;
+        }
+    };
+
+    const getStorageMethodLabel = (method?: string) => {
+        switch (method) {
+            case 'refrigerated':
+                return 'Refrigerated';
+            case 'frozen':
+                return 'Frozen';
+            default:
+                return 'Room Temperature';
+        }
+    };
+
+    const getExpiryStatusColor = (expiryDate?: string) => {
+        if (!expiryDate) return 'text-gray-300';
+        const status = getExpiryStatus(expiryDate);
+        switch (status) {
+            case 'expired':
+                return 'text-red-400';
+            case 'expiring_soon':
+                return 'text-orange-400';
+            default:
+                return 'text-green-400';
+        }
+    };
+
+    const getExpiryStatusText = (expiryDate?: string) => {
+        if (!expiryDate) return 'No expiry date set';
+        const daysUntilExpiry = getDaysUntilExpiry(expiryDate);
+        if (daysUntilExpiry < 0) return 'Expired';
+        if (daysUntilExpiry <= 3) return `Expires in ${daysUntilExpiry} days`;
+        return `Expires in ${daysUntilExpiry} days`;
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 50 }}
@@ -81,6 +127,28 @@ export function ProductDetailCard({
                     <div className="flex items-center text-gray-300">
                         <MapPin size={16} />
                         <span className="ml-2">{product.location}</span>
+                    </div>
+
+                    {/* Expiry Date and Storage Method */}
+                    <div className="space-y-2">
+                        {product.expiryDate && (
+                            <div className="flex items-center space-x-2">
+                                <Clock className={`w-4 h-4 ${getExpiryStatusColor(product.expiryDate)}`} />
+                                <span className={`text-sm ${getExpiryStatusColor(product.expiryDate)}`}>
+                                    {getExpiryStatusText(product.expiryDate)}
+                                </span>
+                            </div>
+                        )}
+                        {product.storageMethod && (
+                            <div className="flex items-center space-x-2">
+                                <div className="w-4 h-4 text-blue-300">
+                                    {getStorageMethodIcon(product.storageMethod)}
+                                </div>
+                                <span className="text-sm text-blue-300">
+                                    {getStorageMethodLabel(product.storageMethod)}
+                                </span>
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex justify-between items-center">

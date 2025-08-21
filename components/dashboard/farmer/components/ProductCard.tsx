@@ -1,9 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Leaf, Package, MapPin, Clock, Edit, Trash2, Eye, Star } from 'lucide-react';
+import { Leaf, Package, MapPin, Clock, Edit, Trash2, Eye, Star, Thermometer, Snowflake } from 'lucide-react';
 import { Product } from '../types';
 import { formatCurrency, formatDate } from '../utils';
+import { getExpiryStatus, getDaysUntilExpiry } from '../../../../lib/utils/product-utils';
 
 interface ProductCardProps {
     product: Product;
@@ -11,6 +12,49 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, showActions = true }: ProductCardProps) {
+    const getStorageMethodIcon = (method?: string) => {
+        switch (method) {
+            case 'refrigerated':
+                return <Thermometer className="w-4 h-4" />;
+            case 'frozen':
+                return <Snowflake className="w-4 h-4" />;
+            default:
+                return <Package className="w-4 h-4" />;
+        }
+    };
+
+    const getStorageMethodLabel = (method?: string) => {
+        switch (method) {
+            case 'refrigerated':
+                return 'Refrigerated';
+            case 'frozen':
+                return 'Frozen';
+            default:
+                return 'Room Temperature';
+        }
+    };
+
+    const getExpiryStatusColor = (expiryDate?: string) => {
+        if (!expiryDate) return 'text-gray-500';
+        const status = getExpiryStatus(expiryDate);
+        switch (status) {
+            case 'expired':
+                return 'text-red-500';
+            case 'expiring_soon':
+                return 'text-orange-500';
+            default:
+                return 'text-green-500';
+        }
+    };
+
+    const getExpiryStatusText = (expiryDate?: string) => {
+        if (!expiryDate) return 'No expiry date';
+        const daysUntilExpiry = getDaysUntilExpiry(expiryDate);
+        if (daysUntilExpiry < 0) return 'Expired';
+        if (daysUntilExpiry <= 3) return `Expires in ${daysUntilExpiry} days`;
+        return `Expires in ${daysUntilExpiry} days`;
+    };
+
     return (
         <Card className="hover:shadow-md transition-shadow">
             <CardHeader>
@@ -70,6 +114,26 @@ export function ProductCard({ product, showActions = true }: ProductCardProps) {
                             <span className="font-medium">Quantity:</span>
                             <p className="text-lg">{product.quantity} {product.unit}</p>
                         </div>
+                    </div>
+
+                    {/* Expiry Date and Storage Method */}
+                    <div className="space-y-2">
+                        {product.expiryDate && (
+                            <div className="flex items-center space-x-2 text-sm">
+                                <Clock className={`w-4 h-4 ${getExpiryStatusColor(product.expiryDate)}`} />
+                                <span className={`${getExpiryStatusColor(product.expiryDate)}`}>
+                                    {getExpiryStatusText(product.expiryDate)}
+                                </span>
+                            </div>
+                        )}
+                        {product.storageMethod && (
+                            <div className="flex items-center space-x-2 text-sm">
+                                <div className="w-4 h-4 text-blue-600">
+                                    {getStorageMethodIcon(product.storageMethod)}
+                                </div>
+                                <span className="text-blue-600">{getStorageMethodLabel(product.storageMethod)}</span>
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex items-center justify-between text-sm text-gray-500">
