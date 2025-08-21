@@ -55,6 +55,24 @@ export function Dashboard() {
         );
     }
 
+    // Check if user profile exists and has a role
+    if (!userProfile.role) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <Card className="w-full max-w-md">
+                    <CardContent className="p-6 text-center">
+                        <AlertCircle className="w-12 h-12 text-orange-500 mx-auto mb-4" />
+                        <h2 className="text-xl font-semibold mb-2">Profile Setup Required</h2>
+                        <p className="text-gray-600 mb-4">Your profile needs to be set up. Please contact support or try signing in again.</p>
+                        <SignInButton mode="modal">
+                            <Button>Sign In Again</Button>
+                        </SignInButton>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
     const roleConfig = {
         farmer: {
             title: 'Farmer Dashboard',
