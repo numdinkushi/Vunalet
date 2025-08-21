@@ -3,6 +3,22 @@ import { mutation, query } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 import { api } from './_generated/api';
 
+interface DispatcherAssignmentResult {
+    dispatcherId: string;
+    isAssigned: boolean;
+    reason?: string;
+}
+
+interface DispatcherWorkload {
+    dispatcherId: string;
+    pendingOrders: number;
+    totalOrders: number;
+}
+
+interface Dispatcher {
+    clerkUserId: string;
+}
+
 // Create basic user profile (without role)
 export const createBasicUserProfile = mutation({
     args: {
@@ -395,18 +411,6 @@ export const getUserProfileDebug = query({
     },
 });
 
-export interface DispatcherWorkload {
-    dispatcherId: string;
-    pendingOrders: number;
-    totalOrders: number;
-}
-
-export interface DispatcherAssignmentResult {
-    dispatcherId: string;
-    isAssigned: boolean;
-    reason?: string;
-}
-
 /**
  * Utility to find the best dispatcher for assignment based on workload
  */
@@ -414,7 +418,7 @@ export class DispatcherAssignmentService {
     /**
      * Get dispatcher workload from Convex
      */
-    static async getDispatcherWorkload(dispatchers: any[]): Promise<DispatcherWorkload[]> {
+    static async getDispatcherWorkload(dispatchers: Dispatcher[]): Promise<DispatcherWorkload[]> {
         const workloads: DispatcherWorkload[] = [];
 
         for (const dispatcher of dispatchers) {
@@ -462,7 +466,7 @@ export class DispatcherAssignmentService {
     /**
      * Get random dispatcher (fallback method)
      */
-    static getRandomDispatcher(dispatchers: any[]): DispatcherAssignmentResult {
+    static getRandomDispatcher(dispatchers: Dispatcher[]): DispatcherAssignmentResult {
         if (dispatchers.length === 0) {
             return {
                 dispatcherId: '',
@@ -485,8 +489,8 @@ export class DispatcherAssignmentService {
 // Get dispatcher workload for assignment
 export const getDispatcherWorkload = query({
     args: { dispatcherIds: v.array(v.string()) },
-    handler: async (ctx, args) => {
-        const workloads = [];
+    handler: async (ctx, args): Promise<DispatcherWorkload[]> => {
+        const workloads: DispatcherWorkload[] = [];
 
         for (const dispatcherId of args.dispatcherIds) {
             // Get pending orders for this dispatcher
@@ -516,7 +520,7 @@ export const getDispatcherWorkload = query({
 // Auto-assign dispatcher to order
 export const autoAssignDispatcher = mutation({
     args: {},
-    handler: async (ctx) => {
+    handler: async (ctx): Promise<{ dispatcherId: string; pendingOrders: number; reason: string; }> => {
         // Get all dispatchers (remove verification check)
         const dispatchers = await ctx.db
             .query("userProfiles")
@@ -530,19 +534,19 @@ export const autoAssignDispatcher = mutation({
         const dispatcherIds = dispatchers.map(d => d.clerkUserId);
 
         // Get workload for all dispatchers
-        const workloads = await ctx.runQuery(api.users.getDispatcherWorkload, {
+        const workloads: DispatcherWorkload[] = await ctx.runQuery(api.users.getDispatcherWorkload, {
             dispatcherIds
         });
 
         // Find dispatcher with least pending orders
-        const sortedWorkloads = workloads.sort((a, b) => {
+        const sortedWorkloads: DispatcherWorkload[] = workloads.sort((a: DispatcherWorkload, b: DispatcherWorkload) => {
             if (a.pendingOrders !== b.pendingOrders) {
                 return a.pendingOrders - b.pendingOrders;
             }
             return a.totalOrders - b.totalOrders;
         });
 
-        const bestDispatcher = sortedWorkloads[0];
+        const bestDispatcher: DispatcherWorkload = sortedWorkloads[0];
 
         return {
             dispatcherId: bestDispatcher.dispatcherId,
