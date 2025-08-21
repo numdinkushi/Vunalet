@@ -22,6 +22,7 @@ export interface PurchaseFormData {
     deliveryDistance: number;
     deliveryCost: number;
     totalCost: number;
+    specialInstructions?: string;
 }
 
 export interface ProductDetailPageProps {
