@@ -13,6 +13,25 @@ import { api } from '../../../convex/_generated/api';
 import { categories } from '../../../constants/categories';
 import { ProductCard } from '../../app/cards/ProductCard';
 
+interface Product {
+    _id: string;
+    images: string[];
+    name: string;
+    price: number;
+    unit: string;
+    quantity: number;
+    description?: string;
+    harvestDate: string;
+    isOrganic?: boolean;
+    isFeatured: boolean;
+    location: string;
+    status: string;
+    farmerId: string;
+    categoryId: string;
+    createdAt: number;
+    updatedAt: number;
+}
+
 export function ProductsPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
@@ -31,7 +50,7 @@ export function ProductsPage() {
         const interval = setInterval(() => {
             setCurrentImageIndexes(prev => {
                 const newIndexes = { ...prev };
-                featuredProducts.forEach(product => {
+                featuredProducts.forEach((product: Product) => {
                     if (product.images.length > 1) {
                         const currentIndex = newIndexes[product._id] || 0;
                         newIndexes[product._id] = (currentIndex + 1) % product.images.length;
@@ -126,7 +145,7 @@ export function ProductsPage() {
                         <p className="text-lg text-gray-600">Handpicked fresh produce from our trusted farmers</p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {featuredProducts.slice(0, 6).map((product, index) => (
+                        {featuredProducts.slice(0, 6).map((product: Product, index: number) => (
                             <ProductCard
                                 key={product._id}
                                 product={product}
