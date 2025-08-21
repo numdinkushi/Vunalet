@@ -3,16 +3,17 @@ import { FarmerProductsPage } from '@/components/pages/product/FarmerProductsPag
 import { Footer } from '@/components/layout/Footer';
 
 interface FarmerProductsPageProps {
-    params: {
+    params: Promise<{
         id: string;
-    };
+    }>;
 }
 
-export default function FarmerProducts({ params }: FarmerProductsPageProps) {
+export default async function FarmerProducts({ params }: FarmerProductsPageProps) {
+    const { id } = await params;
     return (
         <div className="min-h-screen bg-white">
             <Header />
-            <FarmerProductsPage farmerId={params.id} />
+            <FarmerProductsPage farmerId={id} />
             <Footer />
         </div>
     );
