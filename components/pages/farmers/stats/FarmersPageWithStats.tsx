@@ -13,7 +13,7 @@ export function FarmersPageWithStats() {
 
     const handleViewProducts = (farmerId: string) => {
         // Navigate to farmer's products page
-        window.location.href = `/products?farmer=${farmerId}`;
+        window.location.href = `/products/farmer/${farmerId}`;
     };
 
     if (!farmersWithStats) {

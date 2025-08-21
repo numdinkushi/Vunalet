@@ -2,11 +2,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Package, MapPin, Clock, Truck, Edit, Eye, User, ShoppingBag, DollarSign } from 'lucide-react';
-import { FarmerOrder } from '../types';
+import { TransformedOrder } from '../types/dashboard-types';
 import { formatCurrency, formatDate, getOrderStatusText, getStatusColor, getStatusIcon } from '../utils';
 
 interface OrderCardProps {
-    order: FarmerOrder;
+    order: TransformedOrder;
     showActions?: boolean;
 }
 
@@ -63,11 +63,16 @@ export function OrderCard({ order, showActions = true }: OrderCardProps) {
                             <h4 className="font-semibold text-blue-900">Customer</h4>
                         </div>
                         <div className="space-y-2">
-                            <p className="text-sm text-blue-800 font-medium">{order.farmName}</p>
+                            <p className="text-sm text-blue-800 font-medium">{order.customerName}</p>
                             <div className="flex items-center space-x-2 text-xs text-blue-600">
                                 <MapPin className="w-3 h-3" />
                                 <span className="truncate">{order.deliveryAddress}</span>
                             </div>
+                            {order.customerPhone && (
+                                <div className="flex items-center space-x-2 text-xs text-blue-600">
+                                    <span>📞 {order.customerPhone}</span>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -98,7 +103,7 @@ export function OrderCard({ order, showActions = true }: OrderCardProps) {
                         <h4 className="font-semibold text-gray-900">Products</h4>
                     </div>
                     <div className="space-y-2">
-                        {order.products.map((product, index) => (
+                        {order.products.map((product: { name: string; quantity: number; price: number; }, index: number) => (
                             <div key={index} className="flex items-center justify-between p-2 bg-white rounded border border-gray-100">
                                 <span className="font-medium text-gray-900">{product.name}</span>
                                 <div className="text-right">

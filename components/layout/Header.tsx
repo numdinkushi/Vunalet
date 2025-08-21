@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -15,6 +16,8 @@ import {
     SignedOut
 } from '@clerk/nextjs';
 import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 const navItems = [
     { name: 'Home', href: '/' },
@@ -27,6 +30,7 @@ const navItems = [
 export function Header() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
+    const pathname = usePathname();
 
     useEffect(() => {
         // Only apply scroll effects on the home page
@@ -82,22 +86,43 @@ export function Header() {
 
                     {/* Desktop Navigation */}
                     <nav className="hidden md:flex items-center space-x-8">
-                        {navItems.map((item, index) => (
-                            <motion.a
-                                key={item.name}
-                                href={item.href}
-                                className={`px-3 py-2 text-sm font-medium transition-colors ${isScrolled
-                                    ? 'text-gray-700 hover:text-green-600'
-                                    : 'text-white/90 hover:text-white'
-                                    }`}
-                                initial={{ opacity: 0, y: -20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.3 + index * 0.1 }}
-                                whileHover={{ y: -2 }}
-                            >
-                                {item.name}
-                            </motion.a>
-                        ))}
+                        {navItems.map((item, index) => {
+                            const isActive = pathname === item.href ||
+                                (item.href !== '/' && pathname?.startsWith(item.href));
+
+                            return (
+                                <motion.div
+                                    key={item.name}
+                                    initial={{ opacity: 0, y: -20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.3 + index * 0.1 }}
+                                    whileHover={{ y: -2 }}
+                                >
+                                    <Link
+                                        href={item.href}
+                                        className={`px-3 py-2 text-sm font-medium transition-colors relative ${isActive
+                                            ? isScrolled
+                                                ? 'text-green-600 font-semibold'
+                                                : 'text-white font-semibold'
+                                            : isScrolled
+                                                ? 'text-gray-700 hover:text-green-600'
+                                                : 'text-white/90 hover:text-white'
+                                            }`}
+                                    >
+                                        {item.name}
+                                        {isActive && (
+                                            <motion.div
+                                                className={`absolute bottom-0 left-0 right-0 h-0.5 ${isScrolled ? 'bg-green-600' : 'bg-white'
+                                                    }`}
+                                                layoutId="activeTab"
+                                                initial={false}
+                                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                            />
+                                        )}
+                                    </Link>
+                                </motion.div>
+                            );
+                        })}
                     </nav>
 
                     <div className="hidden md:flex items-center space-x-4">
@@ -173,17 +198,28 @@ export function Header() {
                             transition={{ duration: 0.3 }}
                         >
                             <div className="px-2 pt-2 pb-3 space-y-1 bg-white shadow-lg rounded-lg mt-2">
-                                {navItems.map((item) => (
-                                    <motion.a
-                                        key={item.name}
-                                        href={item.href}
-                                        className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600 w-full text-left rounded-lg hover:bg-green-50 transition-all duration-300"
-                                        onClick={() => setIsMenuOpen(false)}
-                                        whileHover={{ x: 10 }}
-                                    >
-                                        {item.name}
-                                    </motion.a>
-                                ))}
+                                {navItems.map((item) => {
+                                    const isActive = pathname === item.href ||
+                                        (item.href !== '/' && pathname?.startsWith(item.href));
+
+                                    return (
+                                        <motion.div
+                                            key={item.name}
+                                            whileHover={{ x: 10 }}
+                                        >
+                                            <Link
+                                                href={item.href}
+                                                className={`block px-3 py-2 text-base font-medium w-full text-left rounded-lg transition-all duration-300 ${isActive
+                                                    ? 'text-green-600 bg-green-50 font-semibold'
+                                                    : 'text-gray-700 hover:text-green-600 hover:bg-green-50'
+                                                    }`}
+                                                onClick={() => setIsMenuOpen(false)}
+                                            >
+                                                {item.name}
+                                            </Link>
+                                        </motion.div>
+                                    );
+                                })}
 
                                 <SignedOut>
                                     <div className="pt-4 space-y-2">

@@ -1,0 +1,424 @@
+'use client';
+
+import { useState } from 'react';
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '../../../../convex/_generated/api';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card';
+import { Button } from '../../../ui/button';
+import { Input } from '../../../ui/input';
+import { Label } from '../../../ui/label';
+import { Textarea } from '../../../ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select';
+import { EnhancedImageUpload } from '../../../ui/enhanced-image-upload';
+import { Checkbox } from '../../../ui/checkbox';
+import { Calendar } from '../../../ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover';
+import { CalendarIcon, Package, Thermometer, Snowflake, Clock } from 'lucide-react';
+import { toast } from 'sonner';
+import { cn } from '../../../../lib/utils';
+import { calculateExpiryDate, StorageMethod } from '../../../../lib/utils/product-utils';
+import { AddProductModalProps, NewProduct } from '../types/dashboard-types';
+
+// Local function to get storage method label
+const getStorageMethodLabel = (method: StorageMethod): string => {
+    switch (method) {
+        case 'refrigerated':
+            return 'Refrigerated';
+        case 'frozen':
+            return 'Frozen';
+        default:
+            return 'Room Temperature';
+    }
+};
+
+export function AddProductModal({ isOpen, onClose, userProfile, onProductAdded }: AddProductModalProps) {
+    const [newProduct, setNewProduct] = useState<NewProduct>({
+        name: '',
+        categoryId: '',
+        price: 0,
+        unit: '',
+        quantity: 0,
+        description: '',
+        harvestDate: '',
+        storageMethod: 'room_temp',
+        location: userProfile.location || 'Barberton, Mpumalanga',
+        isOrganic: false,
+        isFeatured: false,
+        images: [],
+    });
+
+    const [harvestDate, setHarvestDate] = useState<Date | undefined>(undefined);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const categories = useQuery(api.categories.getActiveCategories);
+    const createProduct = useMutation(api.products.createProduct);
+
+    const handleImagesUploaded = (imageUrls: string[]) => {
+        setNewProduct({ ...newProduct, images: imageUrls });
+    };
+
+    const handleAddProduct = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!newProduct.harvestDate) {
+            toast.error('Please select a harvest date');
+            return;
+        }
+
+        if (newProduct.images.length === 0) {
+            toast.error('Please upload at least one product image');
+            return;
+        }
+
+        setIsSubmitting(true);
+
+        try {
+            await createProduct({
+                ...newProduct,
+                farmerId: userProfile.clerkUserId,
+                status: 'active',
+            });
+
+            toast.success('Product added successfully!');
+            onProductAdded();
+            onClose();
+
+            // Reset form
+            setNewProduct({
+                name: '',
+                categoryId: '',
+                price: 0,
+                unit: '',
+                quantity: 0,
+                description: '',
+                harvestDate: '',
+                storageMethod: 'room_temp',
+                location: userProfile.location || 'Barberton, Mpumalanga',
+                isOrganic: false,
+                isFeatured: false,
+                images: [],
+            });
+            setHarvestDate(undefined);
+
+        } catch (error) {
+            console.error('Error creating product:', error);
+            toast.error('Failed to add product. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-2xl max-h-[90vh] flex flex-col">
+                <CardHeader className="flex-shrink-0">
+                    <CardTitle>Add New Product</CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1 overflow-y-auto p-6">
+                    <form onSubmit={handleAddProduct} className="space-y-6">
+                        {/* Basic Information */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
+                                Basic Information
+                            </h3>
+                            <div className="grid grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+                                        Product Name *
+                                    </Label>
+                                    <Input
+                                        id="name"
+                                        value={newProduct.name}
+                                        onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                                        className="h-11"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="category" className="text-sm font-medium text-gray-700">
+                                        Category *
+                                    </Label>
+                                    <Select value={newProduct.categoryId} onValueChange={(value) => setNewProduct({ ...newProduct, categoryId: value })}>
+                                        <SelectTrigger className="h-11">
+                                            <SelectValue placeholder="Select category" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {categories?.filter((category: { categoryId: string; name: string }) =>
+                                                userProfile.specialties?.includes(category.categoryId)
+                                            ).map((category: { categoryId: string; name: string }) => (
+                                                <SelectItem key={category.categoryId} value={category.categoryId}>
+                                                    {category.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Pricing & Quantity */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
+                                Pricing & Quantity
+                            </h3>
+                            <div className="grid grid-cols-3 gap-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="price" className="text-sm font-medium text-gray-700">
+                                        Price (R) *
+                                    </Label>
+                                    <Input
+                                        id="price"
+                                        type="number"
+                                        value={newProduct.price}
+                                        onChange={(e) => setNewProduct({ ...newProduct, price: Number(e.target.value) })}
+                                        className="h-11"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="quantity" className="text-sm font-medium text-gray-700">
+                                        Quantity *
+                                    </Label>
+                                    <Input
+                                        id="quantity"
+                                        type="number"
+                                        value={newProduct.quantity}
+                                        onChange={(e) => setNewProduct({ ...newProduct, quantity: Number(e.target.value) })}
+                                        className="h-11"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="unit" className="text-sm font-medium text-gray-700">
+                                        Unit *
+                                    </Label>
+                                    <Input
+                                        id="unit"
+                                        value={newProduct.unit}
+                                        onChange={(e) => setNewProduct({ ...newProduct, unit: e.target.value })}
+                                        placeholder="kg, pcs, etc."
+                                        className="h-11"
+                                        required
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Harvest & Storage */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
+                                Harvest & Storage
+                            </h3>
+                            <div className="grid grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="harvestDate" className="text-sm font-medium text-gray-700">
+                                        Harvest Date *
+                                    </Label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                className={cn(
+                                                    "w-full justify-start text-left font-normal h-11",
+                                                    !harvestDate && "text-muted-foreground"
+                                                )}
+                                            >
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {harvestDate ? (
+                                                    harvestDate.toLocaleDateString()
+                                                ) : (
+                                                    <span>Pick a date</span>
+                                                )}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar
+                                                mode="single"
+                                                selected={harvestDate}
+                                                onSelect={(date) => {
+                                                    setHarvestDate(date);
+                                                    if (date) {
+                                                        setNewProduct({
+                                                            ...newProduct,
+                                                            harvestDate: date.toISOString().split('T')[0]
+                                                        });
+                                                    }
+                                                }}
+                                                initialFocus
+                                                disabled={(date) => date > new Date()}
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="storageMethod" className="text-sm font-medium text-gray-700">
+                                        Storage Method *
+                                    </Label>
+                                    <Select
+                                        value={newProduct.storageMethod}
+                                        onValueChange={(value: StorageMethod) => setNewProduct({ ...newProduct, storageMethod: value })}
+                                    >
+                                        <SelectTrigger className="h-11">
+                                            <SelectValue placeholder="Select storage method" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="room_temp">
+                                                <div className="flex items-center space-x-2">
+                                                    <Package className="w-4 h-4" />
+                                                    <span>Room Temperature</span>
+                                                </div>
+                                            </SelectItem>
+                                            <SelectItem value="refrigerated">
+                                                <div className="flex items-center space-x-2">
+                                                    <Thermometer className="w-4 h-4" />
+                                                    <span>Refrigerated</span>
+                                                </div>
+                                            </SelectItem>
+                                            <SelectItem value="frozen">
+                                                <div className="flex items-center space-x-2">
+                                                    <Snowflake className="w-4 h-4" />
+                                                    <span>Frozen</span>
+                                                </div>
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Expiry Date Preview */}
+                        {newProduct.harvestDate && newProduct.categoryId && (
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <div className="flex items-center space-x-2 mb-3">
+                                    <Clock className="w-4 h-4 text-blue-600" />
+                                    <span className="text-sm font-medium text-blue-800">Expiry Date Preview</span>
+                                </div>
+                                <div className="text-sm text-blue-700">
+                                    {(() => {
+                                        try {
+                                            const expiryDate = calculateExpiryDate(
+                                                newProduct.harvestDate,
+                                                newProduct.categoryId,
+                                                newProduct.storageMethod
+                                            );
+                                            const expiryDateObj = new Date(expiryDate);
+                                            const daysUntilExpiry = Math.ceil((expiryDateObj.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+
+                                            return (
+                                                <div className="space-y-1">
+                                                    <p>
+                                                        <span className="font-medium">Expires:</span> {expiryDateObj.toLocaleDateString()}
+                                                    </p>
+                                                    <p>
+                                                        <span className="font-medium">Storage:</span> {getStorageMethodLabel(newProduct.storageMethod)}
+                                                    </p>
+                                                    <p>
+                                                        <span className="font-medium">Shelf Life:</span> {daysUntilExpiry > 0 ? `${daysUntilExpiry} days` : 'Expired'}
+                                                    </p>
+                                                </div>
+                                            );
+                                        } catch {
+                                            return <p className="text-red-600">Error calculating expiry date</p>;
+                                        }
+                                    })()}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Location & Description */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
+                                Location & Description
+                            </h3>
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="location" className="text-sm font-medium text-gray-700">
+                                        Location *
+                                    </Label>
+                                    <Input
+                                        id="location"
+                                        value={newProduct.location}
+                                        onChange={(e) => setNewProduct({ ...newProduct, location: e.target.value })}
+                                        placeholder="Farm location"
+                                        className="h-11"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="description" className="text-sm font-medium text-gray-700">
+                                        Description
+                                    </Label>
+                                    <Textarea
+                                        id="description"
+                                        value={newProduct.description}
+                                        onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                                        rows={3}
+                                        className="resize-none"
+                                        placeholder="Describe your product..."
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Product Images */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
+                                Product Images
+                            </h3>
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium text-gray-700">
+                                    Upload Images *
+                                </Label>
+                                <EnhancedImageUpload
+                                    onImagesUploaded={handleImagesUploaded}
+                                    maxImages={5}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Product Options */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
+                                Product Options
+                            </h3>
+                            <div className="flex items-center space-x-8">
+                                <div className="flex items-center space-x-3">
+                                    <Checkbox
+                                        id="isOrganic"
+                                        checked={newProduct.isOrganic}
+                                        onCheckedChange={(checked) => setNewProduct({ ...newProduct, isOrganic: checked as boolean })}
+                                    />
+                                    <Label htmlFor="isOrganic" className="text-sm font-medium text-gray-700">
+                                        Organic Product
+                                    </Label>
+                                </div>
+                                <div className="flex items-center space-x-3">
+                                    <Checkbox
+                                        id="isFeatured"
+                                        checked={newProduct.isFeatured}
+                                        onCheckedChange={(checked) => setNewProduct({ ...newProduct, isFeatured: checked as boolean })}
+                                    />
+                                    <Label htmlFor="isFeatured" className="text-sm font-medium text-gray-700">
+                                        Featured Product
+                                    </Label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </CardContent>
+                <div className="flex-shrink-0 border-t bg-gray-50 px-6 py-4">
+                    <div className="flex justify-end space-x-2">
+                        <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+                            Cancel
+                        </Button>
+                        <Button type="submit" onClick={handleAddProduct} disabled={isSubmitting}>
+                            {isSubmitting ? 'Adding Product...' : 'Add Product'}
+                        </Button>
+                    </div>
+                </div>
+            </Card>
+        </div>
+    );
+} 

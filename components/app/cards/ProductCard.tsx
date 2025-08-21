@@ -1,13 +1,14 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Star, Heart, MapPin, ShoppingCart } from 'lucide-react';
+import { Star, Heart, MapPin, ShoppingCart, Clock, Thermometer, Snowflake, Package } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { VideoBackground } from '../../ui/VideoBackground';
+import { getExpiryStatus, getDaysUntilExpiry } from '../../../lib/utils/product-utils';
 
 interface ProductCardProps {
     product: {
@@ -20,6 +21,9 @@ interface ProductCardProps {
         price: number;
         unit: string;
         quantity: number;
+        expiryDate?: string;
+        storageMethod?: 'room_temp' | 'refrigerated' | 'frozen';
+        harvestDate: string;
     };
     index?: number;
     currentImageIndex?: number;
@@ -58,6 +62,49 @@ export function ProductCard({
         // Other roles (farmer, dispatcher) won't see the button
     };
 
+    const getStorageMethodIcon = (method?: string) => {
+        switch (method) {
+            case 'refrigerated':
+                return <Thermometer className="w-4 h-4" />;
+            case 'frozen':
+                return <Snowflake className="w-4 h-4" />;
+            default:
+                return <Package className="w-4 h-4" />;
+        }
+    };
+
+    const getStorageMethodLabel = (method?: string) => {
+        switch (method) {
+            case 'refrigerated':
+                return 'Refrigerated';
+            case 'frozen':
+                return 'Frozen';
+            default:
+                return 'Room Temp';
+        }
+    };
+
+    const getExpiryStatusColor = (expiryDate?: string) => {
+        if (!expiryDate) return 'text-gray-500';
+        const status = getExpiryStatus(expiryDate);
+        switch (status) {
+            case 'expired':
+                return 'text-red-500';
+            case 'expiring_soon':
+                return 'text-orange-500';
+            default:
+                return 'text-green-500';
+        }
+    };
+
+    const getExpiryStatusText = (expiryDate?: string) => {
+        if (!expiryDate) return 'No expiry date';
+        const daysUntilExpiry = getDaysUntilExpiry(expiryDate);
+        if (daysUntilExpiry < 0) return 'Expired';
+        if (daysUntilExpiry <= 3) return `Expires in ${daysUntilExpiry} days`;
+        return `Expires in ${daysUntilExpiry} days`;
+    };
+
     return (
         <motion.div
             key={product._id}
@@ -69,13 +116,18 @@ export function ProductCard({
         >
             {/* Product Image */}
             <div className="relative h-64 overflow-hidden">
-                <Image
-                    src={product.images[currentImageIndex] || '/assets/categories/vegetables/image.jpg'}
-                    alt={product.name}
-                    width={400}
-                    height={300}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                />
+                {product.images && product.images.length > 0 ? (
+                    <Image
+                        src={product.images[currentImageIndex] || product.images[0]}
+                        alt={product.name}
+                        fill
+                        className="object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                ) : (
+                    <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                        <span className="text-gray-400">No image</span>
+                    </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
                 {/* Featured Badge */}
@@ -122,6 +174,28 @@ export function ProductCard({
                 <div className={`flex items-center ${showVideoBackground ? 'text-gray-300' : 'text-gray-500'} mb-4`}>
                     <MapPin size={16} />
                     <span className="ml-1 text-sm">{product.location}</span>
+                </div>
+
+                {/* Expiry Date and Storage Method */}
+                <div className="space-y-2 mb-4">
+                    {product.expiryDate && (
+                        <div className="flex items-center space-x-2">
+                            <Clock className={`w-4 h-4 ${getExpiryStatusColor(product.expiryDate)}`} />
+                            <span className={`text-sm ${getExpiryStatusColor(product.expiryDate)}`}>
+                                {getExpiryStatusText(product.expiryDate)}
+                            </span>
+                        </div>
+                    )}
+                    {product.storageMethod && (
+                        <div className="flex items-center space-x-2">
+                            <div className={`w-4 h-4 ${showVideoBackground ? 'text-blue-300' : 'text-blue-600'}`}>
+                                {getStorageMethodIcon(product.storageMethod)}
+                            </div>
+                            <span className={`text-sm ${showVideoBackground ? 'text-blue-300' : 'text-blue-600'}`}>
+                                {getStorageMethodLabel(product.storageMethod)}
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex justify-between items-center mb-6">

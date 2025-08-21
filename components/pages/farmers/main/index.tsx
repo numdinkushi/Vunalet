@@ -16,7 +16,7 @@ export function FarmersPage() {
 
     const handleViewProducts = (farmerId: string) => {
         // Navigate to farmer's products page
-        window.location.href = `/products?farmer=${farmerId}`;
+        window.location.href = `/products/farmer/${farmerId}`;
     };
 
     return (

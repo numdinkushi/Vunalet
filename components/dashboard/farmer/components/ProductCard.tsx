@@ -1,16 +1,62 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Leaf, Package, MapPin, Clock, Edit, Trash2, Eye, Star } from 'lucide-react';
+import { Leaf, Package, MapPin, Clock, Edit, Eye, Star, Thermometer, Snowflake } from 'lucide-react';
 import { Product } from '../types';
 import { formatCurrency, formatDate } from '../utils';
+import { getExpiryStatus, getDaysUntilExpiry } from '../../../../lib/utils/product-utils';
+import { DeleteProductButton } from './delete-product-button';
 
 interface ProductCardProps {
     product: Product;
     showActions?: boolean;
+    onProductDeleted?: () => void;
 }
 
-export function ProductCard({ product, showActions = true }: ProductCardProps) {
+export function ProductCard({ product, showActions = true, onProductDeleted }: ProductCardProps) {
+    const getStorageMethodIcon = (method?: string) => {
+        switch (method) {
+            case 'refrigerated':
+                return <Thermometer className="w-4 h-4" />;
+            case 'frozen':
+                return <Snowflake className="w-4 h-4" />;
+            default:
+                return <Package className="w-4 h-4" />;
+        }
+    };
+
+    const getStorageMethodLabel = (method?: string) => {
+        switch (method) {
+            case 'refrigerated':
+                return 'Refrigerated';
+            case 'frozen':
+                return 'Frozen';
+            default:
+                return 'Room Temperature';
+        }
+    };
+
+    const getExpiryStatusColor = (expiryDate?: string) => {
+        if (!expiryDate) return 'text-gray-500';
+        const status = getExpiryStatus(expiryDate);
+        switch (status) {
+            case 'expired':
+                return 'text-red-500';
+            case 'expiring_soon':
+                return 'text-orange-500';
+            default:
+                return 'text-green-500';
+        }
+    };
+
+    const getExpiryStatusText = (expiryDate?: string) => {
+        if (!expiryDate) return 'No expiry date';
+        const daysUntilExpiry = getDaysUntilExpiry(expiryDate);
+        if (daysUntilExpiry < 0) return 'Expired';
+        if (daysUntilExpiry <= 3) return `Expires in ${daysUntilExpiry} days`;
+        return `Expires in ${daysUntilExpiry} days`;
+    };
+
     return (
         <Card className="hover:shadow-md transition-shadow">
             <CardHeader>
@@ -72,6 +118,26 @@ export function ProductCard({ product, showActions = true }: ProductCardProps) {
                         </div>
                     </div>
 
+                    {/* Expiry Date and Storage Method */}
+                    <div className="space-y-2">
+                        {product.expiryDate && (
+                            <div className="flex items-center space-x-2 text-sm">
+                                <Clock className={`w-4 h-4 ${getExpiryStatusColor(product.expiryDate)}`} />
+                                <span className={`${getExpiryStatusColor(product.expiryDate)}`}>
+                                    {getExpiryStatusText(product.expiryDate)}
+                                </span>
+                            </div>
+                        )}
+                        {product.storageMethod && (
+                            <div className="flex items-center space-x-2 text-sm">
+                                <div className="w-4 h-4 text-blue-600">
+                                    {getStorageMethodIcon(product.storageMethod)}
+                                </div>
+                                <span className="text-blue-600">{getStorageMethodLabel(product.storageMethod)}</span>
+                            </div>
+                        )}
+                    </div>
+
                     <div className="flex items-center justify-between text-sm text-gray-500">
                         <div className="flex items-center space-x-1">
                             <MapPin className="w-4 h-4" />
@@ -89,15 +155,14 @@ export function ProductCard({ product, showActions = true }: ProductCardProps) {
                                 {product.status}
                             </Badge>
                             <div className="flex space-x-2">
-                                <Button size="sm" variant="outline">
-                                    <Edit className="w-4 h-4" />
-                                </Button>
-                                <Button size="sm" variant="outline">
-                                    <Eye className="w-4 h-4" />
-                                </Button>
-                                <Button size="sm" variant="outline" className="text-red-600">
-                                    <Trash2 className="w-4 h-4" />
-                                </Button>
+                                <DeleteProductButton
+                                    productId={product._id}
+                                    productName={product.name}
+                                    onSuccess={onProductDeleted}
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-red-600 hover:text-red-700"
+                                />
                             </div>
                         </div>
                     )}

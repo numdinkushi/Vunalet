@@ -67,6 +67,7 @@ export default defineSchema({
         images: v.array(v.string()), // Cloudinary URLs
         harvestDate: v.string(),
         expiryDate: v.optional(v.string()),
+        storageMethod: v.optional(v.union(v.literal("room_temp"), v.literal("refrigerated"), v.literal("frozen"))),
         isOrganic: v.optional(v.boolean()),
         isFeatured: v.boolean(),
         location: v.string(),

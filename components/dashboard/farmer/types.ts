@@ -16,8 +16,10 @@ export interface Product {
     price: number;
     unit: string;
     quantity: number;
-    description: string;
+    description?: string;
     harvestDate: string;
+    expiryDate?: string;
+    storageMethod?: 'room_temp' | 'refrigerated' | 'frozen';
     location: string;
     isOrganic: boolean;
     isFeatured: boolean;
