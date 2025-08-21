@@ -36,7 +36,6 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { mockFarmerStats, mockProducts, mockFarmerOrders } from './data';
 import { StatCard, ProductCard, OrderCard } from './components';
 import { cn } from '../../../lib/utils';
 import { WalletCard } from '../shared/WalletCard';
@@ -44,6 +43,51 @@ import { useUser } from '@clerk/nextjs';
 import { useEffect } from 'react';
 import { walletService } from '../../../lib/services/wallet/wallet.service';
 import { LZC_TOKEN_NAME } from '../../../constants/tokens';
+
+// Type for Convex order structure with buyer info
+interface ConvexOrder {
+    _id: string;
+    buyerId: string;
+    farmerId: string;
+    dispatcherId?: string;
+    products: Array<{
+        productId: string;
+        name: string;
+        price: number;
+        quantity: number;
+        unit: string;
+    }>;
+    totalAmount: number;
+    farmerAmount: number;
+    dispatcherAmount: number;
+    deliveryAddress: string;
+    deliveryCoordinates?: {
+        lat: number;
+        lng: number;
+    };
+    pickupLocation?: string;
+    pickupCoordinates?: {
+        lat: number;
+        lng: number;
+    };
+    deliveryDistance: number;
+    deliveryCost: number;
+    totalCost: number;
+    paymentMethod: 'lisk_zar' | 'cash';
+    paymentStatus: 'pending' | 'paid' | 'failed';
+    orderStatus: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'delivered' | 'cancelled';
+    specialInstructions?: string;
+    estimatedPickupTime?: string;
+    estimatedDeliveryTime?: string;
+    actualDeliveryTime?: string;
+    createdAt: number;
+    updatedAt: number;
+    buyerInfo?: {
+        firstName: string;
+        lastName: string;
+        email: string;
+    } | null;
+}
 
 interface FarmerDashboardProps {
     userProfile: {
@@ -58,14 +102,21 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
     const [showAddProduct, setShowAddProduct] = useState(false);
     const { user } = useUser();
 
-
     const balance = useQuery((api as any).balances.getUserBalance, {
         clerkUserId: user?.id || '',
         token: LZC_TOKEN_NAME,
     });
 
-
     const upsertBalance = useMutation((api as any).balances.upsertUserBalance);
+
+    // Fetch real data from Convex
+    const products = useQuery(api.products.getProductsByFarmer, { farmerId: userProfile.clerkUserId });
+    const orders = useQuery(api.orders.getOrdersByFarmerWithBuyerInfo, { farmerId: userProfile.clerkUserId });
+    const categories = useQuery(api.categories.getActiveCategories);
+    const orderStats = useQuery(api.orders.getOrderStats, {
+        role: 'farmer',
+        userId: userProfile.clerkUserId,
+    });
 
     useEffect(() => {
         if (!user?.id) return;
@@ -106,10 +157,6 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
 
     const walletBalance = balance?.walletBalance ?? 0;
     const ledgerBalance = balance?.ledgerBalance ?? 0;
-
-    const products = useQuery(api.products.getProductsByFarmer, { farmerId: userProfile.clerkUserId });
-    const orders = useQuery(api.orders.getOrdersByFarmer, { farmerId: userProfile.clerkUserId });
-    const categories = useQuery(api.categories.getActiveCategories);
 
     const createProduct = useMutation(api.products.createProduct);
     const updateProduct = useMutation(api.products.updateProduct);
@@ -161,35 +208,36 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
         }
     };
 
-    const stats = mockFarmerStats;
-    const farmerProducts = mockProducts as unknown as Array<{
-        _id: string;
-        name: string;
-        categoryId: string;
-        category: { name: string; categoryId: string; };
-        price: number;
-        unit: string;
-        quantity: number;
-        description: string;
-        harvestDate: string;
-        location: string;
-        isOrganic: boolean;
-        isFeatured: boolean;
-        status: "active" | "inactive";
-        images: string[];
-    }>;
-    const farmerOrders = mockFarmerOrders as Array<{
-        _id: string;
-        products: { name: string; quantity: number; price: number; }[];
-        totalCost: number;
-        orderStatus: "pending" | "confirmed" | "preparing" | "ready" | "in_transit" | "delivered" | "cancelled";
-        paymentStatus: "pending" | "paid" | "failed";
-        createdAt: string;
-        deliveryAddress: string;
-        estimatedDeliveryTime: string;
-        riderName: string;
-        farmName: string;
-    }>;
+    // Calculate real stats from data
+    const stats = {
+        totalProducts: products?.length ?? 0,
+        activeOrders: orderStats ? (orderStats.pending + orderStats.confirmed + orderStats.preparing + orderStats.ready + orderStats.inTransit) : 0,
+        totalRevenue: orderStats?.totalRevenue ?? 0,
+        averageRating: 4.7, // This would need to be calculated from ratings table
+    };
+
+    // Transform Convex orders to match the Order interface
+    const transformOrders = (convexOrders: ConvexOrder[]) => {
+        return convexOrders?.map(order => ({
+            _id: order._id,
+            products: order.products.map((p) => ({
+                name: p.name,
+                quantity: p.quantity,
+                price: p.price,
+            })),
+            totalCost: order.totalCost,
+            orderStatus: order.orderStatus,
+            paymentStatus: order.paymentStatus,
+            createdAt: new Date(order.createdAt).toISOString(),
+            deliveryAddress: order.deliveryAddress,
+            estimatedDeliveryTime: order.estimatedDeliveryTime,
+            riderId: order.dispatcherId,
+            riderName: order.dispatcherId || '',
+            farmName: order.buyerInfo ?
+                `${order.buyerInfo.firstName} ${order.buyerInfo.lastName}` :
+                order.buyerId,
+        })) || [];
+    };
 
     const handleRefreshBalance = async () => {
         if (!userProfile?.liskId) {
@@ -203,12 +251,14 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
 
             console.log('Manual refresh - balances:', balances);
 
-            await upsertBalance({
-                clerkUserId: user.id,
-                token: LZC_TOKEN_NAME,
-                walletBalance: balances.walletBalance,
-                ledgerBalance: 0,
-            });
+            if (user?.id) {
+                await upsertBalance({
+                    clerkUserId: user.id,
+                    token: LZC_TOKEN_NAME,
+                    walletBalance: balances.walletBalance,
+                    ledgerBalance: 0,
+                });
+            }
 
             toast.success('Balance refreshed successfully');
         } catch (error) {
@@ -216,6 +266,17 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
             toast.error('Failed to refresh balance');
         }
     };
+
+    // Transform products to match the expected interface
+    const transformProducts = (convexProducts: any[]) => {
+        return convexProducts?.map(product => ({
+            ...product,
+            description: product.description || '',
+        })) || [];
+    };
+
+    const transformedOrders = transformOrders(orders || []);
+    const transformedProducts = transformProducts(products || []);
 
     return (
         <div className="space-y-6">
@@ -255,10 +316,7 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
             </div>
 
             {/* Wallet & Ledger */}
-            <WalletCard
-                walletBalance={walletBalance}
-                ledgerBalance={ledgerBalance}
-            />
+            <WalletCard />
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -283,7 +341,7 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
-                                    {farmerProducts.slice(0, 3).map((product) => (
+                                    {transformedProducts.slice(0, 3).map((product) => (
                                         <ProductCard key={product._id} product={product} showActions={false} />
                                     ))}
                                 </div>
@@ -297,7 +355,7 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
-                                    {farmerOrders.slice(0, 3).map((order) => (
+                                    {transformedOrders.slice(0, 3).map((order) => (
                                         <OrderCard key={order._id} order={order} showActions={false} />
                                     ))}
                                 </div>
@@ -319,7 +377,7 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
-                                {farmerProducts.map((product) => (
+                                {transformedProducts.map((product) => (
                                     <ProductCard key={product._id} product={product} />
                                 ))}
                             </div>
@@ -334,7 +392,7 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
-                                {farmerOrders.map((order) => (
+                                {transformedOrders.map((order) => (
                                     <OrderCard key={order._id} order={order} />
                                 ))}
                             </div>

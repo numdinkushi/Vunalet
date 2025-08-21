@@ -31,6 +31,13 @@ export function OrderCard({ order, showActions = true }: OrderCardProps) {
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
+                    {/* Buyer Information */}
+                    <div className="flex items-center space-x-2 text-sm">
+                        <User className="w-4 h-4 text-gray-500" />
+                        <span className="font-medium text-gray-700">Customer:</span>
+                        <span className="text-gray-900">{order.farmName}</span>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                             <span className="font-medium">Total:</span>

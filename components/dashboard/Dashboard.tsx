@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useUser, SignInButton } from '@clerk/nextjs';
 import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { motion } from 'framer-motion';
@@ -31,7 +31,9 @@ export function Dashboard() {
                         <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
                         <h2 className="text-xl font-semibold mb-2">Authentication Required</h2>
                         <p className="text-gray-600 mb-4">Please sign in to access your dashboard.</p>
-                        <Button>Sign In</Button>
+                        <SignInButton mode="modal">
+                            <Button>Sign In</Button>
+                        </SignInButton>
                     </CardContent>
                 </Card>
             </div>

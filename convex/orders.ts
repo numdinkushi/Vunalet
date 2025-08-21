@@ -128,6 +128,46 @@ export const getOrdersByBuyerWithFarmerInfo = query({
     },
 });
 
+// Get orders by farmer with buyer information
+export const getOrdersByFarmerWithBuyerInfo = query({
+    args: { farmerId: v.string() },
+    handler: async (ctx, args) => {
+        const orders = await ctx.db
+            .query("orders")
+            .withIndex("by_farmer", (q) => q.eq("farmerId", args.farmerId))
+            .order("desc")
+            .collect();
+
+        // Get unique buyer IDs from orders
+        const buyerIds = [...new Set(orders.map(order => order.buyerId))];
+
+        // Fetch buyer profiles
+        const buyerProfiles = await Promise.all(
+            buyerIds.map(async (buyerId) => {
+                const profile = await ctx.db
+                    .query("userProfiles")
+                    .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", buyerId))
+                    .first();
+                return { buyerId, profile };
+            })
+        );
+
+        // Create a map of buyer ID to profile
+        const buyerMap = new Map();
+        buyerProfiles.forEach(({ buyerId, profile }) => {
+            if (profile) {
+                buyerMap.set(buyerId, profile);
+            }
+        });
+
+        // Add buyer information to orders
+        return orders.map(order => ({
+            ...order,
+            buyerInfo: buyerMap.get(order.buyerId) || null
+        }));
+    },
+});
+
 // Get orders by farmer
 export const getOrdersByFarmer = query({
     args: { farmerId: v.string() },
@@ -149,6 +189,66 @@ export const getOrdersByDispatcher = query({
             .withIndex("by_dispatcher", (q) => q.eq("dispatcherId", args.dispatcherId))
             .order("desc")
             .collect();
+    },
+});
+
+// Get orders by dispatcher with buyer and farmer information
+export const getOrdersByDispatcherWithUserInfo = query({
+    args: { dispatcherId: v.string() },
+    handler: async (ctx, args) => {
+        const orders = await ctx.db
+            .query("orders")
+            .withIndex("by_dispatcher", (q) => q.eq("dispatcherId", args.dispatcherId))
+            .order("desc")
+            .collect();
+
+        // Get unique buyer and farmer IDs from orders
+        const buyerIds = [...new Set(orders.map(order => order.buyerId))];
+        const farmerIds = [...new Set(orders.map(order => order.farmerId))];
+
+        // Fetch buyer profiles
+        const buyerProfiles = await Promise.all(
+            buyerIds.map(async (buyerId) => {
+                const profile = await ctx.db
+                    .query("userProfiles")
+                    .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", buyerId))
+                    .first();
+                return { buyerId, profile };
+            })
+        );
+
+        // Fetch farmer profiles
+        const farmerProfiles = await Promise.all(
+            farmerIds.map(async (farmerId) => {
+                const profile = await ctx.db
+                    .query("userProfiles")
+                    .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", farmerId))
+                    .first();
+                return { farmerId, profile };
+            })
+        );
+
+        // Create maps of ID to profile
+        const buyerMap = new Map();
+        buyerProfiles.forEach(({ buyerId, profile }) => {
+            if (profile) {
+                buyerMap.set(buyerId, profile);
+            }
+        });
+
+        const farmerMap = new Map();
+        farmerProfiles.forEach(({ farmerId, profile }) => {
+            if (profile) {
+                farmerMap.set(farmerId, profile);
+            }
+        });
+
+        // Add user information to orders
+        return orders.map(order => ({
+            ...order,
+            buyerInfo: buyerMap.get(order.buyerId) || null,
+            farmerInfo: farmerMap.get(order.farmerId) || null
+        }));
     },
 });
 
