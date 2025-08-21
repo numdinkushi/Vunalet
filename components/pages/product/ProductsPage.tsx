@@ -76,6 +76,28 @@ export function ProductsPage() {
         );
     }
 
+    // Filter products based on search and category
+    const filteredProducts = allProducts.filter((product: Product) => {
+        const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()));
+        const matchesCategory = selectedCategory === 'all' || product.categoryId === selectedCategory;
+        return matchesSearch && matchesCategory;
+    });
+
+    // Sort products
+    const sortedProducts = [...filteredProducts].sort((a: Product, b: Product) => {
+        switch (sortBy) {
+            case 'price-low':
+                return a.price - b.price;
+            case 'price-high':
+                return b.price - a.price;
+            case 'newest':
+                return b.createdAt - a.createdAt;
+            default:
+                return 0;
+        }
+    });
+
     return (
         <div className="min-h-screen pt-20 bg-gradient-to-br from-gray-50 to-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -133,12 +155,59 @@ export function ProductsPage() {
                     </div>
                 </motion.div>
 
-                {/* Featured Products */}
+                {/* All Products Grid */}
                 <motion.div
                     className="mb-16"
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3, duration: 0.6 }}
+                >
+                    <div className="text-center mb-12">
+                        <h2 className="text-4xl font-bold text-gray-900 mb-4">All Products</h2>
+                        <p className="text-lg text-gray-600">
+                            {sortedProducts.length} product{sortedProducts.length !== 1 ? 's' : ''} found
+                        </p>
+                    </div>
+
+                    {sortedProducts.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {sortedProducts.map((product: Product, index: number) => (
+                                <ProductCard
+                                    key={product._id}
+                                    product={product}
+                                    index={index}
+                                    currentImageIndex={currentImageIndexes[product._id] || 0}
+                                    farmers={farmers}
+                                    showVideoBackground={true}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-16">
+                            <h3 className="text-2xl font-bold text-gray-900 mb-4">No Products Found</h3>
+                            <p className="text-gray-600 mb-8">
+                                No products match your current search criteria. Try adjusting your filters.
+                            </p>
+                            <button
+                                onClick={() => {
+                                    setSearchTerm('');
+                                    setSelectedCategory('all');
+                                    setSortBy('newest');
+                                }}
+                                className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-300"
+                            >
+                                Clear Filters
+                            </button>
+                        </div>
+                    )}
+                </motion.div>
+
+                {/* Featured Products */}
+                <motion.div
+                    className="mb-16"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4, duration: 0.6 }}
                 >
                     <div className="text-center mb-12">
                         <h2 className="text-4xl font-bold text-gray-900 mb-4">Featured Products</h2>
@@ -163,7 +232,7 @@ export function ProductsPage() {
                     className="mb-16"
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4, duration: 0.6 }}
+                    transition={{ delay: 0.5, duration: 0.6 }}
                 >
                     <div className="text-center mb-12">
                         <h2 className="text-4xl font-bold text-gray-900 mb-4">Browse by Category</h2>
