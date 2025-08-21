@@ -42,7 +42,8 @@ export interface PaginationState {
 }
 
 export interface ProductsPageProps {
-    // Add any props if needed in the future
+    // This interface is intentionally empty as no props are currently needed
+    // but may be added in the future for extensibility
 }
 
 export interface ProductCardProps {

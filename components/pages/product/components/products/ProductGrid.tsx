@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { ProductCard } from '../../../../app/cards/ProductCard';
 import { Product, Farmer } from '../../types';
 

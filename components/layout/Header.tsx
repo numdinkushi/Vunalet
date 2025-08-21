@@ -88,7 +88,7 @@ export function Header() {
                     <nav className="hidden md:flex items-center space-x-8">
                         {navItems.map((item, index) => {
                             const isActive = pathname === item.href ||
-                                (item.href !== '/' && pathname.startsWith(item.href));
+                                (item.href !== '/' && pathname?.startsWith(item.href));
 
                             return (
                                 <motion.div
@@ -200,7 +200,7 @@ export function Header() {
                             <div className="px-2 pt-2 pb-3 space-y-1 bg-white shadow-lg rounded-lg mt-2">
                                 {navItems.map((item) => {
                                     const isActive = pathname === item.href ||
-                                        (item.href !== '/' && pathname.startsWith(item.href));
+                                        (item.href !== '/' && pathname?.startsWith(item.href));
 
                                     return (
                                         <motion.div
@@ -210,8 +210,8 @@ export function Header() {
                                             <Link
                                                 href={item.href}
                                                 className={`block px-3 py-2 text-base font-medium w-full text-left rounded-lg transition-all duration-300 ${isActive
-                                                        ? 'text-green-600 bg-green-50 font-semibold'
-                                                        : 'text-gray-700 hover:text-green-600 hover:bg-green-50'
+                                                    ? 'text-green-600 bg-green-50 font-semibold'
+                                                    : 'text-gray-700 hover:text-green-600 hover:bg-green-50'
                                                     }`}
                                                 onClick={() => setIsMenuOpen(false)}
                                             >

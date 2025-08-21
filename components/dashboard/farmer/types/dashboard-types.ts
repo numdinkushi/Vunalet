@@ -1,4 +1,5 @@
 import { StorageMethod } from '../../../../lib/utils/product-utils';
+import { Product } from '../types';
 
 // User profile interface
 export interface FarmerUserProfile {
@@ -9,6 +10,7 @@ export interface FarmerUserProfile {
     role: 'farmer';
     liskId?: string;
     specialties?: string[];
+    location?: string;
 }
 
 // New product interface
@@ -107,7 +109,7 @@ export interface DashboardStatsProps {
 }
 
 export interface RecentProductsProps {
-    products: any[];
+    products: Product[];
     onProductDeleted: () => void;
 }
 

@@ -145,9 +145,9 @@ export function AddProductModal({ isOpen, onClose, userProfile, onProductAdded }
                                             <SelectValue placeholder="Select category" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {categories?.filter((category: any) =>
+                                            {categories?.filter((category: { categoryId: string; name: string }) =>
                                                 userProfile.specialties?.includes(category.categoryId)
-                                            ).map((category: any) => (
+                                            ).map((category: { categoryId: string; name: string }) => (
                                                 <SelectItem key={category.categoryId} value={category.categoryId}>
                                                     {category.name}
                                                 </SelectItem>
@@ -319,7 +319,7 @@ export function AddProductModal({ isOpen, onClose, userProfile, onProductAdded }
                                                     </p>
                                                 </div>
                                             );
-                                        } catch (error) {
+                                        } catch {
                                             return <p className="text-red-600">Error calculating expiry date</p>;
                                         }
                                     })()}

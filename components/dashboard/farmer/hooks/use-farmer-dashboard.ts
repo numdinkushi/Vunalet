@@ -58,7 +58,7 @@ export function useFarmerDashboard(userProfile: FarmerUserProfile) {
                     walletBalance: balances.walletBalance,
                     ledgerBalance: 0,
                 });
-            } catch (error) {
+            } catch {
                 toast.error('Failed to refresh wallet balance');
             }
         };

@@ -3,7 +3,7 @@
 import { useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { categories } from '../../../constants/categories';
-import { Product, Farmer } from './types';
+// Types are imported in the individual components
 import { ProductHeader } from './components/header/ProductHeader';
 import { FeaturedProducts } from './components/featured/FeaturedProducts';
 import { ProductFilters } from './components/filters/ProductFilters';
@@ -25,8 +25,7 @@ export function ProductsPage() {
         paginatedProducts,
         totalPages,
         updateFilters,
-        updatePage,
-        clearFilters
+        updatePage
     } = useProductFilters(allProducts);
 
     const currentImageIndexes = useImageRotation(featuredProducts);
