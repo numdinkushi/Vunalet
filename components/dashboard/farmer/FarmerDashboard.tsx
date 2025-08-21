@@ -14,7 +14,7 @@ import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 import { Textarea } from '../../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
-import { ImageUpload } from '../../ui/image-upload';
+import { EnhancedImageUpload } from '../../ui/enhanced-image-upload';
 import { Checkbox } from '../../ui/checkbox';
 import { Calendar } from '../../ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover';
@@ -24,7 +24,9 @@ import {
     DollarSign,
     Clock,
     Star,
-    Calendar as CalendarIcon
+    Calendar as CalendarIcon,
+    Snowflake,
+    Thermometer
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { StatCard, ProductCard, OrderCard } from './components';
@@ -33,6 +35,7 @@ import { WalletCard } from '../shared/WalletCard';
 import { useUser } from '@clerk/nextjs';
 import { useEffect } from 'react';
 import { LZC_TOKEN_NAME } from '../../../constants/tokens';
+import { calculateExpiryDate, StorageMethod } from '../../../lib/utils/product-utils';
 
 // Type for Convex order structure with buyer info
 interface ConvexOrder {
@@ -91,6 +94,21 @@ interface FarmerDashboardProps {
         location?: string;
         specialties?: string[];
     };
+}
+
+interface NewProduct {
+    name: string;
+    categoryId: string;
+    price: number;
+    unit: string;
+    quantity: number;
+    description: string;
+    harvestDate: string;
+    storageMethod: StorageMethod;
+    location: string;
+    isOrganic: boolean;
+    isFeatured: boolean;
+    images: string[];
 }
 
 export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
@@ -158,7 +176,7 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
     const updateProduct = useMutation(api.products.updateProduct);
     const deleteProduct = useMutation(api.products.deleteProduct);
 
-    const [newProduct, setNewProduct] = useState({
+    const [newProduct, setNewProduct] = useState<NewProduct>({
         name: '',
         categoryId: '',
         price: 0,
@@ -166,10 +184,11 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
         quantity: 0,
         description: '',
         harvestDate: '',
+        storageMethod: 'room_temp',
         location: userProfile.location || '',
         isOrganic: false,
         isFeatured: false,
-        images: [] as string[],
+        images: [],
     });
     const [harvestDate, setHarvestDate] = useState<Date | undefined>(undefined);
 
@@ -177,30 +196,90 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
         e.preventDefault();
 
         try {
+            // Calculate expiry date based on harvest date, category, and storage method
+            let expiryDate: string | undefined;
+            if (newProduct.harvestDate && newProduct.categoryId) {
+                try {
+                    expiryDate = calculateExpiryDate(
+                        newProduct.harvestDate,
+                        newProduct.categoryId,
+                        newProduct.storageMethod
+                    );
+                } catch (error) {
+                    console.error('Error calculating expiry date:', error);
+                    toast.error('Error calculating expiry date. Please check your harvest date.');
+                    return;
+                }
+            }
+
             await createProduct({
                 farmerId: userProfile.clerkUserId,
-                ...newProduct,
+                categoryId: newProduct.categoryId,
+                name: newProduct.name,
+                price: newProduct.price,
+                unit: newProduct.unit,
+                quantity: newProduct.quantity,
+                description: newProduct.description,
+                images: newProduct.images,
+                harvestDate: newProduct.harvestDate,
+                expiryDate,
+                storageMethod: newProduct.storageMethod,
+                isOrganic: newProduct.isOrganic,
+                isFeatured: newProduct.isFeatured,
+                location: newProduct.location,
                 status: 'active',
             });
 
             toast.success('Product added successfully!');
             setShowAddProduct(false);
-            setNewProduct({
-                name: '',
-                categoryId: '',
-                price: 0,
-                unit: '',
-                quantity: 0,
-                description: '',
-                harvestDate: '',
-                location: userProfile.location || '',
-                isOrganic: false,
-                isFeatured: false,
-                images: [],
-            });
-            setHarvestDate(undefined);
+            resetProductForm();
         } catch (error) {
-            toast.error('Failed to add product');
+            console.error('Error creating product:', error);
+            toast.error('Failed to create product. Please try again.');
+        }
+    };
+
+    const resetProductForm = () => {
+        setNewProduct({
+            name: '',
+            categoryId: '',
+            price: 0,
+            unit: '',
+            quantity: 0,
+            description: '',
+            harvestDate: '',
+            storageMethod: 'room_temp',
+            location: userProfile.location || '',
+            isOrganic: false,
+            isFeatured: false,
+            images: [],
+        });
+        setHarvestDate(undefined);
+    };
+
+    const handleImagesUploaded = (urls: string[]) => {
+        setNewProduct(prev => ({ ...prev, images: urls }));
+    };
+
+    const getStorageMethodIcon = (method: StorageMethod) => {
+        switch (method) {
+            case 'refrigerated':
+                return <Thermometer className="w-4 h-4" />;
+            case 'frozen':
+                return <Snowflake className="w-4 h-4" />;
+            default:
+                return <Package className="w-4 h-4" />;
+        }
+    };
+
+    const getStorageMethodLabel = (method: StorageMethod) => {
+        switch (method) {
+            case 'refrigerated':
+                return 'Refrigerated';
+            case 'frozen':
+                return 'Frozen';
+            default:
+                return 'Room Temperature';
         }
     };
 
@@ -401,12 +480,12 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
 
             {/* Add Product Modal */}
             {showAddProduct && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <Card className="w-full max-w-2xl mx-4">
-                        <CardHeader>
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <Card className="w-full max-w-2xl max-h-[90vh] flex flex-col">
+                        <CardHeader className="flex-shrink-0">
                             <CardTitle>Add New Product</CardTitle>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="flex-1 overflow-y-auto">
                             <form onSubmit={handleAddProduct} className="space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
@@ -508,15 +587,86 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
                                         </Popover>
                                     </div>
                                     <div>
-                                        <Label htmlFor="location">Location</Label>
-                                        <Input
-                                            id="location"
-                                            value={newProduct.location}
-                                            onChange={(e) => setNewProduct({ ...newProduct, location: e.target.value })}
-                                            placeholder="Farm location"
-                                            required
-                                        />
+                                        <Label htmlFor="storageMethod">Storage Method</Label>
+                                        <Select
+                                            value={newProduct.storageMethod}
+                                            onValueChange={(value: StorageMethod) => setNewProduct({ ...newProduct, storageMethod: value })}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select storage method" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="room_temp">
+                                                    <div className="flex items-center space-x-2">
+                                                        <Package className="w-4 h-4" />
+                                                        <span>Room Temperature</span>
+                                                    </div>
+                                                </SelectItem>
+                                                <SelectItem value="refrigerated">
+                                                    <div className="flex items-center space-x-2">
+                                                        <Thermometer className="w-4 h-4" />
+                                                        <span>Refrigerated</span>
+                                                    </div>
+                                                </SelectItem>
+                                                <SelectItem value="frozen">
+                                                    <div className="flex items-center space-x-2">
+                                                        <Snowflake className="w-4 h-4" />
+                                                        <span>Frozen</span>
+                                                    </div>
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </div>
+                                </div>
+
+                                {/* Expiry Date Preview */}
+                                {newProduct.harvestDate && newProduct.categoryId && (
+                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                        <div className="flex items-center space-x-2 mb-2">
+                                            <Clock className="w-4 h-4 text-blue-600" />
+                                            <span className="text-sm font-medium text-blue-800">Expiry Date Preview</span>
+                                        </div>
+                                        <div className="text-sm text-blue-700">
+                                            {(() => {
+                                                try {
+                                                    const expiryDate = calculateExpiryDate(
+                                                        newProduct.harvestDate,
+                                                        newProduct.categoryId,
+                                                        newProduct.storageMethod
+                                                    );
+                                                    const expiryDateObj = new Date(expiryDate);
+                                                    const daysUntilExpiry = Math.ceil((expiryDateObj.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+
+                                                    return (
+                                                        <div className="space-y-1">
+                                                            <p>
+                                                                <span className="font-medium">Expires:</span> {expiryDateObj.toLocaleDateString()}
+                                                            </p>
+                                                            <p>
+                                                                <span className="font-medium">Storage:</span> {getStorageMethodLabel(newProduct.storageMethod)}
+                                                            </p>
+                                                            <p>
+                                                                <span className="font-medium">Shelf Life:</span> {daysUntilExpiry > 0 ? `${daysUntilExpiry} days` : 'Expired'}
+                                                            </p>
+                                                        </div>
+                                                    );
+                                                } catch (error) {
+                                                    return <p className="text-red-600">Error calculating expiry date</p>;
+                                                }
+                                            })()}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div>
+                                    <Label htmlFor="location">Location</Label>
+                                    <Input
+                                        id="location"
+                                        value={newProduct.location}
+                                        onChange={(e) => setNewProduct({ ...newProduct, location: e.target.value })}
+                                        placeholder="Farm location"
+                                        required
+                                    />
                                 </div>
                                 <div>
                                     <Label htmlFor="description">Description</Label>
@@ -529,8 +679,8 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
                                 </div>
                                 <div>
                                     <Label>Product Images</Label>
-                                    <ImageUpload
-                                        onImagesUploaded={(urls) => setNewProduct({ ...newProduct, images: urls })}
+                                    <EnhancedImageUpload
+                                        onImagesUploaded={handleImagesUploaded}
                                         maxImages={5}
                                     />
                                 </div>
@@ -552,16 +702,18 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
                                         <Label htmlFor="isFeatured">Featured Product</Label>
                                     </div>
                                 </div>
-                                <div className="flex justify-end space-x-2">
-                                    <Button type="button" variant="outline" onClick={() => setShowAddProduct(false)}>
-                                        Cancel
-                                    </Button>
-                                    <Button type="submit">
-                                        Add Product
-                                    </Button>
-                                </div>
                             </form>
                         </CardContent>
+                        <div className="flex-shrink-0 border-t bg-gray-50 px-6 py-4">
+                            <div className="flex justify-end space-x-2">
+                                <Button type="button" variant="outline" onClick={() => setShowAddProduct(false)}>
+                                    Cancel
+                                </Button>
+                                <Button type="submit" onClick={handleAddProduct}>
+                                    Add Product
+                                </Button>
+                            </div>
+                        </div>
                     </Card>
                 </div>
             )}
