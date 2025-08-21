@@ -5,12 +5,10 @@ import { motion } from 'framer-motion';
 import {
     Search,
     ShoppingCart,
-    ArrowRight,
-    ArrowLeft
+    ArrowRight
 } from 'lucide-react';
 import Image from 'next/image';
 import { useQuery } from 'convex/react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '../../../convex/_generated/api';
 import { categories } from '../../../constants/categories';
 import { ProductCard } from '../../app/cards/ProductCard';
@@ -35,10 +33,6 @@ interface Product {
 }
 
 export function ProductsPage() {
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const farmerId = searchParams?.get('farmer');
-
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [sortBy, setSortBy] = useState('newest');
@@ -49,30 +43,14 @@ export function ProductsPage() {
     const featuredProducts = useQuery(api.products.getFeaturedProducts);
     const farmers = useQuery(api.users.getAllFarmers);
 
-    // Get farmer-specific products if farmerId is provided
-    const farmerProducts = useQuery(
-        api.products.getProductsByFarmer,
-        farmerId ? { farmerId } : { farmerId: '' }
-    );
-
-    // Get farmer info if viewing farmer-specific products
-    const farmerInfo = useQuery(
-        api.users.getUserProfile,
-        farmerId ? { clerkUserId: farmerId } : { clerkUserId: '' }
-    );
-
-    // Determine which products to display
-    const productsToDisplay = farmerId ? (farmerProducts || []) : allProducts;
-    const isFarmerView = !!farmerId;
-
     // Auto-rotate images for products with multiple images
     useEffect(() => {
-        if (!productsToDisplay) return;
+        if (!featuredProducts) return;
 
         const interval = setInterval(() => {
             setCurrentImageIndexes(prev => {
                 const newIndexes = { ...prev };
-                productsToDisplay.forEach((product: Product) => {
+                featuredProducts.forEach((product: Product) => {
                     if (product.images.length > 1) {
                         const currentIndex = newIndexes[product._id] || 0;
                         newIndexes[product._id] = (currentIndex + 1) % product.images.length;
@@ -83,9 +61,9 @@ export function ProductsPage() {
         }, 5000); // Change image every 5 seconds
 
         return () => clearInterval(interval);
-    }, [productsToDisplay]);
+    }, [featuredProducts]);
 
-    if (!productsToDisplay || !featuredProducts) {
+    if (!allProducts || !featuredProducts) {
         return (
             <div className="min-h-screen pt-20 bg-gradient-to-br from-gray-50 to-white">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -98,49 +76,9 @@ export function ProductsPage() {
         );
     }
 
-    // Filter products based on search and category
-    const filteredProducts = productsToDisplay.filter((product: Product) => {
-        const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()));
-        const matchesCategory = selectedCategory === 'all' || product.categoryId === selectedCategory;
-        return matchesSearch && matchesCategory;
-    });
-
-    // Sort products
-    const sortedProducts = [...filteredProducts].sort((a: Product, b: Product) => {
-        switch (sortBy) {
-            case 'price-low':
-                return a.price - b.price;
-            case 'price-high':
-                return b.price - a.price;
-            case 'newest':
-                return b.createdAt - a.createdAt;
-            default:
-                return 0;
-        }
-    });
-
     return (
         <div className="min-h-screen pt-20 bg-gradient-to-br from-gray-50 to-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                {/* Back Button for Farmer View */}
-                {isFarmerView && (
-                    <motion.div
-                        className="mb-6"
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.3 }}
-                    >
-                        <button
-                            onClick={() => router.push('/products')}
-                            className="flex items-center text-green-600 hover:text-green-700 transition-colors duration-200"
-                        >
-                            <ArrowLeft className="w-4 h-4 mr-2" />
-                            Back to All Products
-                        </button>
-                    </motion.div>
-                )}
-
                 {/* Header */}
                 <motion.div
                     className="mb-12 text-center"
@@ -148,21 +86,8 @@ export function ProductsPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
                 >
-                    {isFarmerView ? (
-                        <>
-                            <h1 className="text-5xl font-bold text-gray-900 mb-4">
-                                {farmerInfo ? `${farmerInfo.firstName} ${farmerInfo.lastName}'s Products` : 'Farmer Products'}
-                            </h1>
-                            <p className="text-xl text-gray-600">
-                                Discover fresh produce from this trusted farmer
-                            </p>
-                        </>
-                    ) : (
-                        <>
-                            <h1 className="text-5xl font-bold text-gray-900 mb-4">Fresh Products</h1>
-                            <p className="text-xl text-gray-600">Discover the freshest produce from South African farmers</p>
-                        </>
-                    )}
+                    <h1 className="text-5xl font-bold text-gray-900 mb-4">Fresh Products</h1>
+                    <p className="text-xl text-gray-600">Discover the freshest produce from South African farmers</p>
                 </motion.div>
 
                 {/* Search and Filters */}
@@ -208,164 +133,114 @@ export function ProductsPage() {
                     </div>
                 </motion.div>
 
-                {/* Products Grid */}
-                {isFarmerView ? (
-                    <motion.div
-                        className="mb-16"
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3, duration: 0.6 }}
-                    >
-                        {sortedProducts.length > 0 ? (
-                            <>
-                                <div className="text-center mb-12">
-                                    <h2 className="text-4xl font-bold text-gray-900 mb-4">
-                                        {farmerInfo ? `${farmerInfo.firstName}'s Products` : 'Farmer Products'}
-                                    </h2>
-                                    <p className="text-lg text-gray-600">
-                                        {sortedProducts.length} product{sortedProducts.length !== 1 ? 's' : ''} available
-                                    </p>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                    {sortedProducts.map((product: Product, index: number) => (
-                                        <ProductCard
-                                            key={product._id}
-                                            product={product}
-                                            index={index}
-                                            currentImageIndex={currentImageIndexes[product._id] || 0}
-                                            farmers={farmers}
-                                            showVideoBackground={true}
-                                        />
-                                    ))}
-                                </div>
-                            </>
-                        ) : (
-                            <div className="text-center py-16">
-                                <h3 className="text-2xl font-bold text-gray-900 mb-4">No Products Found</h3>
-                                <p className="text-gray-600 mb-8">
-                                    {farmerInfo ? `${farmerInfo.firstName} ${farmerInfo.lastName}` : 'This farmer'} doesn&apos;t have any products available at the moment.
-                                </p>
-                                <button
-                                    onClick={() => router.push('/products')}
-                                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-300"
-                                >
-                                    Browse All Products
-                                </button>
-                            </div>
-                        )}
-                    </motion.div>
-                ) : (
-                    <>
-                        {/* Featured Products */}
-                        <motion.div
-                            className="mb-16"
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3, duration: 0.6 }}
-                        >
-                            <div className="text-center mb-12">
-                                <h2 className="text-4xl font-bold text-gray-900 mb-4">Featured Products</h2>
-                                <p className="text-lg text-gray-600">Handpicked fresh produce from our trusted farmers</p>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                {featuredProducts.slice(0, 6).map((product: Product, index: number) => (
-                                    <ProductCard
-                                        key={product._id}
-                                        product={product}
-                                        index={index}
-                                        currentImageIndex={currentImageIndexes[product._id] || 0}
-                                        farmers={farmers}
-                                        showVideoBackground={true}
+                {/* Featured Products */}
+                <motion.div
+                    className="mb-16"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, duration: 0.6 }}
+                >
+                    <div className="text-center mb-12">
+                        <h2 className="text-4xl font-bold text-gray-900 mb-4">Featured Products</h2>
+                        <p className="text-lg text-gray-600">Handpicked fresh produce from our trusted farmers</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {featuredProducts.slice(0, 6).map((product: Product, index: number) => (
+                            <ProductCard
+                                key={product._id}
+                                product={product}
+                                index={index}
+                                currentImageIndex={currentImageIndexes[product._id] || 0}
+                                farmers={farmers}
+                                showVideoBackground={true}
+                            />
+                        ))}
+                    </div>
+                </motion.div>
+
+                {/* Categories Section */}
+                <motion.div
+                    className="mb-16"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4, duration: 0.6 }}
+                >
+                    <div className="text-center mb-12">
+                        <h2 className="text-4xl font-bold text-gray-900 mb-4">Browse by Category</h2>
+                        <p className="text-lg text-gray-600">Explore our wide range of fresh produce categories</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                        {categories.map((category, index) => (
+                            <motion.div
+                                key={category.id}
+                                className="group relative bg-white rounded-3xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500 cursor-pointer border border-gray-100"
+                                initial={{ opacity: 0, y: 50 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.1, duration: 0.6 }}
+                                whileHover={{ y: -10, scale: 1.02 }}
+                                onClick={() => window.location.href = `/categories/${category.id}`}
+                            >
+                                {/* Category Image */}
+                                <div className="relative h-48 overflow-hidden">
+                                    <Image
+                                        src={category.images[0]}
+                                        alt={category.name}
+                                        width={400}
+                                        height={300}
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                     />
-                                ))}
-                            </div>
-                        </motion.div>
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
-                        {/* Categories Section */}
-                        <motion.div
-                            className="mb-16"
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.4, duration: 0.6 }}
-                        >
-                            <div className="text-center mb-12">
-                                <h2 className="text-4xl font-bold text-gray-900 mb-4">Browse by Category</h2>
-                                <p className="text-lg text-gray-600">Explore our wide range of fresh produce categories</p>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                                {categories.map((category, index) => (
-                                    <motion.div
-                                        key={category.id}
-                                        className="group relative bg-white rounded-3xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500 cursor-pointer border border-gray-100"
-                                        initial={{ opacity: 0, y: 50 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: index * 0.1, duration: 0.6 }}
-                                        whileHover={{ y: -10, scale: 1.02 }}
-                                        onClick={() => window.location.href = `/categories/${category.id}`}
-                                    >
-                                        {/* Category Image */}
-                                        <div className="relative h-48 overflow-hidden">
-                                            <Image
-                                                src={category.images[0]}
-                                                alt={category.name}
-                                                width={400}
-                                                height={300}
-                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                            />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                                    {/* Category Badge */}
+                                    <div className="absolute top-4 left-4 z-10">
+                                        <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg">
+                                            {category.productCount} items
+                                        </span>
+                                    </div>
 
-                                            {/* Category Badge */}
-                                            <div className="absolute top-4 left-4 z-10">
-                                                <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg">
-                                                    {category.productCount} items
-                                                </span>
-                                            </div>
-
-                                            {/* Shopping Bag Icon */}
-                                            <div className="absolute top-4 right-4 z-10">
-                                                <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg">
-                                                    <ShoppingCart size={16} className="text-gray-600" />
-                                                </div>
-                                            </div>
+                                    {/* Shopping Bag Icon */}
+                                    <div className="absolute top-4 right-4 z-10">
+                                        <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg">
+                                            <ShoppingCart size={16} className="text-gray-600" />
                                         </div>
+                                    </div>
+                                </div>
 
-                                        {/* Content */}
-                                        <div className="p-6 bg-gradient-to-br from-white to-gray-50">
-                                            <div className="flex justify-between items-start mb-3">
-                                                <h3 className="text-xl font-bold text-gray-900 group-hover:text-green-600 transition-colors duration-300">
-                                                    {category.name}
-                                                </h3>
-                                                <motion.div
-                                                    className="text-green-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                                                    whileHover={{ x: 5 }}
-                                                >
-                                                    <ShoppingCart size={20} />
-                                                </motion.div>
-                                            </div>
+                                {/* Content */}
+                                <div className="p-6 bg-gradient-to-br from-white to-gray-50">
+                                    <div className="flex justify-between items-start mb-3">
+                                        <h3 className="text-xl font-bold text-gray-900 group-hover:text-green-600 transition-colors duration-300">
+                                            {category.name}
+                                        </h3>
+                                        <motion.div
+                                            className="text-green-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                                            whileHover={{ x: 5 }}
+                                        >
+                                            <ShoppingCart size={20} />
+                                        </motion.div>
+                                    </div>
 
-                                            <p className="text-gray-600 mb-4 text-sm leading-relaxed">
-                                                {category.description}
-                                            </p>
+                                    <p className="text-gray-600 mb-4 text-sm leading-relaxed">
+                                        {category.description}
+                                    </p>
 
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-sm text-gray-500 font-medium">
-                                                    {category.productCount} products available
-                                                </span>
-                                                <span className="text-sm font-semibold text-green-600 group-hover:text-green-700 transition-colors duration-300 flex items-center">
-                                                    Explore
-                                                    <ArrowRight size={14} className="ml-1 group-hover:translate-x-1 transition-transform" />
-                                                </span>
-                                            </div>
-                                        </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-500 font-medium">
+                                            {category.productCount} products available
+                                        </span>
+                                        <span className="text-sm font-semibold text-green-600 group-hover:text-green-700 transition-colors duration-300 flex items-center">
+                                            Explore
+                                            <ArrowRight size={14} className="ml-1 group-hover:translate-x-1 transition-transform" />
+                                        </span>
+                                    </div>
+                                </div>
 
-                                        {/* Hover Effect Overlay */}
-                                        <div className="absolute inset-0 bg-gradient-to-t from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-                                    </motion.div>
-                                ))}
-                            </div>
-                        </motion.div>
-                    </>
-                )}
+                                {/* Hover Effect Overlay */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                            </motion.div>
+                        ))}
+                    </div>
+                </motion.div>
             </div>
         </div>
     );
