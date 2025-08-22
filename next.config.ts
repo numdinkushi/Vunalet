@@ -43,6 +43,19 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        source: '/manifest.json',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/manifest+json',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600',
+          },
+        ],
+      },
+      {
         source: '/sw.js',
         headers: [
           {
@@ -54,13 +67,31 @@ const nextConfig: NextConfig = {
             value: 'no-cache, no-store, must-revalidate',
           },
           {
-            key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self'",
+            key: 'Service-Worker-Allowed',
+            value: '/',
+          },
+        ],
+      },
+      {
+        source: '/assets/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
           },
         ],
       },
     ];
   },
+  // PWA optimizations
+  experimental: {
+    optimizeCss: true,
+    optimizePackageImports: ['lucide-react'],
+  },
+  // Enable compression
+  compress: true,
+  // Optimize bundle size
+  swcMinify: true,
 };
 
 export default nextConfig;

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
-import { PushNotificationManager, InstallPrompt } from '@/components/PWAComponents';
+import { PWAInstaller } from '@/components/PWAInstaller';
 import { ConvexClientProvider } from '../providers/ConvexClientProvider';
 import { Toaster } from '@/components/ui/sonner';
 
@@ -79,8 +79,7 @@ export default function RootLayout({
           </head>
           <body className={inter.className}>
             {children}
-            <PushNotificationManager />
-            <InstallPrompt />
+            <PWAInstaller />
             <Toaster />
           </body>
         </html>

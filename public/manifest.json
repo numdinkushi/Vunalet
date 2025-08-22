@@ -3,11 +3,43 @@
   "short_name": "Vunalet",
   "description": "Connect directly with local farmers and access the freshest produce while supporting sustainable agriculture in South Africa",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#22c55e",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
   "icons": [
+    {
+      "src": "/assets/logo/logo.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/logo/logo.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/logo/logo.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/logo/logo.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/logo/logo.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "/assets/logo/logo.png",
       "sizes": "192x192",
@@ -16,12 +48,62 @@
     },
     {
       "src": "/assets/logo/logo.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/logo/logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ],
-  "categories": ["food", "shopping", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "Browse Products",
+      "short_name": "Products",
+      "description": "Browse fresh farm products",
+      "url": "/products",
+      "icons": [
+        {
+          "src": "/assets/logo/logo.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "My Orders",
+      "short_name": "Orders",
+      "description": "View your orders",
+      "url": "/dashboard",
+      "icons": [
+        {
+          "src": "/assets/logo/logo.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Find Farmers",
+      "short_name": "Farmers",
+      "description": "Discover local farmers",
+      "url": "/farmers",
+      "icons": [
+        {
+          "src": "/assets/logo/logo.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "categories": ["food", "shopping", "lifestyle", "business"],
   "lang": "en",
-  "dir": "ltr"
+  "dir": "ltr",
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  }
 } 
