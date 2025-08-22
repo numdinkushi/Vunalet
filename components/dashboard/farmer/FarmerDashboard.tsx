@@ -53,6 +53,7 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
                         <RecentProducts
                             products={products}
                             onProductDeleted={onProductDeleted}
+                            onAddProduct={() => setShowAddProduct(true)}
                         />
                         <RecentOrders orders={orders} />
                     </div>

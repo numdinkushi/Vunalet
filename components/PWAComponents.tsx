@@ -9,16 +9,6 @@ const PWAInstaller = dynamic(() => import('./PWAInstaller').then(mod => ({ defau
     loading: () => null,
 });
 
-const NotificationPermission = dynamic(() => import('./NotificationPermission').then(mod => ({ default: mod.NotificationPermission })), {
-    ssr: false,
-    loading: () => null,
-});
-
-const PWAInstructions = dynamic(() => import('./PWAInstructions').then(mod => ({ default: mod.PWAInstructions })), {
-    ssr: false,
-    loading: () => null,
-});
-
 export function PWAComponents() {
     const [isClient, setIsClient] = useState(false);
 
@@ -33,8 +23,6 @@ export function PWAComponents() {
     return (
         <>
             <PWAInstaller />
-            <NotificationPermission />
-            <PWAInstructions />
         </>
     );
 } 

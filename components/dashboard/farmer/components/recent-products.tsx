@@ -6,13 +6,13 @@ import { Plus } from 'lucide-react';
 import { ProductCard } from './ProductCard';
 import { RecentProductsProps } from '../types/dashboard-types';
 
-export function RecentProducts({ products, onProductDeleted }: RecentProductsProps) {
+export function RecentProducts({ products, onProductDeleted, onAddProduct }: RecentProductsProps) {
     return (
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                     <span>Recent Products</span>
-                    <Button size="sm" onClick={() => window.location.href = '/dashboard?tab=products'}>
+                    <Button size="sm" onClick={onAddProduct}>
                         <Plus className="w-4 h-4 mr-2" />
                         Add Product
                     </Button>
