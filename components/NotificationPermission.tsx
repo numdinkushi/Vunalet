@@ -64,15 +64,7 @@ export function NotificationPermission() {
         setHasShownPrompt(true);
     };
 
-    const handleRetry = () => {
-        setHasShownPrompt(false);
-        setShowPermissionPrompt(false);
-        // Reset and try again after a short delay
-        setTimeout(() => {
-            setShowPermissionPrompt(true);
-            setHasShownPrompt(true);
-        }, 1000);
-    };
+
 
     // Don't render anything until client-side
     if (!isClient) return null;

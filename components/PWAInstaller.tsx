@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Download, X, CheckCircle, Smartphone, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -19,7 +18,7 @@ interface BeforeInstallPromptEvent extends Event {
 export function PWAInstaller() {
     const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
     const [isInstalled, setIsInstalled] = useState(false);
-    const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+
     const [isOnline, setIsOnline] = useState(true);
     const [isClient, setIsClient] = useState(false);
     const [showManualInstall, setShowManualInstall] = useState(false);
@@ -40,13 +39,11 @@ export function PWAInstaller() {
         const handleBeforeInstallPrompt = (e: Event) => {
             e.preventDefault();
             setDeferredPrompt(e as BeforeInstallPromptEvent);
-            setShowInstallPrompt(true);
         };
 
         // Listen for appinstalled event
         const handleAppInstalled = () => {
             setIsInstalled(true);
-            setShowInstallPrompt(false);
             setShowManualInstall(false);
             setDeferredPrompt(null);
             toast.success('Vunalet has been installed successfully!');
@@ -121,7 +118,6 @@ export function PWAInstaller() {
             }
 
             setDeferredPrompt(null);
-            setShowInstallPrompt(false);
         } catch (error) {
             console.error('Installation failed:', error);
             toast.error('Installation failed. Please try again.');
@@ -129,7 +125,6 @@ export function PWAInstaller() {
     };
 
     const handleDismiss = () => {
-        setShowInstallPrompt(false);
         setShowManualInstall(false);
         setDeferredPrompt(null);
     };
@@ -144,8 +139,8 @@ export function PWAInstaller() {
 
     // Show install prompt on mobile devices
     const isMobile = window.innerWidth <= 768;
-    const shouldShowInstall = (deferredPrompt && !isInstalled && isOnline && isMobile) || 
-                             (showManualInstall && !isInstalled && isOnline && isMobile);
+    const shouldShowInstall = (deferredPrompt && !isInstalled && isOnline && isMobile) ||
+        (showManualInstall && !isInstalled && isOnline && isMobile);
 
     return (
         <>

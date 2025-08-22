@@ -66,11 +66,11 @@ export function PWAInstructions() {
                         </div>
                         <div className="flex items-start space-x-2">
                             <Plus className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                            <span>Select <strong>"Add to Home Screen"</strong></span>
+                            <span>Select <strong>&quot;Add to Home Screen&quot;</strong></span>
                         </div>
                         <div className="flex items-start space-x-2">
                             <Smartphone className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                            <span>Tap <strong>"Add"</strong> to install</span>
+                            <span>Tap <strong>&quot;Add&quot;</strong> to install</span>
                         </div>
                     </div>
 

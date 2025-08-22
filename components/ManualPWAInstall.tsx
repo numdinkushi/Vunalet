@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download, Smartphone } from 'lucide-react';
+import { Download } from 'lucide-react';
 
 interface BeforeInstallPromptEvent extends Event {
     readonly platforms: string[];
