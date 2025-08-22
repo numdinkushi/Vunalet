@@ -19,10 +19,12 @@ const ManualPWAInstall = dynamic(() => import('./ManualPWAInstall').then(mod => 
     loading: () => null,
 });
 
-const PWADebug = dynamic(() => import('./PWADebug').then(mod => ({ default: mod.PWADebug })), {
+const PWAInstructions = dynamic(() => import('./PWAInstructions').then(mod => ({ default: mod.PWAInstructions })), {
     ssr: false,
     loading: () => null,
 });
+
+
 
 export function PWAComponents() {
     const [isClient, setIsClient] = useState(false);
@@ -40,7 +42,7 @@ export function PWAComponents() {
             <ManualPWAInstall />
             <PWAInstaller />
             <NotificationPermission />
-            <PWADebug />
+            <PWAInstructions />
         </>
     );
 } 

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Download, X, CheckCircle, Smartphone } from 'lucide-react';
+import { Download, X, CheckCircle, Smartphone, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -22,6 +22,7 @@ export function PWAInstaller() {
     const [showInstallPrompt, setShowInstallPrompt] = useState(false);
     const [isOnline, setIsOnline] = useState(true);
     const [isClient, setIsClient] = useState(false);
+    const [showManualInstall, setShowManualInstall] = useState(false);
 
     useEffect(() => {
         // Mark as client-side
@@ -38,7 +39,6 @@ export function PWAInstaller() {
         // Listen for beforeinstallprompt event
         const handleBeforeInstallPrompt = (e: Event) => {
             e.preventDefault();
-            console.log('beforeinstallprompt event fired!', e);
             setDeferredPrompt(e as BeforeInstallPromptEvent);
             setShowInstallPrompt(true);
         };
@@ -47,6 +47,7 @@ export function PWAInstaller() {
         const handleAppInstalled = () => {
             setIsInstalled(true);
             setShowInstallPrompt(false);
+            setShowManualInstall(false);
             setDeferredPrompt(null);
             toast.success('Vunalet has been installed successfully!');
         };
@@ -63,13 +64,21 @@ export function PWAInstaller() {
         // Register service worker
         registerServiceWorker();
 
+        // Show manual install option after a delay if no automatic prompt
+        const timer = setTimeout(() => {
+            if (!isInstalled && isOnline) {
+                setShowManualInstall(true);
+            }
+        }, 5000); // Show after 5 seconds
+
         return () => {
             window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
             window.removeEventListener('appinstalled', handleAppInstalled);
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
+            clearTimeout(timer);
         };
-    }, []);
+    }, [isInstalled, isOnline]);
 
     const registerServiceWorker = async () => {
         if ('serviceWorker' in navigator) {
@@ -96,25 +105,19 @@ export function PWAInstaller() {
     };
 
     const handleInstallClick = async () => {
-        console.log('Install button clicked, deferredPrompt:', deferredPrompt);
         if (!deferredPrompt) {
-            console.log('No deferred prompt available');
             toast.error('Install prompt not available. Please refresh the page.');
             return;
         }
 
         try {
-            console.log('Calling deferredPrompt.prompt()...');
             await deferredPrompt.prompt();
-            console.log('Prompt shown, waiting for user choice...');
             const { outcome } = await deferredPrompt.userChoice;
 
             if (outcome === 'accepted') {
                 console.log('User accepted the install prompt');
-                toast.success('Installation accepted!');
             } else {
                 console.log('User dismissed the install prompt');
-                toast.info('Installation dismissed');
             }
 
             setDeferredPrompt(null);
@@ -127,17 +130,22 @@ export function PWAInstaller() {
 
     const handleDismiss = () => {
         setShowInstallPrompt(false);
+        setShowManualInstall(false);
         setDeferredPrompt(null);
-        // Also clear the shouldShowInstall condition
-        setIsInstalled(true); // This will prevent showing again
+    };
+
+    const handleRefreshInstall = () => {
+        // Clear any stored state and refresh
+        window.location.reload();
     };
 
     // Don't render anything until client-side
     if (!isClient) return null;
 
-    // Show install prompt only when we have a deferred prompt and on mobile devices
+    // Show install prompt on mobile devices
     const isMobile = window.innerWidth <= 768;
-    const shouldShowInstall = deferredPrompt && !isInstalled && isOnline && isMobile;
+    const shouldShowInstall = (deferredPrompt && !isInstalled && isOnline && isMobile) || 
+                             (showManualInstall && !isInstalled && isOnline && isMobile);
 
     return (
         <>
@@ -178,13 +186,23 @@ export function PWAInstaller() {
                             </div>
 
                             <div className="flex space-x-2 pt-2">
-                                <Button
-                                    onClick={handleInstallClick}
-                                    className="flex-1 bg-green-600 hover:bg-green-700"
-                                >
-                                    <Download className="w-4 h-4 mr-2" />
-                                    Install
-                                </Button>
+                                {deferredPrompt ? (
+                                    <Button
+                                        onClick={handleInstallClick}
+                                        className="flex-1 bg-green-600 hover:bg-green-700"
+                                    >
+                                        <Download className="w-4 h-4 mr-2" />
+                                        Install
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        onClick={handleRefreshInstall}
+                                        className="flex-1 bg-blue-600 hover:bg-blue-700"
+                                    >
+                                        <RefreshCw className="w-4 h-4 mr-2" />
+                                        Refresh & Try Again
+                                    </Button>
+                                )}
                                 <Button
                                     variant="outline"
                                     onClick={handleDismiss}
