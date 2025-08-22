@@ -73,6 +73,10 @@ export function ManualPWAInstall() {
     // Don't render anything until client-side
     if (!isClient) return null;
 
+    // Only show on mobile devices
+    const isMobile = window.innerWidth <= 768;
+    if (!isMobile) return null;
+
     // Don't show if already installed or no prompt available
     if (isInstalled || !deferredPrompt) {
         return null;

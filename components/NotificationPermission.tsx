@@ -64,6 +64,10 @@ export function NotificationPermission() {
     // Don't render anything until client-side
     if (!isClient) return null;
 
+    // Only show on mobile devices
+    const isMobile = window.innerWidth <= 768;
+    if (!isMobile) return null;
+
     // Don't show if permission is already granted/denied or prompt is dismissed
     if (permissionStatus !== 'default' || !showPermissionPrompt) {
         return null;

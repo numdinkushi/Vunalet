@@ -38,6 +38,7 @@ export function PWAInstaller() {
         // Listen for beforeinstallprompt event
         const handleBeforeInstallPrompt = (e: Event) => {
             e.preventDefault();
+            console.log('beforeinstallprompt event fired!', e);
             setDeferredPrompt(e as BeforeInstallPromptEvent);
             setShowInstallPrompt(true);
         };
@@ -95,16 +96,25 @@ export function PWAInstaller() {
     };
 
     const handleInstallClick = async () => {
-        if (!deferredPrompt) return;
+        console.log('Install button clicked, deferredPrompt:', deferredPrompt);
+        if (!deferredPrompt) {
+            console.log('No deferred prompt available');
+            toast.error('Install prompt not available. Please refresh the page.');
+            return;
+        }
 
         try {
+            console.log('Calling deferredPrompt.prompt()...');
             await deferredPrompt.prompt();
+            console.log('Prompt shown, waiting for user choice...');
             const { outcome } = await deferredPrompt.userChoice;
 
             if (outcome === 'accepted') {
                 console.log('User accepted the install prompt');
+                toast.success('Installation accepted!');
             } else {
                 console.log('User dismissed the install prompt');
+                toast.info('Installation dismissed');
             }
 
             setDeferredPrompt(null);
@@ -125,8 +135,9 @@ export function PWAInstaller() {
     // Don't render anything until client-side
     if (!isClient) return null;
 
-    // Show install prompt more aggressively for PWA
-    const shouldShowInstall = showInstallPrompt || (!isInstalled && isOnline && window.innerWidth <= 768);
+    // Show install prompt only when we have a deferred prompt and on mobile devices
+    const isMobile = window.innerWidth <= 768;
+    const shouldShowInstall = deferredPrompt && !isInstalled && isOnline && isMobile;
 
     return (
         <>
