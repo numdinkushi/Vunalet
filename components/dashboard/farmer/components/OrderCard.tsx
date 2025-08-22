@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Package, MapPin, Clock, Truck, Edit, Eye, User, ShoppingBag, DollarSign } from 'lucide-react';
 import { TransformedOrder } from '../types/dashboard-types';
 import { formatCurrency, formatDate, getOrderStatusText, getStatusColor, getStatusIcon } from '../utils';
+import { AwaitingConfirmationMessage } from '../../shared/AwaitingConfirmationMessage';
 
 interface OrderCardProps {
     order: TransformedOrder;
@@ -137,6 +138,11 @@ export function OrderCard({ order, showActions = true }: OrderCardProps) {
                             </Button>
                         </div>
                     </div>
+                )}
+
+                {/* Awaiting Confirmation Message for Arrived Orders */}
+                {order.orderStatus === 'arrived' && (
+                    <AwaitingConfirmationMessage customerName={order.customerName} />
                 )}
             </CardContent>
         </Card>

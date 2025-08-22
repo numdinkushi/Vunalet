@@ -20,10 +20,15 @@ import {
     Star,
     X,
     Calendar,
-    CreditCard
+    CreditCard,
+    CheckCircle,
+    XCircle
 } from 'lucide-react';
 import { Order } from '../types';
 import { formatCurrency, formatDate, getOrderStatusText, getStatusColor, getStatusIcon } from '../utils';
+import { useMutation } from 'convex/react';
+import { api } from '../../../../convex/_generated/api';
+import { toast } from 'sonner';
 
 interface OrderModalProps {
     order: Order | null;
@@ -32,9 +37,50 @@ interface OrderModalProps {
 }
 
 export function OrderModal({ order, isOpen, onClose }: OrderModalProps) {
+    const updateOrderStatus = useMutation(api.orders.updateOrderStatus);
+    const updatePaymentStatus = useMutation(api.orders.updatePaymentStatus);
+
     if (!order) return null;
 
     const StatusIcon = getStatusIcon(order.orderStatus);
+
+    const handleCancelOrder = async () => {
+        try {
+            console.log('Order cancelled:', order._id);
+            // TODO: Implement cancellation logic
+            toast.success('Order cancelled!');
+            onClose();
+        } catch (error) {
+            console.error('Failed to cancel order:', error);
+            toast.error('Failed to cancel order');
+        }
+    };
+
+    const handleConfirmOrder = async () => {
+        try {
+            console.log('Order confirmed:', order._id);
+            // TODO: Implement confirmation logic
+            toast.success('Order confirmed!');
+            onClose();
+        } catch (error) {
+            console.error('Failed to confirm order:', error);
+            toast.error('Failed to confirm order');
+        }
+    };
+
+    const handleApproveOrder = async () => {
+        try {
+            await updatePaymentStatus({
+                orderId: order._id,
+                paymentStatus: 'paid',
+            });
+            toast.success('Order approved and payment completed!');
+            onClose();
+        } catch (error) {
+            console.error('Failed to approve order:', error);
+            toast.error('Failed to approve order');
+        }
+    };
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -144,13 +190,39 @@ export function OrderModal({ order, isOpen, onClose }: OrderModalProps) {
 
                     {/* Actions */}
                     <div className="flex justify-end space-x-2">
-                        <Button variant="outline" onClick={onClose}>
-                            Close
-                        </Button>
-                        <Button>
-                            <Eye className="w-4 h-4 mr-2" />
-                            Track Order
-                        </Button>
+                        {order.orderStatus === 'arrived' ? (
+                            <>
+                                <Button variant="outline" onClick={handleCancelOrder} className="text-red-600 hover:text-red-700">
+                                    <XCircle className="w-4 h-4 mr-2" />
+                                    Cancel
+                                </Button>
+                                <Button onClick={handleConfirmOrder} className="bg-green-600 hover:bg-green-700">
+                                    <CheckCircle className="w-4 h-4 mr-2" />
+                                    Confirm
+                                </Button>
+                            </>
+                        ) : order.orderStatus === 'delivered' ? (
+                            <>
+                                <Button variant="outline" onClick={handleCancelOrder} className="text-red-600 hover:text-red-700">
+                                    <XCircle className="w-4 h-4 mr-2" />
+                                    Cancel
+                                </Button>
+                                <Button onClick={handleApproveOrder} className="bg-green-600 hover:bg-green-700">
+                                    <CheckCircle className="w-4 h-4 mr-2" />
+                                    Approve
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                <Button variant="outline" onClick={onClose}>
+                                    Close
+                                </Button>
+                                <Button>
+                                    <Eye className="w-4 h-4 mr-2" />
+                                    Track Order
+                                </Button>
+                            </>
+                        )}
                     </div>
                 </div>
             </DialogContent>

@@ -33,7 +33,7 @@ export const createOrder = mutation({
         totalCost: v.number(),
         paymentMethod: v.union(v.literal("lisk_zar"), v.literal("cash")),
         paymentStatus: v.union(v.literal("pending"), v.literal("paid"), v.literal("failed")),
-        orderStatus: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("delivered"), v.literal("cancelled")),
+        orderStatus: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("arrived"), v.literal("delivered"), v.literal("cancelled")),
         specialInstructions: v.optional(v.string()),
         estimatedPickupTime: v.optional(v.string()),
         estimatedDeliveryTime: v.optional(v.string()),
@@ -344,7 +344,7 @@ export const getOrderById = query({
 export const updateOrderStatus = mutation({
     args: {
         orderId: v.string(),
-        orderStatus: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("delivered"), v.literal("cancelled")),
+        orderStatus: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("arrived"), v.literal("delivered"), v.literal("cancelled")),
         estimatedDeliveryTime: v.optional(v.string()),
         actualDeliveryTime: v.optional(v.string()),
     },
@@ -388,7 +388,7 @@ export const assignDispatcher = mutation({
 // Get orders by status
 export const getOrdersByStatus = query({
     args: {
-        status: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("delivered"), v.literal("cancelled")),
+        status: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("arrived"), v.literal("delivered"), v.literal("cancelled")),
         role: v.union(v.literal("farmer"), v.literal("dispatcher"), v.literal("buyer")),
         userId: v.string(),
     },
@@ -494,6 +494,7 @@ export const getOrderStats = query({
             preparing: orders.filter(o => o.orderStatus === "preparing").length,
             ready: orders.filter(o => o.orderStatus === "ready").length,
             inTransit: orders.filter(o => o.orderStatus === "in_transit").length,
+            arrived: orders.filter(o => o.orderStatus === "arrived").length,
             delivered: orders.filter(o => o.orderStatus === "delivered").length,
             cancelled: orders.filter(o => o.orderStatus === "cancelled").length,
             totalRevenue: orders

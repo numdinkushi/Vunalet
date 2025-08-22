@@ -42,7 +42,7 @@ interface ConvexOrder {
     totalCost: number;
     paymentMethod: 'lisk_zar' | 'cash';
     paymentStatus: 'pending' | 'paid' | 'failed';
-    orderStatus: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'delivered' | 'cancelled';
+    orderStatus: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'arrived' | 'delivered' | 'cancelled';
     specialInstructions?: string;
     estimatedPickupTime?: string;
     estimatedDeliveryTime?: string;
@@ -161,7 +161,7 @@ export default function BuyerDashboard() {
     const transformedOrders = transformOrders(buyerOrders || []);
 
     const getActiveOrders = () => {
-        return filterOrdersByStatus(transformedOrders, ['pending', 'confirmed', 'preparing', 'ready', 'in_transit']);
+        return filterOrdersByStatus(transformedOrders, ['pending', 'confirmed', 'preparing', 'ready', 'in_transit', 'arrived']);
     };
 
     const getHistoryOrders = () => {

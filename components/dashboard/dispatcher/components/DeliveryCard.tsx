@@ -4,6 +4,11 @@ import { Badge } from '@/components/ui/badge';
 import { Truck, MapPin, Clock, Package, Edit, Eye, User, Phone, CheckCircle, Navigation } from 'lucide-react';
 import { DispatcherOrder } from '../types';
 import { formatCurrency, formatDate, getOrderStatusText, getStatusColor, getStatusIcon } from '../utils';
+import { useMutation } from 'convex/react';
+import { api } from '../../../../convex/_generated/api';
+import { toast } from 'sonner';
+import { motion } from 'framer-motion';
+import { AwaitingConfirmationMessage } from '../../shared/AwaitingConfirmationMessage';
 
 interface DeliveryCardProps {
     order: DispatcherOrder;
@@ -12,6 +17,21 @@ interface DeliveryCardProps {
 
 export function DeliveryCard({ order, showActions = true }: DeliveryCardProps) {
     const StatusIcon = getStatusIcon(order.orderStatus);
+    const updateOrderStatus = useMutation(api.orders.updateOrderStatus);
+
+    const handleMarkAsArrived = async () => {
+        try {
+            await updateOrderStatus({
+                orderId: order._id,
+                orderStatus: 'arrived',
+                actualDeliveryTime: new Date().toISOString(),
+            });
+            toast.success('Order marked as arrived successfully!');
+        } catch (error) {
+            console.error('Failed to mark order as arrived:', error);
+            toast.error('Failed to mark order as arrived');
+        }
+    };
 
     return (
         <Card className="hover:shadow-md transition-shadow">
@@ -105,6 +125,25 @@ export function DeliveryCard({ order, showActions = true }: DeliveryCardProps) {
                                 )}
                             </div>
                         </div>
+                    )}
+
+                    {/* Delivered Button for Pending/In Transit Orders */}
+                    {(order.orderStatus === 'pending' || order.orderStatus === 'in_transit' || order.orderStatus === 'ready') && (
+                        <div className="pt-3 border-t">
+                            <Button
+                                onClick={handleMarkAsArrived}
+                                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
+                                size="default"
+                            >
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Mark as Arrived
+                            </Button>
+                        </div>
+                    )}
+
+                    {/* Awaiting Confirmation Message for Arrived Orders */}
+                    {order.orderStatus === 'arrived' && (
+                        <AwaitingConfirmationMessage customerName={order.customerName} />
                     )}
                 </div>
             </CardContent>

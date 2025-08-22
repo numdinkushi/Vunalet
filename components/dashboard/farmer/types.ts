@@ -31,7 +31,7 @@ export interface FarmerOrder {
     _id: string;
     products: OrderProduct[];
     totalCost: number;
-    orderStatus: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'delivered' | 'cancelled';
+    orderStatus: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'arrived' | 'delivered' | 'cancelled';
     paymentStatus: 'paid' | 'pending' | 'failed';
     createdAt: string;
     deliveryAddress: string;

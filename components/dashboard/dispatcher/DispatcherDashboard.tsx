@@ -53,7 +53,7 @@ interface ConvexOrder {
     totalCost: number;
     paymentMethod: 'lisk_zar' | 'cash';
     paymentStatus: 'pending' | 'paid' | 'failed';
-    orderStatus: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'delivered' | 'cancelled';
+    orderStatus: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'arrived' | 'delivered' | 'cancelled';
     specialInstructions?: string;
     estimatedPickupTime?: string;
     estimatedDeliveryTime?: string;
@@ -162,7 +162,7 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
     // Calculate real stats from data
     const stats = {
         totalDeliveries: orderStats?.total ?? 0,
-        activeDeliveries: orderStats ? (orderStats.pending + orderStats.confirmed + orderStats.preparing + orderStats.ready + orderStats.inTransit) : 0,
+        activeDeliveries: orderStats ? (orderStats.pending + orderStats.confirmed + orderStats.preparing + orderStats.ready + orderStats.inTransit + (orderStats.arrived || 0)) : 0,
         completedDeliveries: orderStats?.delivered ?? 0,
         totalEarnings: orderStats?.totalRevenue ?? 0,
     };
@@ -292,7 +292,7 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
                         <CardContent>
                             <div className="space-y-4">
                                 {transformedOrders.filter(order =>
-                                    ['pending', 'confirmed', 'preparing', 'ready', 'in_transit'].includes(order.orderStatus)
+                                    ['pending', 'confirmed', 'preparing', 'ready', 'in_transit', 'arrived'].includes(order.orderStatus)
                                 ).map((order) => (
                                     <DeliveryCard key={order._id} order={order} />
                                 ))}
@@ -308,7 +308,7 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
-                                {transformedOrders.filter(order => order.orderStatus === 'delivered').map((order) => (
+                                {transformedOrders.filter(order => order.orderStatus === 'delivered' || order.orderStatus === 'cancelled').map((order) => (
                                     <DeliveryCard key={order._id} order={order} />
                                 ))}
                             </div>

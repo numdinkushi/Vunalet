@@ -114,7 +114,7 @@ export default defineSchema({
         totalCost: v.number(),
         paymentMethod: v.union(v.literal("lisk_zar"), v.literal("cash")),
         paymentStatus: v.union(v.literal("pending"), v.literal("paid"), v.literal("failed")),
-        orderStatus: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("delivered"), v.literal("cancelled")),
+        orderStatus: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("arrived"), v.literal("delivered"), v.literal("cancelled")),
         specialInstructions: v.optional(v.string()),
         estimatedPickupTime: v.optional(v.string()), // Add this field
         estimatedDeliveryTime: v.optional(v.string()),
