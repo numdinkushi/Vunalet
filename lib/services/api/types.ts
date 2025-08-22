@@ -136,4 +136,64 @@ export interface TransferTransactionResponse {
             v: number;
         };
     };
+}
+
+// Bulk transfer types
+export interface BulkTransferPayment {
+    recipient: string; // paymentIdentifier
+    amount: number;
+}
+
+export interface BulkTransferRequest {
+    payments: BulkTransferPayment[];
+    transactionNotes?: string;
+}
+
+export interface BulkTransferResponse {
+    message: string;
+    transaction: {
+        _type: string;
+        accessList: unknown[];
+        blockNumber: string | null;
+        blockHash: string | null;
+        blobVersionedHashes: string | null;
+        chainId: string;
+        data: string;
+        from: string;
+        gasLimit: string;
+        gasPrice: string | null;
+        hash: string;
+        maxFeePerGas: string;
+        maxPriorityFeePerGas: string;
+        maxFeePerBlobGas: string | null;
+        nonce: number;
+        signature: {
+            _type: string;
+            networkV: string | null;
+            r: string;
+            s: string;
+            v: number;
+        };
+        to: string;
+        type: number;
+        value: string;
+    };
+    receipt?: {
+        _type: string;
+        blockHash: string;
+        blockNumber: number;
+        contractAddress: string | null;
+        cumulativeGasUsed: string;
+        from: string;
+        gasPrice: string;
+        blobGasUsed: string | null;
+        blobGasPrice: string | null;
+        gasUsed: string;
+        hash: string;
+        index: number;
+        logs: unknown[];
+        logsBloom: string;
+        status: number;
+        to: string;
+    };
 } 

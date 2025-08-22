@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { CreateUserRequest, CreateUserResponse, ApiError, MintTransactionResponse, TransferRequest, TransferTransactionResponse } from './types';
+import { CreateUserRequest, CreateUserResponse, ApiError, MintTransactionResponse, TransferRequest, TransferTransactionResponse, BulkTransferRequest, BulkTransferResponse } from './types';
 
 // API Configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://seal-app-qp9cc.ondigitalocean.app/api/v1';
@@ -142,6 +142,17 @@ class StablecoinApiService {
      */
     async transferStablecoins(userId: string, transferData: TransferRequest): Promise<TransferTransactionResponse> {
         const response = await this.api.post<TransferTransactionResponse>(`/transfer/${userId}`, transferData);
+        return response.data;
+    }
+
+    /**
+     * Bulk transfer stablecoins to multiple recipients
+     */
+    async bulkTransferStablecoins(
+        liskId: string,
+        bulkTransferData: BulkTransferRequest
+    ): Promise<BulkTransferResponse> {
+        const response = await this.api.post<BulkTransferResponse>(`/transfer/batch/${liskId}`, bulkTransferData);
         return response.data;
     }
 }
