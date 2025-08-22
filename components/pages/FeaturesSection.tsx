@@ -179,7 +179,7 @@ export function FeaturesSection() {
                             </motion.p>
                         </div>
 
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
                             {stats.map((stat, index) => (
                                 <motion.div
                                     key={index}

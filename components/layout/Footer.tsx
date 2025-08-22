@@ -20,7 +20,7 @@ export function Footer() {
             <div className="flex items-center space-x-3 mb-6">
               <div className="relative w-12 h-12">
                 <Image
-                  src="/assets/logo/logo.png"
+                  src="/assets/logo/logo_white.png"
                   alt="Vunalet Logo"
                   fill
                   className="object-contain"
@@ -32,23 +32,23 @@ export function Footer() {
               Harvesting the future through sustainable agriculture and direct farmer-consumer connections across South Africa.
             </p>
             <div className="flex space-x-4">
-              <motion.a 
-                href="#" 
-                className="text-gray-300 hover:text-white transition-colors p-2 bg-gray-800 rounded-full hover:bg-gray-700" 
+              <motion.a
+                href="#"
+                className="text-gray-300 hover:text-white transition-colors p-2 bg-gray-800 rounded-full hover:bg-gray-700"
                 whileHover={{ scale: 1.2 }}
               >
                 <Phone size={20} />
               </motion.a>
-              <motion.a 
-                href="#" 
-                className="text-gray-300 hover:text-white transition-colors p-2 bg-gray-800 rounded-full hover:bg-gray-700" 
+              <motion.a
+                href="#"
+                className="text-gray-300 hover:text-white transition-colors p-2 bg-gray-800 rounded-full hover:bg-gray-700"
                 whileHover={{ scale: 1.2 }}
               >
                 <Mail size={20} />
               </motion.a>
             </div>
           </div>
-          
+
           {/* Quick Links */}
           <div>
             <h4 className="text-xl font-semibold mb-6">Quick Links</h4>
@@ -67,7 +67,7 @@ export function Footer() {
               ))}
             </ul>
           </div>
-          
+
           {/* Categories */}
           <div>
             <h4 className="text-xl font-semibold mb-6">Categories</h4>
@@ -106,7 +106,7 @@ export function Footer() {
                 <p className="text-gray-300 text-sm">Cape Town, South Africa</p>
               </div>
             </div>
-            
+
             <div className="flex items-center">
               <div className="p-3 bg-green-600 rounded-full mr-4">
                 <Clock className="text-white" size={20} />
@@ -116,7 +116,7 @@ export function Footer() {
                 <p className="text-gray-300 text-sm">Mon - Fri: 8AM - 6PM</p>
               </div>
             </div>
-            
+
             <div className="flex items-center">
               <div className="p-3 bg-green-600 rounded-full mr-4">
                 <Shield className="text-white" size={20} />
@@ -128,7 +128,7 @@ export function Footer() {
             </div>
           </div>
         </motion.div>
-        
+
         <motion.div
           className="border-t border-gray-700 mt-12 pt-8 text-center"
           initial={{ opacity: 0, y: 20 }}

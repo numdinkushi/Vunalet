@@ -78,16 +78,16 @@ function FloatingElements() {
     );
 }
 
-function CountUp({ target, duration = 2 }: { target: string; duration?: number }) {
+function CountUp({ target, duration = 2 }: { target: string; duration?: number; }) {
     const [count, setCount] = useState(0);
     const [hasStarted, setHasStarted] = useState(false);
 
     useEffect(() => {
         if (!hasStarted) return;
-        
+
         const numericTarget = parseInt(target.replace(/[^0-9]/g, ''));
         const increment = numericTarget / (duration * 60);
-        
+
         let current = 0;
         const timer = setInterval(() => {
             current += increment;
@@ -186,7 +186,7 @@ export function StatsSection() {
                 </motion.div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
                     {stats.map((stat, index) => (
                         <motion.div
                             key={index}
