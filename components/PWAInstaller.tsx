@@ -21,8 +21,15 @@ export function PWAInstaller() {
     const [isInstalled, setIsInstalled] = useState(false);
     const [showInstallPrompt, setShowInstallPrompt] = useState(false);
     const [isOnline, setIsOnline] = useState(true);
+    const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
+        // Mark as client-side
+        setIsClient(true);
+
+        // Only run on client side
+        if (typeof window === 'undefined') return;
+
         // Check if PWA is already installed
         if (window.matchMedia('(display-mode: standalone)').matches) {
             setIsInstalled(true);
@@ -111,16 +118,19 @@ export function PWAInstaller() {
     const handleDismiss = () => {
         setShowInstallPrompt(false);
         setDeferredPrompt(null);
+        // Also clear the shouldShowInstall condition
+        setIsInstalled(true); // This will prevent showing again
     };
 
-    // Don't show if already installed or not online
-    if (isInstalled || !isOnline) {
-        return null;
-    }
+    // Don't render anything until client-side
+    if (!isClient) return null;
+
+    // Show install prompt more aggressively for PWA
+    const shouldShowInstall = showInstallPrompt || (!isInstalled && isOnline && window.innerWidth <= 768);
 
     return (
         <>
-            {showInstallPrompt && (
+            {shouldShowInstall && (
                 <div className="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:w-80">
                     <Card className="shadow-lg border-2 border-green-200 bg-gradient-to-r from-green-50 to-emerald-50">
                         <CardHeader className="pb-3">
