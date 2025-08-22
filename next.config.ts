@@ -90,8 +90,6 @@ const nextConfig: NextConfig = {
   },
   // Enable compression
   compress: true,
-  // Optimize bundle size
-  swcMinify: true,
 };
 
 export default nextConfig;

@@ -78,8 +78,8 @@ export function RatingForm({ farmerId, buyerId, orderId, farmerName, onRatingSub
                                     <Star
                                         size={32}
                                         className={`transition-colors ${star <= (hoveredRating || rating)
-                                            ? 'text-yellow-400 fill-current'
-                                            : 'text-gray-300'
+                                                ? 'text-yellow-400 fill-current'
+                                                : 'text-gray-300'
                                             }`}
                                     />
                                 </button>

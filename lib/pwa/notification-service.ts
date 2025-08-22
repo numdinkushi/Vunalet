@@ -113,10 +113,9 @@ class NotificationService {
                 data: {
                     url: data.url,
                 },
-                actions: data.actions,
                 requireInteraction: true,
                 vibrate: [100, 50, 100],
-            });
+            } as NotificationOptions);
         } catch (error) {
             console.error('Failed to show local notification:', error);
         }
