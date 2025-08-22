@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Download, X, CheckCircle, Smartphone } from 'lucide-react';
+import { Download, X, CheckCircle, Smartphone, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -19,9 +18,10 @@ interface BeforeInstallPromptEvent extends Event {
 export function PWAInstaller() {
     const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
     const [isInstalled, setIsInstalled] = useState(false);
-    const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+
     const [isOnline, setIsOnline] = useState(true);
     const [isClient, setIsClient] = useState(false);
+    const [showManualInstall, setShowManualInstall] = useState(false);
 
     useEffect(() => {
         // Mark as client-side
@@ -39,13 +39,12 @@ export function PWAInstaller() {
         const handleBeforeInstallPrompt = (e: Event) => {
             e.preventDefault();
             setDeferredPrompt(e as BeforeInstallPromptEvent);
-            setShowInstallPrompt(true);
         };
 
         // Listen for appinstalled event
         const handleAppInstalled = () => {
             setIsInstalled(true);
-            setShowInstallPrompt(false);
+            setShowManualInstall(false);
             setDeferredPrompt(null);
             toast.success('Vunalet has been installed successfully!');
         };
@@ -62,13 +61,21 @@ export function PWAInstaller() {
         // Register service worker
         registerServiceWorker();
 
+        // Show manual install option after a delay if no automatic prompt
+        const timer = setTimeout(() => {
+            if (!isInstalled && isOnline) {
+                setShowManualInstall(true);
+            }
+        }, 5000); // Show after 5 seconds
+
         return () => {
             window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
             window.removeEventListener('appinstalled', handleAppInstalled);
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
+            clearTimeout(timer);
         };
-    }, []);
+    }, [isInstalled, isOnline]);
 
     const registerServiceWorker = async () => {
         if ('serviceWorker' in navigator) {
@@ -95,7 +102,10 @@ export function PWAInstaller() {
     };
 
     const handleInstallClick = async () => {
-        if (!deferredPrompt) return;
+        if (!deferredPrompt) {
+            toast.error('Install prompt not available. Please refresh the page.');
+            return;
+        }
 
         try {
             await deferredPrompt.prompt();
@@ -108,7 +118,6 @@ export function PWAInstaller() {
             }
 
             setDeferredPrompt(null);
-            setShowInstallPrompt(false);
         } catch (error) {
             console.error('Installation failed:', error);
             toast.error('Installation failed. Please try again.');
@@ -116,17 +125,22 @@ export function PWAInstaller() {
     };
 
     const handleDismiss = () => {
-        setShowInstallPrompt(false);
+        setShowManualInstall(false);
         setDeferredPrompt(null);
-        // Also clear the shouldShowInstall condition
-        setIsInstalled(true); // This will prevent showing again
+    };
+
+    const handleRefreshInstall = () => {
+        // Clear any stored state and refresh
+        window.location.reload();
     };
 
     // Don't render anything until client-side
     if (!isClient) return null;
 
-    // Show install prompt more aggressively for PWA
-    const shouldShowInstall = showInstallPrompt || (!isInstalled && isOnline && window.innerWidth <= 768);
+    // Show install prompt on mobile devices
+    const isMobile = window.innerWidth <= 768;
+    const shouldShowInstall = (deferredPrompt && !isInstalled && isOnline && isMobile) ||
+        (showManualInstall && !isInstalled && isOnline && isMobile);
 
     return (
         <>
@@ -167,13 +181,23 @@ export function PWAInstaller() {
                             </div>
 
                             <div className="flex space-x-2 pt-2">
-                                <Button
-                                    onClick={handleInstallClick}
-                                    className="flex-1 bg-green-600 hover:bg-green-700"
-                                >
-                                    <Download className="w-4 h-4 mr-2" />
-                                    Install
-                                </Button>
+                                {deferredPrompt ? (
+                                    <Button
+                                        onClick={handleInstallClick}
+                                        className="flex-1 bg-green-600 hover:bg-green-700"
+                                    >
+                                        <Download className="w-4 h-4 mr-2" />
+                                        Install
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        onClick={handleRefreshInstall}
+                                        className="flex-1 bg-blue-600 hover:bg-blue-700"
+                                    >
+                                        <RefreshCw className="w-4 h-4 mr-2" />
+                                        Refresh & Try Again
+                                    </Button>
+                                )}
                                 <Button
                                     variant="outline"
                                     onClick={handleDismiss}

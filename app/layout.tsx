@@ -2,9 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
-import { PWAInstaller } from '@/components/PWAInstaller';
-import { NotificationPermission } from '@/components/NotificationPermission';
-import { ManualPWAInstall } from '@/components/ManualPWAInstall';
+import { PWAComponents } from '@/components/PWAComponents';
 import { ConvexClientProvider } from '../providers/ConvexClientProvider';
 import { Toaster } from '@/components/ui/sonner';
 
@@ -26,11 +24,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/assets/logo/logo.png', sizes: '192x192', type: 'image/png' },
-      { url: '/assets/logo/logo.png', sizes: '512x512', type: 'image/png' },
+      { url: '/assets/logo/logo-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/assets/logo/logo-512x512.png', sizes: '512x512', type: 'image/png' },
     ],
     apple: [
-      { url: '/assets/logo/logo.png', sizes: '192x192', type: 'image/png' },
+      { url: '/assets/logo/logo-192x192.png', sizes: '192x192', type: 'image/png' },
     ],
   },
 };
@@ -60,7 +58,7 @@ export default function RootLayout({
             <meta name="apple-mobile-web-app-capable" content="yes" />
             <meta name="apple-mobile-web-app-status-bar-style" content="default" />
             <meta name="apple-mobile-web-app-title" content="Vunalet" />
-            <link rel="apple-touch-icon" href="/assets/logo/logo.png" />
+            <link rel="apple-touch-icon" href="/assets/logo/logo-192x192.png" />
             <script
               dangerouslySetInnerHTML={{
                 __html: `
@@ -81,9 +79,7 @@ export default function RootLayout({
           </head>
           <body className={inter.className}>
             {children}
-            <ManualPWAInstall />
-            <PWAInstaller />
-            <NotificationPermission />
+            <PWAComponents />
             <Toaster />
           </body>
         </html>

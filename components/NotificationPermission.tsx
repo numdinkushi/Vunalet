@@ -11,6 +11,7 @@ export function NotificationPermission() {
     const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
     const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
     const [isClient, setIsClient] = useState(false);
+    const [hasShownPrompt, setHasShownPrompt] = useState(false);
 
     useEffect(() => {
         // Mark as client-side
@@ -23,17 +24,18 @@ export function NotificationPermission() {
         if ('Notification' in window) {
             setPermissionStatus(Notification.permission);
 
-            // Show prompt if permission is default (not granted/denied)
-            if (Notification.permission === 'default') {
+            // Show prompt if permission is default (not granted/denied) and we haven't shown it yet
+            if (Notification.permission === 'default' && !hasShownPrompt) {
                 // Delay showing the prompt to not overwhelm users
                 const timer = setTimeout(() => {
                     setShowPermissionPrompt(true);
+                    setHasShownPrompt(true);
                 }, 3000); // Show after 3 seconds
 
                 return () => clearTimeout(timer);
             }
         }
-    }, []);
+    }, [hasShownPrompt]);
 
     const handleEnableNotifications = async () => {
         try {
@@ -59,10 +61,17 @@ export function NotificationPermission() {
 
     const handleDismiss = () => {
         setShowPermissionPrompt(false);
+        setHasShownPrompt(true);
     };
+
+
 
     // Don't render anything until client-side
     if (!isClient) return null;
+
+    // Only show on mobile devices
+    const isMobile = window.innerWidth <= 768;
+    if (!isMobile) return null;
 
     // Don't show if permission is already granted/denied or prompt is dismissed
     if (permissionStatus !== 'default' || !showPermissionPrompt) {

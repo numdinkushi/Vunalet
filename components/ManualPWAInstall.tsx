@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download, Smartphone } from 'lucide-react';
+import { Download } from 'lucide-react';
 
 interface BeforeInstallPromptEvent extends Event {
     readonly platforms: string[];
@@ -17,6 +17,7 @@ export function ManualPWAInstall() {
     const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
     const [isInstalled, setIsInstalled] = useState(false);
     const [isClient, setIsClient] = useState(false);
+    const [showButton, setShowButton] = useState(false);
 
     useEffect(() => {
         // Mark as client-side
@@ -45,14 +46,26 @@ export function ManualPWAInstall() {
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
         window.addEventListener('appinstalled', handleAppInstalled);
 
+        // Show button after a delay if not installed
+        const timer = setTimeout(() => {
+            if (!isInstalled) {
+                setShowButton(true);
+            }
+        }, 3000);
+
         return () => {
             window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
             window.removeEventListener('appinstalled', handleAppInstalled);
+            clearTimeout(timer);
         };
-    }, []);
+    }, [isInstalled]);
 
     const handleInstallClick = async () => {
-        if (!deferredPrompt) return;
+        if (!deferredPrompt) {
+            // If no deferred prompt, try to trigger a page refresh to get a new one
+            window.location.reload();
+            return;
+        }
 
         try {
             await deferredPrompt.prompt();
@@ -73,8 +86,17 @@ export function ManualPWAInstall() {
     // Don't render anything until client-side
     if (!isClient) return null;
 
-    // Don't show if already installed or no prompt available
-    if (isInstalled || !deferredPrompt) {
+    // Only show on mobile devices
+    const isMobile = window.innerWidth <= 768;
+    if (!isMobile) return null;
+
+    // Don't show if already installed
+    if (isInstalled) {
+        return null;
+    }
+
+    // Show button if we have a prompt or if we want to show the manual option
+    if (!deferredPrompt && !showButton) {
         return null;
     }
 
@@ -85,7 +107,7 @@ export function ManualPWAInstall() {
             size="sm"
         >
             <Download className="w-4 h-4 mr-2" />
-            Install App
+            {deferredPrompt ? 'Install App' : 'Add to Home Screen'}
         </Button>
     );
 } 
