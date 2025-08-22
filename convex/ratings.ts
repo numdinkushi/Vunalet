@@ -5,24 +5,27 @@ import { Id } from "./_generated/dataModel";
 // Create a new rating/review
 export const createRating = mutation({
     args: {
-        farmerId: v.string(),
-        buyerId: v.string(),
         orderId: v.string(),
+        ratedUserId: v.string(),
+        raterRole: v.union(v.literal("buyer"), v.literal("farmer"), v.literal("dispatcher")),
+        ratedRole: v.union(v.literal("farmer"), v.literal("dispatcher")),
         rating: v.number(),
-        review: v.optional(v.string()),
+        comment: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-        // Check if rating already exists for this order
+        // Check if rating already exists for this order and rated user
         const existingRating = await ctx.db
             .query("ratings")
-            .withIndex("by_order", (q) => q.eq("orderId", args.orderId))
+            .withIndex("by_order_and_rated_user", (q) =>
+                q.eq("orderId", args.orderId).eq("ratedUserId", args.ratedUserId)
+            )
             .first();
 
         if (existingRating) {
             // Update existing rating
             return await ctx.db.patch(existingRating._id, {
                 rating: args.rating,
-                review: args.review,
+                comment: args.comment,
                 updatedAt: Date.now(),
             });
         }
@@ -36,25 +39,25 @@ export const createRating = mutation({
     },
 });
 
-// Get ratings for a specific farmer
-export const getFarmerRatings = query({
-    args: { farmerId: v.string() },
+// Get ratings for a specific user (farmer or dispatcher)
+export const getUserRatings = query({
+    args: { userId: v.string() },
     handler: async (ctx, args) => {
         return await ctx.db
             .query("ratings")
-            .withIndex("by_farmer", (q) => q.eq("farmerId", args.farmerId))
+            .withIndex("by_rated_user", (q) => q.eq("ratedUserId", args.userId))
             .order("desc")
             .collect();
     },
 });
 
-// Get average rating for a farmer
-export const getFarmerAverageRating = query({
-    args: { farmerId: v.string() },
+// Get average rating for a user (farmer or dispatcher)
+export const getUserAverageRating = query({
+    args: { userId: v.string() },
     handler: async (ctx, args) => {
         const ratings = await ctx.db
             .query("ratings")
-            .withIndex("by_farmer", (q) => q.eq("farmerId", args.farmerId))
+            .withIndex("by_rated_user", (q) => q.eq("ratedUserId", args.userId))
             .collect();
 
         if (ratings.length === 0) {

@@ -187,18 +187,21 @@ export default defineSchema({
         .index("by_read_status", ["isRead"])
         .index("by_created_at", ["createdAt"]),
 
-    // Ratings table for farmer reviews
+    // Ratings table for farmer and dispatcher reviews
     ratings: defineTable({
-        farmerId: v.string(), // clerkUserId of the farmer
-        buyerId: v.string(), // clerkUserId of the buyer
         orderId: v.string(), // Reference to the order
+        ratedUserId: v.string(), // clerkUserId of the person being rated (farmer or dispatcher)
+        raterRole: v.union(v.literal("buyer"), v.literal("farmer"), v.literal("dispatcher")),
+        ratedRole: v.union(v.literal("farmer"), v.literal("dispatcher")),
         rating: v.number(), // 1-5 stars
-        review: v.optional(v.string()),
+        comment: v.optional(v.string()),
         createdAt: v.number(),
         updatedAt: v.number(),
     })
-        .index("by_farmer", ["farmerId"])
-        .index("by_buyer", ["buyerId"])
+        .index("by_rated_user", ["ratedUserId"])
+        .index("by_rater_role", ["raterRole"])
+        .index("by_rated_role", ["ratedRole"])
         .index("by_order", ["orderId"])
+        .index("by_order_and_rated_user", ["orderId", "ratedUserId"])
         .index("by_rating", ["rating"]),
 }); 

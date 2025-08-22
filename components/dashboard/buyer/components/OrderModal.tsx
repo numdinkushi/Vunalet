@@ -33,6 +33,7 @@ import { api } from '../../../../convex/_generated/api';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import { useOrderCancellation } from '../../../../hooks/use-order-cancellation';
+import { useOrderConfirmation } from '../../../../hooks/use-order-confirmation';
 
 interface OrderModalProps {
     order: Order | null;
@@ -50,6 +51,7 @@ export function OrderModal({ order, isOpen, onClose, buyerLiskId }: OrderModalPr
     const [isApproving, setIsApproving] = useState(false);
     const [isConfirming, setIsConfirming] = useState(false);
     const { cancelOrder } = useOrderCancellation();
+    const { confirmOrder } = useOrderConfirmation();
 
     if (!order) return null;
 
@@ -100,14 +102,30 @@ export function OrderModal({ order, isOpen, onClose, buyerLiskId }: OrderModalPr
     };
 
     const handleConfirmOrder = async () => {
+        if (!buyerLiskId) {
+            toast.error('Payment account not found. Please contact support.');
+            return;
+        }
+
         setIsConfirming(true);
         try {
-            console.log('Order confirmed:', order._id);
-            // TODO: Implement confirmation logic
-            toast.success('Order confirmed!');
-            onClose();
+            const success = await confirmOrder({
+                orderId: order._id,
+                buyerId: order.buyerId || '',
+                buyerLiskId: buyerLiskId,
+                dispatcherId: order.dispatcherId || '',
+                farmerId: order.farmerId || '',
+                totalCost: order.totalCost,
+                dispatcherAmount: order.dispatcherAmount || 0,
+                farmerAmount: order.farmerAmount || 0,
+            });
+
+            if (success) {
+                onClose();
+                // TODO: Show rating modal after successful confirmation
+            }
         } catch (error) {
-            console.error('Failed to confirm order:', error);
+            console.log('Failed to confirm order:', error);
             toast.error('Failed to confirm order');
         } finally {
             setIsConfirming(false);
@@ -299,6 +317,31 @@ export function OrderModal({ order, isOpen, onClose, buyerLiskId }: OrderModalPr
 
                     <Separator />
 
+                    {/* Order Completion Message */}
+                    {(order.orderStatus === 'delivered' || order.orderStatus === 'cancelled') && (
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                            <div className="flex items-center space-x-2">
+                                {order.orderStatus === 'delivered' ? (
+                                    <>
+                                        <CheckCircle className="w-5 h-5 text-green-600" />
+                                        <span className="font-medium text-green-800">Order Completed</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <XCircle className="w-5 h-5 text-red-600" />
+                                        <span className="font-medium text-red-800">Order Cancelled</span>
+                                    </>
+                                )}
+                            </div>
+                            <p className="text-sm text-gray-600 mt-1">
+                                {order.orderStatus === 'delivered'
+                                    ? 'This order has been successfully delivered and completed.'
+                                    : 'This order has been cancelled and cannot be modified.'
+                                }
+                            </p>
+                        </div>
+                    )}
+
                     {/* Actions */}
                     {!showCancellationForm && (
                         <div className="flex justify-end space-x-2">
@@ -331,35 +374,11 @@ export function OrderModal({ order, isOpen, onClose, buyerLiskId }: OrderModalPr
                                         )}
                                     </Button>
                                 </>
-                            ) : order.orderStatus === 'delivered' ? (
-                                <>
-                                    <Button
-                                        variant="outline"
-                                        onClick={handleCancelClick}
-                                        className="text-red-600 hover:text-red-700"
-                                        disabled={isCancelling}
-                                    >
-                                        <XCircle className="w-4 h-4 mr-2" />
-                                        Cancel
-                                    </Button>
-                                    <Button
-                                        onClick={handleApproveOrder}
-                                        className="bg-green-600 hover:bg-green-700"
-                                        disabled={isApproving}
-                                    >
-                                        {isApproving ? (
-                                            <>
-                                                <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                                Approving...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <CheckCircle className="w-4 h-4 mr-2" />
-                                                Approve
-                                            </>
-                                        )}
-                                    </Button>
-                                </>
+                            ) : order.orderStatus === 'delivered' || order.orderStatus === 'cancelled' ? (
+                                // No action buttons for resolved orders - just close button
+                                <Button variant="outline" onClick={onClose}>
+                                    Close
+                                </Button>
                             ) : (
                                 <>
                                     <Button variant="outline" onClick={onClose}>

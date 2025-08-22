@@ -2,7 +2,7 @@ import { useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { toast } from 'sonner';
 
-interface CancelOrderParams {
+interface ConfirmOrderParams {
     orderId: string;
     buyerId: string; // Clerk ID
     buyerLiskId: string; // Lisk ID for payments
@@ -11,14 +11,14 @@ interface CancelOrderParams {
     totalCost: number;
     dispatcherAmount: number;
     farmerAmount: number;
-    reason: string;
 }
 
-export function useOrderCancellation() {
+export function useOrderConfirmation() {
     const updateOrderStatus = useMutation(api.orders.updateOrderStatus);
+    const updatePaymentStatus = useMutation(api.orders.updatePaymentStatus);
     const updateBalance = useMutation(api.balances.upsertUserBalance);
 
-    const cancelOrder = async ({
+    const confirmOrder = async ({
         orderId,
         buyerId,
         buyerLiskId,
@@ -26,53 +26,57 @@ export function useOrderCancellation() {
         farmerId,
         totalCost,
         dispatcherAmount,
-        farmerAmount,
-        reason
-    }: CancelOrderParams) => {
+        farmerAmount
+    }: ConfirmOrderParams) => {
         try {
             // Validate required parameters
             if (!buyerLiskId) {
-                throw new Error('Buyer payment account not found');
+                toast.error('Buyer payment account not found');
+                return false;
             }
 
             // Step 1: Get payment identifiers for dispatcher and farmer
-            // Note: dispatcherId and farmerId are Clerk user IDs, not Lisk IDs
             const [dispatcherProfile, farmerProfile] = await Promise.all([
                 dispatcherId ? fetch(`/api/stablecoin/users?userId=${dispatcherId}`).then(r => r.json()).catch(() => null) : null,
                 farmerId ? fetch(`/api/stablecoin/users?userId=${farmerId}`).then(r => r.json()).catch(() => null) : null
             ]);
 
-            // Step 2: Process refunds using bulk transfer
-            const refundPayments = [];
+            // Step 2: Process payments using bulk transfer
+            const payments = [];
 
-            // Add dispatcher refund (half of dispatcher amount)
+            // Add dispatcher payment (full dispatcher amount)
             if (dispatcherId && dispatcherAmount > 0 && dispatcherProfile?.paymentIdentifier) {
-                refundPayments.push({
+                payments.push({
                     recipient: dispatcherProfile.paymentIdentifier,
-                    amount: dispatcherAmount / 2
+                    amount: dispatcherAmount
                 });
             }
 
-            // Add farmer refund (half of farmer amount)
+            // Add farmer payment (full farmer amount)
             if (farmerId && farmerAmount > 0 && farmerProfile?.paymentIdentifier) {
-                refundPayments.push({
+                payments.push({
                     recipient: farmerProfile.paymentIdentifier,
-                    amount: farmerAmount / 2
+                    amount: farmerAmount
                 });
             }
 
-            // If no valid recipients found, just cancel the order without refunds
-            if (refundPayments.length === 0) {
-                console.log('No valid recipients found for refunds, cancelling order without refunds');
+            // If no valid recipients found, just confirm the order without payments
+            if (payments.length === 0) {
+                console.log('No valid recipients found for payments, confirming order without payments');
 
-                // Update order status to cancelled without processing refunds
-                await updateOrderStatus({
-                    orderId,
-                    orderStatus: 'cancelled',
-                    cancellationReason: reason,
-                });
+                // Update order status to delivered and payment status to paid
+                await Promise.all([
+                    updateOrderStatus({
+                        orderId,
+                        orderStatus: 'delivered',
+                    }),
+                    updatePaymentStatus({
+                        orderId,
+                        paymentStatus: 'paid',
+                    })
+                ]);
 
-                // Update buyer's ledger balance (decrease by total cost since order is now cancelled)
+                // Update buyer's ledger balance (decrease by total cost since order is now confirmed)
                 await updateBalance({
                     clerkUserId: buyerId,
                     token: 'L ZAR Coin',
@@ -80,7 +84,7 @@ export function useOrderCancellation() {
                     ledgerBalance: 0, // Ledger balance will be recalculated from pending orders
                 });
 
-                toast.success('Order cancelled successfully');
+                toast.success('Order confirmed successfully');
                 return true;
             }
 
@@ -91,8 +95,8 @@ export function useOrderCancellation() {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    payments: refundPayments,
-                    transactionNotes: `Order cancellation refund - ${reason}`
+                    payments: payments,
+                    transactionNotes: `Order confirmation payment - Order #${orderId.slice(-6)}`
                 }),
             });
 
@@ -100,7 +104,7 @@ export function useOrderCancellation() {
                 const errorData = await response.json().catch(() => ({}));
                 console.log('Bulk transfer failed:', errorData);
 
-                let errorMessage = 'Failed to process refunds';
+                let errorMessage = 'Failed to process payments';
                 if (errorData.message === 'Sender not found.') {
                     errorMessage = 'Buyer payment account not found or invalid';
                 } else if (errorData.error === 'TIMEOUT') {
@@ -108,21 +112,26 @@ export function useOrderCancellation() {
                 } else if (errorData.message) {
                     errorMessage = `Payment failed: ${errorData.message}`;
                 } else {
-                    errorMessage = `Failed to process refunds: ${response.status} ${response.statusText}`;
+                    errorMessage = `Failed to process payments: ${response.status} ${response.statusText}`;
                 }
 
                 toast.error(errorMessage);
                 return false;
             }
 
-            // Step 3: Only update order status to cancelled after successful payment processing
-            await updateOrderStatus({
-                orderId,
-                orderStatus: 'cancelled',
-                cancellationReason: reason,
-            });
+            // Step 3: Update order status to delivered and payment status to paid after successful payment processing
+            await Promise.all([
+                updateOrderStatus({
+                    orderId,
+                    orderStatus: 'delivered',
+                }),
+                updatePaymentStatus({
+                    orderId,
+                    paymentStatus: 'paid',
+                })
+            ]);
 
-            // Step 4: Update buyer's ledger balance (decrease by total cost since order is now cancelled)
+            // Step 4: Update buyer's ledger balance (decrease by total cost since order is now confirmed)
             await updateBalance({
                 clerkUserId: buyerId,
                 token: 'L ZAR Coin',
@@ -130,15 +139,15 @@ export function useOrderCancellation() {
                 ledgerBalance: 0, // Ledger balance will be recalculated from pending orders
             });
 
-            toast.success('Order cancelled successfully with refunds processed');
+            toast.success('Order confirmed successfully with payments processed');
             return true;
         } catch (error) {
-            console.log('Failed to cancel order:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Failed to cancel order';
+            console.log('Failed to confirm order:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Failed to confirm order';
             toast.error(errorMessage);
             return false;
         }
     };
 
-    return { cancelOrder };
+    return { confirmOrder };
 } 

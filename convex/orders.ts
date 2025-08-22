@@ -566,45 +566,63 @@ export const processPaymentTransfer = mutation({
     },
 });
 
-// Get pending order total for buyer (sum of totalCost for pending orders)
+// Get pending order total for buyer (sum of totalCost for orders that should affect ledger balance)
 export const getBuyerPendingTotal = query({
     args: { buyerId: v.string() },
     handler: async (ctx, args) => {
-        const pendingOrders = await ctx.db
+        const buyerOrders = await ctx.db
             .query("orders")
             .withIndex("by_buyer", (q) => q.eq("buyerId", args.buyerId))
-            .filter((q) => q.eq(q.field("orderStatus"), "pending"))
             .collect();
+
+        // Calculate total for orders that should affect ledger balance
+        // These are orders that are not yet fully completed (delivered/cancelled)
+        const pendingOrders = buyerOrders.filter(order =>
+            order.orderStatus !== "delivered" &&
+            order.orderStatus !== "cancelled"
+        );
 
         const totalPending = pendingOrders.reduce((sum, order) => sum + order.totalCost, 0);
         return totalPending;
     },
 });
 
-// Get pending order total for farmer (sum of farmerAmount for pending orders)
+// Get pending order total for farmer (sum of farmerAmount for orders that should affect ledger balance)
 export const getFarmerPendingTotal = query({
     args: { farmerId: v.string() },
     handler: async (ctx, args) => {
-        const pendingOrders = await ctx.db
+        const farmerOrders = await ctx.db
             .query("orders")
             .withIndex("by_farmer", (q) => q.eq("farmerId", args.farmerId))
-            .filter((q) => q.eq(q.field("orderStatus"), "pending"))
             .collect();
+
+        // Calculate total for orders that should affect ledger balance
+        // These are orders that are not yet fully completed (delivered/cancelled)
+        const pendingOrders = farmerOrders.filter(order =>
+            order.orderStatus !== "delivered" &&
+            order.orderStatus !== "cancelled"
+        );
 
         const totalPending = pendingOrders.reduce((sum, order) => sum + order.farmerAmount, 0);
         return totalPending;
     },
 });
 
-// Get pending order total for dispatcher (sum of dispatcherAmount for pending orders)
+// Get pending order total for dispatcher (sum of dispatcherAmount for orders that should affect ledger balance)
 export const getDispatcherPendingTotal = query({
     args: { dispatcherId: v.string() },
     handler: async (ctx, args) => {
-        const pendingOrders = await ctx.db
+        const dispatcherOrders = await ctx.db
             .query("orders")
             .withIndex("by_dispatcher", (q) => q.eq("dispatcherId", args.dispatcherId))
-            .filter((q) => q.eq(q.field("orderStatus"), "pending"))
             .collect();
+
+        // Calculate total for orders that should affect ledger balance
+        // These are orders that are not yet fully completed (delivered/cancelled)
+        const pendingOrders = dispatcherOrders.filter(order =>
+            order.orderStatus !== "delivered" &&
+            order.orderStatus !== "cancelled"
+        );
 
         const totalPending = pendingOrders.reduce((sum, order) => sum + order.dispatcherAmount, 0);
         return totalPending;

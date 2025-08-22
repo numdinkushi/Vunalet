@@ -250,7 +250,7 @@ export const getFarmersWithStats = query({
                 // Get ratings
                 const ratings = await ctx.db
                     .query("ratings")
-                    .withIndex("by_farmer", (q) => q.eq("farmerId", farmer.clerkUserId))
+                    .withIndex("by_rated_user", (q) => q.eq("ratedUserId", farmer.clerkUserId))
                     .collect();
 
                 const averageRating = ratings.length > 0
