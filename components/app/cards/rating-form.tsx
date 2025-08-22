@@ -37,11 +37,11 @@ export function RatingForm({ farmerId, buyerId, orderId, farmerName, onRatingSub
 
         try {
             await createRating({
+                orderId,
                 farmerId,
                 buyerId,
-                orderId,
-                rating,
-                review: review.trim() || undefined,
+                farmerRating: rating,
+                farmerComment: review.trim() || undefined,
             });
 
             toast.success('Thank you for your review!');
@@ -78,8 +78,8 @@ export function RatingForm({ farmerId, buyerId, orderId, farmerName, onRatingSub
                                     <Star
                                         size={32}
                                         className={`transition-colors ${star <= (hoveredRating || rating)
-                                                ? 'text-yellow-400 fill-current'
-                                                : 'text-gray-300'
+                                            ? 'text-yellow-400 fill-current'
+                                            : 'text-gray-300'
                                             }`}
                                     />
                                 </button>
