@@ -34,22 +34,30 @@ import { toast } from 'sonner';
 import { useState } from 'react';
 import { useOrderCancellation } from '../../../../hooks/use-order-cancellation';
 import { useOrderConfirmation } from '../../../../hooks/use-order-confirmation';
+import { useRouter } from 'next/navigation';
 
 interface OrderModalProps {
     order: Order | null;
     isOpen: boolean;
     onClose: () => void;
-    buyerLiskId?: string; // Add buyer's liskId prop
+    buyerLiskId?: string;
 }
 
 export function OrderModal({ order, isOpen, onClose, buyerLiskId }: OrderModalProps) {
-    const updateOrderStatus = useMutation(api.orders.updateOrderStatus);
-    const updatePaymentStatus = useMutation(api.orders.updatePaymentStatus);
+    const router = useRouter();
+    const createRating = useMutation(api.ratings.createRating);
+
     const [cancellationReason, setCancellationReason] = useState('');
     const [showCancellationForm, setShowCancellationForm] = useState(false);
     const [isCancelling, setIsCancelling] = useState(false);
-    const [isApproving, setIsApproving] = useState(false);
     const [isConfirming, setIsConfirming] = useState(false);
+    const [canShowRating, setCanShowRating] = useState(false);
+    const [farmerRating, setFarmerRating] = useState(0);
+    const [dispatcherRating, setDispatcherRating] = useState(0);
+    const [farmerComment, setFarmerComment] = useState('');
+    const [dispatcherComment, setDispatcherComment] = useState('');
+    const [isSubmittingRating, setIsSubmittingRating] = useState(false);
+
     const { cancelOrder } = useOrderCancellation();
     const { confirmOrder } = useOrderConfirmation();
 
@@ -121,8 +129,8 @@ export function OrderModal({ order, isOpen, onClose, buyerLiskId }: OrderModalPr
             });
 
             if (success) {
-                onClose();
-                // TODO: Show rating modal after successful confirmation
+                // Show rating modal instead of closing
+                setCanShowRating(true);
             }
         } catch (error) {
             console.log('Failed to confirm order:', error);
@@ -132,23 +140,173 @@ export function OrderModal({ order, isOpen, onClose, buyerLiskId }: OrderModalPr
         }
     };
 
-    const handleApproveOrder = async () => {
-        setIsApproving(true);
-        try {
-            await updatePaymentStatus({
-                orderId: order._id,
-                paymentStatus: 'paid',
-            });
-            toast.success('Order approved and payment completed!');
-            onClose();
-        } catch (error) {
-            console.error('Failed to approve order:', error);
-            toast.error('Failed to approve order');
-        } finally {
-            setIsApproving(false);
+
+    const handleStarClick = (rating: number, type: 'farmer' | 'dispatcher') => {
+        if (type === 'farmer') {
+            setFarmerRating(rating);
+        } else {
+            setDispatcherRating(rating);
         }
     };
 
+    const handleSubmitRating = async () => {
+        if (farmerRating === 0) {
+            toast.error('Please rate the farmer');
+            return;
+        }
+
+        setIsSubmittingRating(true);
+        try {
+            // Create single rating record with both farmer and dispatcher ratings
+            await createRating({
+                orderId: order._id,
+                farmerId: order.farmerId || '',
+                dispatcherId: order.dispatcherId || undefined,
+                buyerId: order.buyerId || '',
+                farmerRating: farmerRating,
+                dispatcherRating: dispatcherRating > 0 ? dispatcherRating : undefined,
+                farmerComment: farmerComment.trim() || undefined,
+                dispatcherComment: dispatcherComment.trim() || undefined,
+            });
+
+            toast.success('Thank you for your feedback!');
+            onClose();
+
+            // Redirect to dashboard
+            router.push('/dashboard');
+        } catch (error) {
+            console.log('Failed to submit ratings:', error);
+            toast.error('Failed to submit ratings. Please try again.');
+        } finally {
+            setIsSubmittingRating(false);
+        }
+    };
+
+    const handleSkipRating = () => {
+        onClose();
+        // Redirect to dashboard
+        router.push('/dashboard');
+    };
+
+    const renderStars = (rating: number, type: 'farmer' | 'dispatcher') => {
+        return (
+            <div className="flex space-x-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                        key={star}
+                        type="button"
+                        onClick={() => handleStarClick(star, type)}
+                        className={`p-1 transition-colors ${star <= rating ? 'text-yellow-400' : 'text-gray-300'
+                            } hover:text-yellow-400`}
+                    >
+                        <Star className="w-6 h-6 fill-current" />
+                    </button>
+                ))}
+            </div>
+        );
+    };
+
+    // Render Rating Modal Content
+    if (canShowRating) {
+        return (
+            <Dialog open={isOpen} onOpenChange={onClose}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="text-center">
+                            Rate Your Experience
+                        </DialogTitle>
+                        <DialogDescription className="text-center">
+                            Help us improve by rating your recent order experience
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-8">
+                        {/* Farmer Rating */}
+                        <div className="space-y-4">
+                            <div className="flex items-center space-x-3">
+                                <Leaf className="w-5 h-5 text-emerald-500" />
+                                <Label className="text-lg font-semibold">
+                                    Rate {order.farmName} (Farmer)
+                                </Label>
+                            </div>
+
+                            <div className="space-y-3">
+                                {renderStars(farmerRating, 'farmer')}
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="farmer-comment" className="text-sm text-gray-600">
+                                        Additional comments (optional)
+                                    </Label>
+                                    <Input
+                                        id="farmer-comment"
+                                        value={farmerComment}
+                                        onChange={(e) => setFarmerComment(e.target.value)}
+                                        placeholder="Share your experience with the farm produce..."
+                                        className="min-h-[80px]"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Dispatcher Rating - Only show if dispatcher exists */}
+                        {order.riderName && order.dispatcherId && order.dispatcherId !== undefined && (
+                            <div className="space-y-4">
+                                <div className="flex items-center space-x-3">
+                                    <Truck className="w-5 h-5 text-blue-500" />
+                                    <Label className="text-lg font-semibold">
+                                        Rate {order.riderName} (Dispatcher)
+                                    </Label>
+                                </div>
+
+                                <div className="space-y-3">
+                                    {renderStars(dispatcherRating, 'dispatcher')}
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="dispatcher-comment" className="text-sm text-gray-600">
+                                            Additional comments (optional)
+                                        </Label>
+                                        <Input
+                                            id="dispatcher-comment"
+                                            value={dispatcherComment}
+                                            onChange={(e) => setDispatcherComment(e.target.value)}
+                                            placeholder="Share your experience with the delivery service..."
+                                            className="min-h-[80px]"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        <div className="flex justify-end space-x-3 pt-4">
+                            <Button
+                                variant="outline"
+                                onClick={handleSkipRating}
+                                disabled={isSubmittingRating}
+                            >
+                                Skip Rating
+                            </Button>
+                            <Button
+                                onClick={handleSubmitRating}
+                                disabled={isSubmittingRating || farmerRating === 0}
+                            >
+                                {isSubmittingRating ? (
+                                    <>
+                                        <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        Submitting...
+                                    </>
+                                ) : (
+                                    'Submit Rating'
+                                )}
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        );
+    }
+
+    // Render Order Modal Content
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">

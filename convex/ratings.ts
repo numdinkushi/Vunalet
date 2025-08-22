@@ -6,26 +6,25 @@ import { Id } from "./_generated/dataModel";
 export const createRating = mutation({
     args: {
         orderId: v.string(),
-        ratedUserId: v.string(),
-        raterRole: v.union(v.literal("buyer"), v.literal("farmer"), v.literal("dispatcher")),
-        ratedRole: v.union(v.literal("farmer"), v.literal("dispatcher")),
-        rating: v.number(),
-        comment: v.optional(v.string()),
+        farmerId: v.string(),
+        dispatcherId: v.optional(v.string()),
+        buyerId: v.string(),
+        farmerRating: v.optional(v.number()),
+        dispatcherRating: v.optional(v.number()),
+        farmerComment: v.optional(v.string()),
+        dispatcherComment: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-        // Check if rating already exists for this order and rated user
+        // Check if rating already exists for this order
         const existingRating = await ctx.db
             .query("ratings")
-            .withIndex("by_order_and_rated_user", (q) =>
-                q.eq("orderId", args.orderId).eq("ratedUserId", args.ratedUserId)
-            )
+            .withIndex("by_order", (q) => q.eq("orderId", args.orderId))
             .first();
 
         if (existingRating) {
             // Update existing rating
             return await ctx.db.patch(existingRating._id, {
-                rating: args.rating,
-                comment: args.comment,
+                ...args,
                 updatedAt: Date.now(),
             });
         }
@@ -39,25 +38,25 @@ export const createRating = mutation({
     },
 });
 
-// Get ratings for a specific user (farmer or dispatcher)
-export const getUserRatings = query({
-    args: { userId: v.string() },
+// Get ratings for a specific farmer
+export const getFarmerRatings = query({
+    args: { farmerId: v.string() },
     handler: async (ctx, args) => {
         return await ctx.db
             .query("ratings")
-            .withIndex("by_rated_user", (q) => q.eq("ratedUserId", args.userId))
+            .withIndex("by_farmer", (q) => q.eq("farmerId", args.farmerId))
             .order("desc")
             .collect();
     },
 });
 
-// Get average rating for a user (farmer or dispatcher)
-export const getUserAverageRating = query({
-    args: { userId: v.string() },
+// Get average rating for a farmer
+export const getFarmerAverageRating = query({
+    args: { farmerId: v.string() },
     handler: async (ctx, args) => {
         const ratings = await ctx.db
             .query("ratings")
-            .withIndex("by_rated_user", (q) => q.eq("ratedUserId", args.userId))
+            .withIndex("by_farmer", (q) => q.eq("farmerId", args.farmerId))
             .collect();
 
         if (ratings.length === 0) {
@@ -70,13 +69,15 @@ export const getUserAverageRating = query({
             };
         }
 
-        const totalRating = ratings.reduce((sum, rating) => sum + rating.rating, 0);
+        const totalRating = ratings.reduce((sum, rating) => sum + (rating.farmerRating || 0), 0);
         const averageRating = totalRating / ratings.length;
 
         // Calculate rating distribution
         const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
         ratings.forEach(rating => {
-            distribution[rating.rating as keyof typeof distribution]++;
+            if (rating.farmerRating) {
+                distribution[rating.farmerRating as keyof typeof distribution]++;
+            }
         });
 
         return {

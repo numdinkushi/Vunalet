@@ -2,6 +2,7 @@
 
 import { DatabaseMigrator } from '../../../components/admin/DatabaseMigrator';
 import { CategoryInitializer } from '../../../components/admin/CategoryInitializer';
+import { RatingsMigrator } from '../../../components/admin/RatingsMigrator';
 
 export default function MigrationPage() {
     return (
@@ -15,6 +16,7 @@ export default function MigrationPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <DatabaseMigrator />
                     <CategoryInitializer />
+                    <RatingsMigrator />
                 </div>
 
                 <div className="mt-8 p-4 bg-blue-50 rounded-lg">
@@ -23,8 +25,9 @@ export default function MigrationPage() {
                         <li>1. First run the &quot;Database Migration&quot; to update existing data</li>
                         <li>2. Then run &quot;Initialize Categories&quot; if categories aren&apos;t created yet</li>
                         <li>3. Run &quot;Migrate Products&quot; to import dummy products and assign to farmers</li>
-                        <li>4. Check the products page to see real data from the database</li>
-                        <li>5. Check the farmer dashboard to ensure everything works</li>
+                        <li>4. <strong>Run &quot;Ratings Schema Migration&quot; to fix rating validation errors</strong></li>
+                        <li>5. Check the products page to see real data from the database</li>
+                        <li>6. Check the farmer dashboard to ensure everything works</li>
                     </ol>
                 </div>
             </div>
