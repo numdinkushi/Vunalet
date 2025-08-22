@@ -88,7 +88,7 @@ export const getOrdersByBuyer = query({
     },
 });
 
-// Get orders by buyer with farmer information
+// Get orders by buyer with farmer and dispatcher information
 export const getOrdersByBuyerWithFarmerInfo = query({
     args: { buyerId: v.string() },
     handler: async (ctx, args) => {
@@ -98,8 +98,9 @@ export const getOrdersByBuyerWithFarmerInfo = query({
             .order("desc")
             .collect();
 
-        // Get unique farmer IDs from orders
+        // Get unique farmer and dispatcher IDs from orders
         const farmerIds = [...new Set(orders.map(order => order.farmerId))];
+        const dispatcherIds = [...new Set(orders.map(order => order.dispatcherId).filter((id): id is string => id !== undefined))];
 
         // Fetch farmer profiles
         const farmerProfiles = await Promise.all(
@@ -112,7 +113,18 @@ export const getOrdersByBuyerWithFarmerInfo = query({
             })
         );
 
-        // Create a map of farmer ID to profile
+        // Fetch dispatcher profiles
+        const dispatcherProfiles = await Promise.all(
+            dispatcherIds.map(async (dispatcherId) => {
+                const profile = await ctx.db
+                    .query("userProfiles")
+                    .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", dispatcherId))
+                    .first();
+                return { dispatcherId, profile };
+            })
+        );
+
+        // Create maps of ID to profile
         const farmerMap = new Map();
         farmerProfiles.forEach(({ farmerId, profile }) => {
             if (profile) {
@@ -120,10 +132,18 @@ export const getOrdersByBuyerWithFarmerInfo = query({
             }
         });
 
-        // Add farmer information to orders
+        const dispatcherMap = new Map();
+        dispatcherProfiles.forEach(({ dispatcherId, profile }) => {
+            if (profile) {
+                dispatcherMap.set(dispatcherId, profile);
+            }
+        });
+
+        // Add farmer and dispatcher information to orders
         return orders.map(order => ({
             ...order,
-            farmerInfo: farmerMap.get(order.farmerId) || null
+            farmerInfo: farmerMap.get(order.farmerId) || null,
+            dispatcherInfo: order.dispatcherId ? dispatcherMap.get(order.dispatcherId) || null : null
         }));
     },
 });
@@ -347,6 +367,7 @@ export const updateOrderStatus = mutation({
         orderStatus: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("arrived"), v.literal("delivered"), v.literal("cancelled")),
         estimatedDeliveryTime: v.optional(v.string()),
         actualDeliveryTime: v.optional(v.string()),
+        cancellationReason: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
         const { orderId, ...updateData } = args;

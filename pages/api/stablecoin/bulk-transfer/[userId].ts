@@ -4,7 +4,7 @@ import { BulkTransferResponse } from '../../../../lib/services/api/types';
 
 export default async function handler(
     req: NextApiRequest,
-    res: NextApiResponse<BulkTransferResponse | { message: string; error?: string; }>
+    res: NextApiResponse<BulkTransferResponse | { message: string; error?: string; status?: number; }>
 ) {
     if (req.method !== 'POST') {
         return res.status(405).json({ message: 'Method not allowed' });
@@ -67,6 +67,16 @@ export default async function handler(
         return res.status(200).json(result);
     } catch (error: unknown) {
         console.log('Failed to process bulk transfer:', error);
+
+        // Handle timeout errors specifically
+        if (error && typeof error === 'object' && 'code' in error && error.code === 'ECONNABORTED') {
+            return res.status(408).json({
+                message: 'Request timeout - blockchain transaction is taking longer than expected. Please try again.',
+                error: 'TIMEOUT',
+                status: 408
+            });
+        }
+
         const apiError = stablecoinApiService.handleApiError(error);
         return res.status(apiError.status || 500).json(apiError);
     }

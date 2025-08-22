@@ -27,6 +27,11 @@ export interface Order {
     riderId?: string;
     riderName?: string;
     farmName: string;
+    buyerId?: string;
+    dispatcherId?: string;
+    farmerId?: string;
+    dispatcherAmount?: number;
+    farmerAmount?: number;
 }
 
 export interface DashboardStats {

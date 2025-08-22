@@ -18,7 +18,7 @@ class StablecoinApiService {
 
         this.api = axios.create({
             baseURL: API_BASE_URL,
-            timeout: 10000,
+            timeout: 60000, // Increased to 60 seconds for blockchain operations
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': API_KEY ? `Bearer ${API_KEY}` : '',
@@ -100,7 +100,7 @@ class StablecoinApiService {
     }
 
     async activatePayment(userId: string): Promise<{ message: string; userId: string; warning?: string; }> {
-        const customApi = this.createCustomApi(30000);
+        const customApi = this.createCustomApi(120000); // Increased to 60 seconds
 
         try {
             await customApi.post(`/activate-pay/${userId}`);
@@ -152,7 +152,9 @@ class StablecoinApiService {
         liskId: string,
         bulkTransferData: BulkTransferRequest
     ): Promise<BulkTransferResponse> {
-        const response = await this.api.post<BulkTransferResponse>(`/transfer/batch/${liskId}`, bulkTransferData);
+        // Use custom API with longer timeout for blockchain operations
+        const customApi = this.createCustomApi(120000); // 2 minutes for bulk transfers
+        const response = await customApi.post<BulkTransferResponse>(`/transfer/batch/${liskId}`, bulkTransferData);
         return response.data;
     }
 }

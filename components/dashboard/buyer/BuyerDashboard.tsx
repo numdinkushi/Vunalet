@@ -54,6 +54,10 @@ interface ConvexOrder {
         lastName: string;
         businessName?: string;
     } | null;
+    dispatcherInfo?: {
+        firstName: string;
+        lastName: string;
+    } | null;
 }
 
 export default function BuyerDashboard() {
@@ -151,10 +155,17 @@ export default function BuyerDashboard() {
             deliveryAddress: order.deliveryAddress,
             estimatedDeliveryTime: order.estimatedDeliveryTime,
             riderId: order.dispatcherId,
-            riderName: order.dispatcherId || '', // You might want to fetch dispatcher name separately
+            riderName: order.dispatcherInfo ?
+                `${order.dispatcherInfo.firstName} ${order.dispatcherInfo.lastName}` :
+                order.dispatcherId || '',
             farmName: order.farmerInfo ?
                 (order.farmerInfo.businessName || `${order.farmerInfo.firstName} ${order.farmerInfo.lastName}`) :
                 order.farmerId, // Fallback to ID if no farmer info
+            buyerId: order.buyerId,
+            dispatcherId: order.dispatcherId,
+            farmerId: order.farmerId,
+            dispatcherAmount: order.dispatcherAmount,
+            farmerAmount: order.farmerAmount,
         })) || [];
     };
 
@@ -233,7 +244,12 @@ export default function BuyerDashboard() {
 
             {/* Modal */}
             {isModalOpen && (
-                <OrderModal order={selectedOrder} isOpen={isModalOpen} onClose={handleCloseModal} />
+                <OrderModal
+                    order={selectedOrder}
+                    isOpen={isModalOpen}
+                    onClose={handleCloseModal}
+                    buyerLiskId={userProfile?.liskId}
+                />
             )}
         </div>
     );

@@ -54,6 +54,15 @@ export default async function handler(
             transactionNotes
         });
 
+        // Activate payment for the user before transfer
+        try {
+            await stablecoinApiService.activatePayment(userId);
+            console.log('Gas fee enabled');
+        } catch (error) {
+            console.log('Failed to enable gas fee:', error);
+            // Continue with transfer even if activation fails
+        }
+
         const result = await stablecoinApiService.transferStablecoins(userId, {
             transactionAmount,
             transactionRecipient,

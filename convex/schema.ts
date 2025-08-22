@@ -119,6 +119,7 @@ export default defineSchema({
         estimatedPickupTime: v.optional(v.string()), // Add this field
         estimatedDeliveryTime: v.optional(v.string()),
         actualDeliveryTime: v.optional(v.string()),
+        cancellationReason: v.optional(v.string()),
         createdAt: v.number(),
         updatedAt: v.number(),
     })
