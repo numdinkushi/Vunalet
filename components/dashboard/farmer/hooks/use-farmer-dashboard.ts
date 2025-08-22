@@ -76,7 +76,7 @@ export function useFarmerDashboard(userProfile: FarmerUserProfile) {
                 price: p.price,
             })),
             totalCost: order.totalCost,
-            orderStatus: order.orderStatus as 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'delivered' | 'cancelled',
+            orderStatus: order.orderStatus as 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'arrived' | 'delivered' | 'cancelled',
             paymentStatus: order.paymentStatus as 'pending' | 'paid' | 'failed',
             createdAt: new Date(order.createdAt).toISOString(),
             deliveryAddress: order.deliveryAddress,
@@ -99,7 +99,7 @@ export function useFarmerDashboard(userProfile: FarmerUserProfile) {
     // Calculate dashboard stats
     const dashboardStats: DashboardStats = {
         totalProducts: products?.length || 0,
-        activeOrders: orderStats ? (orderStats.pending + orderStats.confirmed + orderStats.preparing + orderStats.ready + orderStats.inTransit) : 0,
+        activeOrders: orderStats ? (orderStats.pending + orderStats.confirmed + orderStats.preparing + orderStats.ready + orderStats.inTransit + (orderStats.arrived || 0)) : 0,
         totalRevenue: orderStats?.totalRevenue || 0,
         pendingOrders: orderStats?.pending || 0,
     };

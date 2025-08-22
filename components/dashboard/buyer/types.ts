@@ -19,7 +19,7 @@ export interface Order {
     _id: string;
     products: OrderProduct[];
     totalCost: number;
-    orderStatus: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'delivered' | 'cancelled';
+    orderStatus: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'arrived' | 'delivered' | 'cancelled';
     paymentStatus: 'paid' | 'pending' | 'failed';
     createdAt: string;
     deliveryAddress: string;
@@ -27,6 +27,11 @@ export interface Order {
     riderId?: string;
     riderName?: string;
     farmName: string;
+    buyerId?: string;
+    dispatcherId?: string;
+    farmerId?: string;
+    dispatcherAmount?: number;
+    farmerAmount?: number;
 }
 
 export interface DashboardStats {

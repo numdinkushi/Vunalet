@@ -43,8 +43,8 @@ export interface ConvexOrder {
         productId: string;
     }>;
     totalCost: number;
-    orderStatus: string;
-    paymentStatus: string;
+    orderStatus: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'arrived' | 'delivered' | 'cancelled';
+    paymentStatus: 'pending' | 'paid' | 'failed';
     createdAt: number;
     deliveryAddress: string;
     estimatedDeliveryTime?: string;
@@ -73,7 +73,7 @@ export interface TransformedOrder {
         price: number;
     }>;
     totalCost: number;
-    orderStatus: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'delivered' | 'cancelled';
+    orderStatus: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'arrived' | 'delivered' | 'cancelled';
     paymentStatus: 'pending' | 'paid' | 'failed';
     createdAt: string;
     deliveryAddress: string;

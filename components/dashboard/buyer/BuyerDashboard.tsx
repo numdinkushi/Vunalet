@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { DashboardHeader, StatsGrid, TabNavigation, OrderList, OrderModal } from './components';
+import { DashboardHeader, StatsGrid, TabNavigation, OrderList } from './components';
+import { OrderModal } from './modals';
 import { filterOrdersByStatus } from './utils';
 import { Order } from './types';
 import { WalletCard } from '../shared/WalletCard';
@@ -42,7 +43,7 @@ interface ConvexOrder {
     totalCost: number;
     paymentMethod: 'lisk_zar' | 'cash';
     paymentStatus: 'pending' | 'paid' | 'failed';
-    orderStatus: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'delivered' | 'cancelled';
+    orderStatus: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'arrived' | 'delivered' | 'cancelled';
     specialInstructions?: string;
     estimatedPickupTime?: string;
     estimatedDeliveryTime?: string;
@@ -53,6 +54,10 @@ interface ConvexOrder {
         firstName: string;
         lastName: string;
         businessName?: string;
+    } | null;
+    dispatcherInfo?: {
+        firstName: string;
+        lastName: string;
     } | null;
 }
 
@@ -151,17 +156,24 @@ export default function BuyerDashboard() {
             deliveryAddress: order.deliveryAddress,
             estimatedDeliveryTime: order.estimatedDeliveryTime,
             riderId: order.dispatcherId,
-            riderName: order.dispatcherId || '', // You might want to fetch dispatcher name separately
+            riderName: order.dispatcherInfo ?
+                `${order.dispatcherInfo.firstName} ${order.dispatcherInfo.lastName}` :
+                order.dispatcherId || '',
             farmName: order.farmerInfo ?
                 (order.farmerInfo.businessName || `${order.farmerInfo.firstName} ${order.farmerInfo.lastName}`) :
                 order.farmerId, // Fallback to ID if no farmer info
+            buyerId: order.buyerId,
+            dispatcherId: order.dispatcherId,
+            farmerId: order.farmerId,
+            dispatcherAmount: order.dispatcherAmount,
+            farmerAmount: order.farmerAmount,
         })) || [];
     };
 
     const transformedOrders = transformOrders(buyerOrders || []);
 
     const getActiveOrders = () => {
-        return filterOrdersByStatus(transformedOrders, ['pending', 'confirmed', 'preparing', 'ready', 'in_transit']);
+        return filterOrdersByStatus(transformedOrders, ['pending', 'confirmed', 'preparing', 'ready', 'in_transit', 'arrived']);
     };
 
     const getHistoryOrders = () => {
@@ -233,7 +245,12 @@ export default function BuyerDashboard() {
 
             {/* Modal */}
             {isModalOpen && (
-                <OrderModal order={selectedOrder} isOpen={isModalOpen} onClose={handleCloseModal} />
+                <OrderModal
+                    order={selectedOrder}
+                    isOpen={isModalOpen}
+                    onClose={handleCloseModal}
+                    buyerLiskId={userProfile?.liskId}
+                />
             )}
         </div>
     );

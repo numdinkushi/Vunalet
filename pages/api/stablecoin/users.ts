@@ -1,84 +1,49 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { CreateUserRequest, CreateUserResponse, ApiError } from '../../../lib/services/api/types';
-import { stablecoinApiService } from '../../../lib/services/api/stablecoin-api';
+import { ConvexHttpClient } from 'convex/browser';
+import { api } from '../../../convex/_generated/api';
 
-/**
- * Validate request data
- */
-function validateRequest(body: unknown): { isValid: boolean; error?: string; } {
-    if (!body || typeof body !== 'object') {
-        return {
-            isValid: false,
-            error: 'Invalid request body'
-        };
-    }
-
-    const { email, firstName, lastName } = body as Record<string, unknown>;
-
-    if (!email || !firstName || !lastName) {
-        return {
-            isValid: false,
-            error: 'Missing required fields: email, firstName, lastName'
-        };
-    }
-
-    if (typeof email !== 'string' || typeof firstName !== 'string' || typeof lastName !== 'string') {
-        return {
-            isValid: false,
-            error: 'All fields must be strings'
-        };
-    }
-
-    if (email.trim() === '' || firstName.trim() === '' || lastName.trim() === '') {
-        return {
-            isValid: false,
-            error: 'All fields must not be empty'
-        };
-    }
-
-    return { isValid: true };
-}
-
-
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export default async function handler(
     req: NextApiRequest,
-    res: NextApiResponse<CreateUserResponse | ApiError>
+    res: NextApiResponse
 ) {
-    // Only allow POST requests
-    if (req.method !== 'POST') {
+    if (req.method !== 'GET') {
         return res.status(405).json({ message: 'Method not allowed' });
     }
 
-    // Debug environment variables (only in development)
-    if (process.env.NODE_ENV === 'development') {
-        console.log('API Route Debug:', {
-            hasNextPrivateApiKey: !!process.env.NEXT_PRIVATE_API_KEY,
-            hasStablecoinApiKey: !!process.env.STABLECOIN_API_KEY,
-            apiKeyLength: process.env.NEXT_PRIVATE_API_KEY?.length || process.env.STABLECOIN_API_KEY?.length || 0,
-        });
-    }
-
     try {
-        // Validate request data
-        const validation = validateRequest(req.body);
-        if (!validation.isValid) {
+        const { userId } = req.query;
+
+        if (!userId || typeof userId !== 'string') {
             return res.status(400).json({
-                message: validation.error!
+                message: 'Missing or invalid userId parameter'
             });
         }
 
-        const { email, firstName, lastName } = req.body as CreateUserRequest;
+        // Get user profile from Convex
+        const userProfile = await convex.query(api.users.getUserProfile, {
+            clerkUserId: userId
+        });
 
-        // Create user in external API using the shared service
-        const userData = await stablecoinApiService.createUser({ email, firstName, lastName });
+        if (!userProfile) {
+            return res.status(404).json({
+                message: 'User not found'
+            });
+        }
 
-        // Return the created user data
-        return res.status(200).json(userData);
-    } catch (error: unknown) {
-        console.log('Failed to create user in stablecoin system:', error);
-
-        const apiError = stablecoinApiService.handleApiError(error);
-        return res.status(apiError.status || 500).json(apiError);
+        return res.status(200).json({
+            clerkUserId: userProfile.clerkUserId,
+            paymentIdentifier: userProfile.paymentIdentifier,
+            liskId: userProfile.liskId,
+            firstName: userProfile.firstName,
+            lastName: userProfile.lastName,
+            role: userProfile.role
+        });
+    } catch (error) {
+        console.error('Failed to get user profile:', error);
+        return res.status(500).json({
+            message: 'Failed to get user profile'
+        });
     }
 } 

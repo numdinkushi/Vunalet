@@ -114,11 +114,12 @@ export default defineSchema({
         totalCost: v.number(),
         paymentMethod: v.union(v.literal("lisk_zar"), v.literal("cash")),
         paymentStatus: v.union(v.literal("pending"), v.literal("paid"), v.literal("failed")),
-        orderStatus: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("delivered"), v.literal("cancelled")),
+        orderStatus: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("arrived"), v.literal("delivered"), v.literal("cancelled")),
         specialInstructions: v.optional(v.string()),
         estimatedPickupTime: v.optional(v.string()), // Add this field
         estimatedDeliveryTime: v.optional(v.string()),
         actualDeliveryTime: v.optional(v.string()),
+        cancellationReason: v.optional(v.string()),
         createdAt: v.number(),
         updatedAt: v.number(),
     })
@@ -186,18 +187,22 @@ export default defineSchema({
         .index("by_read_status", ["isRead"])
         .index("by_created_at", ["createdAt"]),
 
-    // Ratings table for farmer reviews
+    // Ratings table for farmer and dispatcher reviews
     ratings: defineTable({
-        farmerId: v.string(), // clerkUserId of the farmer
-        buyerId: v.string(), // clerkUserId of the buyer
         orderId: v.string(), // Reference to the order
-        rating: v.number(), // 1-5 stars
-        review: v.optional(v.string()),
+        farmerId: v.string(), // clerkUserId of the farmer
+        dispatcherId: v.optional(v.string()), // clerkUserId of the dispatcher (optional)
+        buyerId: v.string(), // clerkUserId of the buyer
+        farmerRating: v.optional(v.number()), // 1-5 stars for farmer
+        dispatcherRating: v.optional(v.number()), // 1-5 stars for dispatcher
+        farmerComment: v.optional(v.string()),
+        dispatcherComment: v.optional(v.string()),
         createdAt: v.number(),
         updatedAt: v.number(),
     })
-        .index("by_farmer", ["farmerId"])
-        .index("by_buyer", ["buyerId"])
         .index("by_order", ["orderId"])
-        .index("by_rating", ["rating"]),
+        .index("by_farmer", ["farmerId"])
+        .index("by_dispatcher", ["dispatcherId"])
+        .index("by_buyer", ["buyerId"])
+        .index("by_rating", ["farmerRating"]),
 }); 

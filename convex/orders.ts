@@ -33,7 +33,7 @@ export const createOrder = mutation({
         totalCost: v.number(),
         paymentMethod: v.union(v.literal("lisk_zar"), v.literal("cash")),
         paymentStatus: v.union(v.literal("pending"), v.literal("paid"), v.literal("failed")),
-        orderStatus: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("delivered"), v.literal("cancelled")),
+        orderStatus: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("arrived"), v.literal("delivered"), v.literal("cancelled")),
         specialInstructions: v.optional(v.string()),
         estimatedPickupTime: v.optional(v.string()),
         estimatedDeliveryTime: v.optional(v.string()),
@@ -88,7 +88,7 @@ export const getOrdersByBuyer = query({
     },
 });
 
-// Get orders by buyer with farmer information
+// Get orders by buyer with farmer and dispatcher information
 export const getOrdersByBuyerWithFarmerInfo = query({
     args: { buyerId: v.string() },
     handler: async (ctx, args) => {
@@ -98,8 +98,9 @@ export const getOrdersByBuyerWithFarmerInfo = query({
             .order("desc")
             .collect();
 
-        // Get unique farmer IDs from orders
+        // Get unique farmer and dispatcher IDs from orders
         const farmerIds = [...new Set(orders.map(order => order.farmerId))];
+        const dispatcherIds = [...new Set(orders.map(order => order.dispatcherId).filter((id): id is string => id !== undefined))];
 
         // Fetch farmer profiles
         const farmerProfiles = await Promise.all(
@@ -112,7 +113,18 @@ export const getOrdersByBuyerWithFarmerInfo = query({
             })
         );
 
-        // Create a map of farmer ID to profile
+        // Fetch dispatcher profiles
+        const dispatcherProfiles = await Promise.all(
+            dispatcherIds.map(async (dispatcherId) => {
+                const profile = await ctx.db
+                    .query("userProfiles")
+                    .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", dispatcherId))
+                    .first();
+                return { dispatcherId, profile };
+            })
+        );
+
+        // Create maps of ID to profile
         const farmerMap = new Map();
         farmerProfiles.forEach(({ farmerId, profile }) => {
             if (profile) {
@@ -120,10 +132,18 @@ export const getOrdersByBuyerWithFarmerInfo = query({
             }
         });
 
-        // Add farmer information to orders
+        const dispatcherMap = new Map();
+        dispatcherProfiles.forEach(({ dispatcherId, profile }) => {
+            if (profile) {
+                dispatcherMap.set(dispatcherId, profile);
+            }
+        });
+
+        // Add farmer and dispatcher information to orders
         return orders.map(order => ({
             ...order,
-            farmerInfo: farmerMap.get(order.farmerId) || null
+            farmerInfo: farmerMap.get(order.farmerId) || null,
+            dispatcherInfo: order.dispatcherId ? dispatcherMap.get(order.dispatcherId) || null : null
         }));
     },
 });
@@ -344,9 +364,10 @@ export const getOrderById = query({
 export const updateOrderStatus = mutation({
     args: {
         orderId: v.string(),
-        orderStatus: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("delivered"), v.literal("cancelled")),
+        orderStatus: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("arrived"), v.literal("delivered"), v.literal("cancelled")),
         estimatedDeliveryTime: v.optional(v.string()),
         actualDeliveryTime: v.optional(v.string()),
+        cancellationReason: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
         const { orderId, ...updateData } = args;
@@ -388,7 +409,7 @@ export const assignDispatcher = mutation({
 // Get orders by status
 export const getOrdersByStatus = query({
     args: {
-        status: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("delivered"), v.literal("cancelled")),
+        status: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("arrived"), v.literal("delivered"), v.literal("cancelled")),
         role: v.union(v.literal("farmer"), v.literal("dispatcher"), v.literal("buyer")),
         userId: v.string(),
     },
@@ -494,6 +515,7 @@ export const getOrderStats = query({
             preparing: orders.filter(o => o.orderStatus === "preparing").length,
             ready: orders.filter(o => o.orderStatus === "ready").length,
             inTransit: orders.filter(o => o.orderStatus === "in_transit").length,
+            arrived: orders.filter(o => o.orderStatus === "arrived").length,
             delivered: orders.filter(o => o.orderStatus === "delivered").length,
             cancelled: orders.filter(o => o.orderStatus === "cancelled").length,
             totalRevenue: orders
@@ -544,45 +566,63 @@ export const processPaymentTransfer = mutation({
     },
 });
 
-// Get pending order total for buyer (sum of totalCost for pending orders)
+// Get pending order total for buyer (sum of totalCost for orders that should affect ledger balance)
 export const getBuyerPendingTotal = query({
     args: { buyerId: v.string() },
     handler: async (ctx, args) => {
-        const pendingOrders = await ctx.db
+        const buyerOrders = await ctx.db
             .query("orders")
             .withIndex("by_buyer", (q) => q.eq("buyerId", args.buyerId))
-            .filter((q) => q.eq(q.field("orderStatus"), "pending"))
             .collect();
+
+        // Calculate total for orders that should affect ledger balance
+        // These are orders that are not yet fully completed (delivered/cancelled)
+        const pendingOrders = buyerOrders.filter(order =>
+            order.orderStatus !== "delivered" &&
+            order.orderStatus !== "cancelled"
+        );
 
         const totalPending = pendingOrders.reduce((sum, order) => sum + order.totalCost, 0);
         return totalPending;
     },
 });
 
-// Get pending order total for farmer (sum of farmerAmount for pending orders)
+// Get pending order total for farmer (sum of farmerAmount for orders that should affect ledger balance)
 export const getFarmerPendingTotal = query({
     args: { farmerId: v.string() },
     handler: async (ctx, args) => {
-        const pendingOrders = await ctx.db
+        const farmerOrders = await ctx.db
             .query("orders")
             .withIndex("by_farmer", (q) => q.eq("farmerId", args.farmerId))
-            .filter((q) => q.eq(q.field("orderStatus"), "pending"))
             .collect();
+
+        // Calculate total for orders that should affect ledger balance
+        // These are orders that are not yet fully completed (delivered/cancelled)
+        const pendingOrders = farmerOrders.filter(order =>
+            order.orderStatus !== "delivered" &&
+            order.orderStatus !== "cancelled"
+        );
 
         const totalPending = pendingOrders.reduce((sum, order) => sum + order.farmerAmount, 0);
         return totalPending;
     },
 });
 
-// Get pending order total for dispatcher (sum of dispatcherAmount for pending orders)
+// Get pending order total for dispatcher (sum of dispatcherAmount for orders that should affect ledger balance)
 export const getDispatcherPendingTotal = query({
     args: { dispatcherId: v.string() },
     handler: async (ctx, args) => {
-        const pendingOrders = await ctx.db
+        const dispatcherOrders = await ctx.db
             .query("orders")
             .withIndex("by_dispatcher", (q) => q.eq("dispatcherId", args.dispatcherId))
-            .filter((q) => q.eq(q.field("orderStatus"), "pending"))
             .collect();
+
+        // Calculate total for orders that should affect ledger balance
+        // These are orders that are not yet fully completed (delivered/cancelled)
+        const pendingOrders = dispatcherOrders.filter(order =>
+            order.orderStatus !== "delivered" &&
+            order.orderStatus !== "cancelled"
+        );
 
         const totalPending = pendingOrders.reduce((sum, order) => sum + order.dispatcherAmount, 0);
         return totalPending;

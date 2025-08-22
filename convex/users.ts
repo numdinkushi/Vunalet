@@ -254,7 +254,7 @@ export const getFarmersWithStats = query({
                     .collect();
 
                 const averageRating = ratings.length > 0
-                    ? Math.round((ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length) * 10) / 10
+                    ? Math.round((ratings.reduce((sum, r) => sum + (r.farmerRating || 0), 0) / ratings.length) * 10) / 10
                     : 0;
 
                 return {

@@ -334,4 +334,34 @@ export const clearTestData = mutation({
             deletedDeliveries: deliveries.length,
         };
     },
+});
+
+// Migration to update existing ratings to new schema - REMOVED
+// This migration is no longer needed as the schema has been updated to the new format
+
+// Delete all ratings to fix schema validation issues
+export const deleteAllRatings = mutation({
+    args: {},
+    handler: async (ctx) => {
+        console.log("Deleting all ratings to fix schema validation...");
+
+        // Get all ratings
+        const allRatings = await ctx.db
+            .query("ratings")
+            .collect();
+
+        console.log(`Found ${allRatings.length} ratings to delete`);
+
+        // Delete all ratings
+        for (const rating of allRatings) {
+            await ctx.db.delete(rating._id);
+        }
+
+        console.log(`Successfully deleted ${allRatings.length} ratings`);
+
+        return {
+            success: true,
+            deletedCount: allRatings.length,
+        };
+    },
 }); 

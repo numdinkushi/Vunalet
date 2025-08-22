@@ -5,11 +5,14 @@ import { Id } from "./_generated/dataModel";
 // Create a new rating/review
 export const createRating = mutation({
     args: {
-        farmerId: v.string(),
-        buyerId: v.string(),
         orderId: v.string(),
-        rating: v.number(),
-        review: v.optional(v.string()),
+        farmerId: v.string(),
+        dispatcherId: v.optional(v.string()),
+        buyerId: v.string(),
+        farmerRating: v.optional(v.number()),
+        dispatcherRating: v.optional(v.number()),
+        farmerComment: v.optional(v.string()),
+        dispatcherComment: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
         // Check if rating already exists for this order
@@ -21,8 +24,7 @@ export const createRating = mutation({
         if (existingRating) {
             // Update existing rating
             return await ctx.db.patch(existingRating._id, {
-                rating: args.rating,
-                review: args.review,
+                ...args,
                 updatedAt: Date.now(),
             });
         }
@@ -67,13 +69,15 @@ export const getFarmerAverageRating = query({
             };
         }
 
-        const totalRating = ratings.reduce((sum, rating) => sum + rating.rating, 0);
+        const totalRating = ratings.reduce((sum, rating) => sum + (rating.farmerRating || 0), 0);
         const averageRating = totalRating / ratings.length;
 
         // Calculate rating distribution
         const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
         ratings.forEach(rating => {
-            distribution[rating.rating as keyof typeof distribution]++;
+            if (rating.farmerRating) {
+                distribution[rating.farmerRating as keyof typeof distribution]++;
+            }
         });
 
         return {

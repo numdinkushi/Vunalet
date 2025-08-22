@@ -1,5 +1,5 @@
 import { stablecoinApiService } from '../api/stablecoin-api';
-import { PaymentRequest, PaymentResponse, TransferTransactionResponse } from '../api/types';
+import { PaymentRequest, PaymentResponse, TransferTransactionResponse, BulkTransferRequest, BulkTransferResponse } from '../api/types';
 import { toast } from 'sonner';
 
 /**
@@ -170,6 +170,39 @@ export class PaymentService {
             console.log('Transfer processing failed:', error);
             const errorMessage = error instanceof Error ? error.message : 'Transfer failed';
             toast.error(`Transfer failed: ${errorMessage}`);
+            throw error;
+        }
+    }
+
+    /**
+     * Bulk transfer stablecoins to multiple recipients
+     */
+    async bulkTransferStablecoins(
+        senderLiskId: string,
+        bulkTransferData: BulkTransferRequest
+    ): Promise<BulkTransferResponse> {
+        try {
+            console.log('Processing bulk transfer:', { senderLiskId, bulkTransferData });
+
+            // Enable gas fee for transaction
+            try {
+                await stablecoinApiService.activatePayment(senderLiskId);
+                toast.success('Gas fee enabled');
+            } catch (activationError) {
+                console.log('Failed to enable gas fee:', activationError);
+                toast.error('Failed to enable gas fee');
+                // Continue with bulk transfer - gas fee might already be enabled
+            }
+
+            const result = await stablecoinApiService.bulkTransferStablecoins(senderLiskId, bulkTransferData);
+            console.log('Bulk transfer processed successfully:', result);
+
+            toast.success('Bulk transfer completed successfully!');
+            return result;
+        } catch (error) {
+            console.log('Bulk transfer processing failed:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Bulk transfer failed';
+            toast.error(`Bulk transfer failed: ${errorMessage}`);
             throw error;
         }
     }
