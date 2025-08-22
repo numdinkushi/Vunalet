@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { DashboardHeader, StatsGrid, TabNavigation, OrderList, OrderModal } from './components';
+import { DashboardHeader, StatsGrid, TabNavigation, OrderList } from './components';
+import { OrderModal } from './modals';
 import { filterOrdersByStatus } from './utils';
 import { Order } from './types';
 import { WalletCard } from '../shared/WalletCard';
