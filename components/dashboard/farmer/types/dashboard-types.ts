@@ -111,6 +111,7 @@ export interface DashboardStatsProps {
 export interface RecentProductsProps {
     products: Product[];
     onProductDeleted: () => void;
+    onAddProduct: () => void;
 }
 
 export interface RecentOrdersProps {
