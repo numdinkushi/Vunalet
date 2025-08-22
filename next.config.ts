@@ -85,7 +85,6 @@ const nextConfig: NextConfig = {
   },
   // PWA optimizations
   experimental: {
-    optimizeCss: true,
     optimizePackageImports: ['lucide-react'],
   },
   // Enable compression
