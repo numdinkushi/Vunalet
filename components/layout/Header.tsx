@@ -126,6 +126,8 @@ export function Header() {
                         className="flex items-center space-x-3 cursor-pointer"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
+                        onClick={() => window.location.href = '/'}
+                        title="Go to Home"
                     >
                         <motion.div
                             className="relative"
@@ -199,6 +201,8 @@ export function Header() {
                                 }`}
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
+                            onClick={() => window.location.href = '/products'}
+                            title="Browse Products"
                         >
                             <ShoppingCart size={20} />
                         </motion.button>
