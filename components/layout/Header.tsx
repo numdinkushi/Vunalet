@@ -13,7 +13,9 @@ import {
     SignUpButton,
     UserButton,
     SignedIn,
-    SignedOut
+    SignedOut,
+    useUser,
+    useClerk
 } from '@clerk/nextjs';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -32,11 +34,27 @@ export function Header() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [mounted, setMounted] = useState(false);
     const pathname = usePathname();
+    const { user, isLoaded, isSignedIn } = useUser();
+    const { session, signOut } = useClerk();
 
     // Prevent hydration mismatch by only rendering after mount
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    // Debug authentication state
+    useEffect(() => {
+        if (mounted && isLoaded) {
+            console.log('Auth Debug:', {
+                isLoaded,
+                isSignedIn,
+                hasUser: !!user,
+                hasSession: !!session,
+                userId: user?.id,
+                sessionId: session?.id
+            });
+        }
+    }, [mounted, isLoaded, isSignedIn, user, session]);
 
     useEffect(() => {
         if (!mounted) return;
@@ -62,14 +80,12 @@ export function Header() {
                     <div className="flex justify-between items-center h-20">
                         <div className="flex items-center space-x-3">
                             <div className="w-10 h-10 bg-gray-200 rounded-lg animate-pulse"></div>
-                            <div className="h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
+                            <div className="w-24 h-8 bg-gray-200 rounded animate-pulse"></div>
                         </div>
-                        <div className="hidden md:flex items-center space-x-8">
-                            {[1, 2, 3, 4, 5].map((i) => (
-                                <div key={i} className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
-                            ))}
+                        <div className="flex items-center space-x-4">
+                            <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+                            <div className="w-20 h-8 bg-gray-200 rounded animate-pulse"></div>
                         </div>
-                        <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
                     </div>
                 </div>
             </header>
@@ -167,9 +183,35 @@ export function Header() {
                             <ShoppingCart size={20} />
                         </motion.button>
 
+                        {/* Debug info - remove this later */}
+                        {process.env.NODE_ENV === 'development' && (
+                            <div className="text-xs text-gray-500 flex items-center gap-2">
+                                <span>
+                                    Loaded: {isLoaded ? 'Yes' : 'No'} |
+                                    SignedIn: {isSignedIn ? 'Yes' : 'No'} |
+                                    User: {user ? 'Yes' : 'No'} |
+                                    Session: {session ? 'Yes' : 'No'}
+                                </span>
+                                <button
+                                    onClick={() => window.location.reload()}
+                                    className="px-2 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300"
+                                >
+                                    Refresh
+                                </button>
+                                {isSignedIn && (
+                                    <button
+                                        onClick={() => signOut()}
+                                        className="px-2 py-1 bg-red-200 rounded text-xs hover:bg-red-300"
+                                    >
+                                        Sign Out
+                                    </button>
+                                )}
+                            </div>
+                        )}
+
                         <SignedOut>
                             <motion.div className="flex items-center space-x-2">
-                                <SignInButton mode="modal">
+                                <SignInButton>
                                     <motion.button
                                         className={`px-4 py-2 rounded-lg transition-all duration-300 ${isScrolled
                                             ? 'text-gray-700 hover:text-green-600'
@@ -181,7 +223,7 @@ export function Header() {
                                         Sign In
                                     </motion.button>
                                 </SignInButton>
-                                <SignUpButton mode="modal">
+                                <SignUpButton>
                                     <motion.button
                                         className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
                                         whileHover={{ scale: 1.05 }}
@@ -253,12 +295,12 @@ export function Header() {
 
                                 <SignedOut>
                                     <div className="pt-4 space-y-2">
-                                        <SignInButton mode="modal">
+                                        <SignInButton>
                                             <button className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600 rounded-lg hover:bg-green-50 transition-all duration-300">
                                                 Sign In
                                             </button>
                                         </SignInButton>
-                                        <SignUpButton mode="modal">
+                                        <SignUpButton>
                                             <button className="block w-full text-left px-3 py-2 text-base font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-300">
                                                 Sign Up
                                             </button>
@@ -276,6 +318,6 @@ export function Header() {
                     )}
                 </AnimatePresence>
             </div>
-        </motion.header>
+        </motion.header >
     );
 } 

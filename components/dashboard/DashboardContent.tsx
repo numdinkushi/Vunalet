@@ -38,7 +38,7 @@ export function DashboardContent() {
                         <p className="text-gray-600 mb-6">
                             Sign in to access your personalized dashboard and manage your account.
                         </p>
-                        <SignInButton mode="modal">
+                        <SignInButton>
                             <Button className="w-full">Sign In</Button>
                         </SignInButton>
                     </CardContent>
