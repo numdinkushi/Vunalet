@@ -4,7 +4,7 @@ import { api } from '../convex/_generated/api';
 
 export function useBalanceDisplay() {
     const { user } = useUser();
-    
+
     // Get user profile to determine role
     const userProfile = useQuery(api.users.getUserProfile, {
         clerkUserId: user?.id || '',

@@ -135,7 +135,9 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
     // Helper function to get current balance
     const getCurrentBalance = async () => {
         try {
-            const balance = await fetch(`/api/balances/${user?.id}`).then(r => r.json());
+            // Use Lisk ID for stablecoin API, fallback to Clerk ID if no Lisk ID
+            const userId = userProfile?.liskId || user?.id;
+            const balance = await fetch(`/api/stablecoin/balance/${userId}`).then(r => r.json());
             return balance;
         } catch (error) {
             return null;

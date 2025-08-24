@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useMutation } from 'convex/react';
-import { useRouter } from 'next/navigation';
 import { api } from '../../../convex/_generated/api';
 import { userIntegrationService } from '../../../lib/services/integration/user-integration.service';
 import { walletService } from '../../../lib/services/wallet/wallet.service';
@@ -11,7 +10,6 @@ import { toast } from 'sonner';
 
 export function useRegistration() {
     const { user } = useUser();
-    const router = useRouter();
     const createUserWithStablecoinIntegration = useMutation(api.users.createUserWithStablecoinIntegration);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const upsertBalance = useMutation((api as unknown as any).balances.upsertUserBalance);
@@ -194,10 +192,7 @@ export function useRegistration() {
             }
 
             toast.success('Profile created successfully with payment activation! Welcome to Vunalet.');
-            // Add a small delay to ensure the profile is properly created and cached
-            setTimeout(() => {
-                router.push('/dashboard');
-            }, 1000);
+            window.location.href = '/dashboard';
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             toast.error(`Failed to complete profile registration: ${errorMessage}`);

@@ -169,7 +169,7 @@ export function Header() {
 
                         <SignedOut>
                             <motion.div className="flex items-center space-x-2">
-                                <SignInButton>
+                                <SignInButton mode="modal">
                                     <motion.button
                                         className={`px-4 py-2 rounded-lg transition-all duration-300 ${isScrolled
                                             ? 'text-gray-700 hover:text-green-600'
@@ -181,7 +181,7 @@ export function Header() {
                                         Sign In
                                     </motion.button>
                                 </SignInButton>
-                                <SignUpButton>
+                                <SignUpButton mode="modal">
                                     <motion.button
                                         className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
                                         whileHover={{ scale: 1.05 }}
@@ -253,12 +253,12 @@ export function Header() {
 
                                 <SignedOut>
                                     <div className="pt-4 space-y-2">
-                                        <SignInButton>
+                                        <SignInButton mode="modal">
                                             <button className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600 rounded-lg hover:bg-green-50 transition-all duration-300">
                                                 Sign In
                                             </button>
                                         </SignInButton>
-                                        <SignUpButton>
+                                        <SignUpButton mode="modal">
                                             <button className="block w-full text-left px-3 py-2 text-base font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-300">
                                                 Sign Up
                                             </button>

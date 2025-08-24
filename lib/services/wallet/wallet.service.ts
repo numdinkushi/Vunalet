@@ -27,22 +27,19 @@ export class WalletService {
                 const errorMessage = errorBody?.message || 'Failed to fetch balances';
                 const statusCode = res.status;
 
+                // Don't show error toasts for expected scenarios
                 if (statusCode === 404 || errorMessage.includes('not found') || errorMessage.includes('User not found')) {
-                    toast.error('User not found in payment system');
+                    console.log('User not found in payment system - this is expected for new users');
                     return { walletBalance: 0, ledgerBalance: 0 };
                 }
 
-                if (statusCode === 401 || statusCode === 403) {
-                    toast.error('Unable to load wallet balance. Please try again later.');
-                    return { walletBalance: 0, ledgerBalance: 0 };
-                }
-
+                // Only show error toasts for unexpected errors
                 if (statusCode >= 500) {
-                    toast.error('Payment system is temporarily unavailable. Please try again later.');
+                    console.log('Payment system error:', errorMessage);
                     return { walletBalance: 0, ledgerBalance: 0 };
                 }
 
-                toast.error(`Failed to fetch balance: ${errorMessage}`);
+                console.log('Balance fetch error:', errorMessage);
                 return { walletBalance: 0, ledgerBalance: 0 };
             }
 
@@ -53,7 +50,7 @@ export class WalletService {
 
             return { walletBalance, ledgerBalance: 0 };
         } catch (error) {
-            toast.error('Unable to load wallet balance. Please check your connection and try again.');
+            console.log('Network error fetching balances:', error);
             return { walletBalance: 0, ledgerBalance: 0 };
         }
     }

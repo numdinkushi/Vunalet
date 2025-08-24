@@ -45,26 +45,30 @@ export function useFarmerDashboard(userProfile: FarmerUserProfile) {
         const refreshBalances = async () => {
             try {
                 if (!userProfile?.liskId) {
-                    toast.error('No payment account found for user');
+                    console.log('No payment account found for user');
                     return;
                 }
 
                 const { walletService } = await import('../../../../lib/services/wallet/wallet.service');
                 const balances = await walletService.fetchBalances(userProfile.liskId);
 
+                // Preserve existing ledger balance from Convex
+                const currentBalance = balance;
+                const currentLedgerBalance = currentBalance?.ledgerBalance || 0;
+
                 await upsertBalance({
                     clerkUserId: user.id,
                     token: LZC_TOKEN_NAME,
-                    walletBalance: balances.walletBalance,
-                    ledgerBalance: 0,
+                    walletBalance: balances.walletBalance, // Update from stablecoin API
+                    ledgerBalance: currentLedgerBalance, // Keep existing ledger balance from Convex
                 });
-            } catch {
-                toast.error('Failed to refresh wallet balance');
+            } catch (error) {
+                console.log('Failed to refresh wallet balance:', error);
             }
         };
 
         refreshBalances();
-    }, [user?.id, userProfile?.liskId]);
+    }, [user?.id, userProfile?.liskId, balance]);
 
     // Transform orders
     const transformOrders = (convexOrders: ConvexOrder[]): TransformedOrder[] => {
