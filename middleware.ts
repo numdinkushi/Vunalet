@@ -6,6 +6,7 @@ const isPublicRoute = createRouteMatcher([
     '/sign-up(.*)',
     "/",
     '/products',
+    '/products/(.*)', // Allow viewing all product pages without authentication
     '/categories(.*)',
     '/farmers',
     '/about',

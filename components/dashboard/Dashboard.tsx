@@ -24,14 +24,6 @@ export function Dashboard() {
         clerkUserId: user?.id || '',
     });
 
-    // Debug logging
-    console.log('Dashboard render:', {
-        hasUser: !!user,
-        userId: user?.id,
-        userProfile: userProfile,
-        userProfileRole: userProfile?.role
-    });
-
     if (!user) {
         return (
             <div className="min-h-screen flex items-center justify-center">
