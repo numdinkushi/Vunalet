@@ -15,6 +15,15 @@ export function DashboardContent() {
         clerkUserId: user?.id || '',
     });
 
+    // Debug logging
+    console.log('DashboardContent render:', {
+        isLoaded,
+        hasUser: !!user,
+        userId: user?.id,
+        userProfile: userProfile,
+        userProfileRole: userProfile?.role
+    });
+
     if (!isLoaded) {
         return (
             <div className="flex items-center justify-center min-h-[calc(100vh-5rem)]">
@@ -38,7 +47,7 @@ export function DashboardContent() {
                         <p className="text-gray-600 mb-6">
                             Sign in to access your personalized dashboard and manage your account.
                         </p>
-                        <SignInButton mode="modal">
+                        <SignInButton>
                             <Button className="w-full">Sign In</Button>
                         </SignInButton>
                     </CardContent>
@@ -64,14 +73,17 @@ export function DashboardContent() {
 
     // If user is signed in but has no profile (null), redirect to user registration
     if (user && userProfile === null) {
+        console.log('User has no profile, redirecting to registration');
         return <UserRegistration />;
     }
 
     // If user has a profile but no role assigned, redirect to user registration
     if (userProfile && !userProfile.role) {
+        console.log('User has profile but no role, redirecting to registration');
         return <UserRegistration />;
     }
 
     // User has a profile with a role, show dashboard
+    console.log('User has complete profile, showing dashboard');
     return <Dashboard />;
 } 

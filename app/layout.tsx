@@ -40,7 +40,11 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider
-      afterSignOutUrl={"/"}
+      afterSignInUrl="/dashboard"
+      afterSignUpUrl="/dashboard"
+      afterSignOutUrl="/"
+      signInFallbackRedirectUrl="/dashboard"
+      signUpFallbackRedirectUrl="/dashboard"
       appearance={{
         baseTheme: undefined,
         variables: {
