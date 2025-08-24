@@ -17,15 +17,6 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-    // Debug logging in development
-    if (process.env.NODE_ENV === 'development') {
-        console.log('Middleware Debug:', {
-            url: req.url,
-            isPublic: isPublicRoute(req),
-            hasAuth: !!auth
-        });
-    }
-
     if (!isPublicRoute(req)) {
         await auth.protect();
     }

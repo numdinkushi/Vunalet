@@ -6,7 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     ShoppingCart,
     Menu,
-    X
+    X,
+    RefreshCw
 } from 'lucide-react';
 import {
     SignInButton,
@@ -14,8 +15,8 @@ import {
     UserButton,
     SignedIn,
     SignedOut,
-    useUser,
-    useClerk
+    useClerk,
+    useUser
 } from '@clerk/nextjs';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -33,28 +34,27 @@ export function Header() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
     const [mounted, setMounted] = useState(false);
+    const [authReady, setAuthReady] = useState(false);
     const pathname = usePathname();
-    const { user, isLoaded, isSignedIn } = useUser();
-    const { session, signOut } = useClerk();
+    const { signOut, loaded: clerkLoaded } = useClerk();
+    const { user, isLoaded: userLoaded, isSignedIn } = useUser();
 
     // Prevent hydration mismatch by only rendering after mount
     useEffect(() => {
         setMounted(true);
     }, []);
 
-    // Debug authentication state
+    // Wait for both Clerk and user to be loaded
     useEffect(() => {
-        if (mounted && isLoaded) {
-            console.log('Auth Debug:', {
-                isLoaded,
-                isSignedIn,
-                hasUser: !!user,
-                hasSession: !!session,
-                userId: user?.id,
-                sessionId: session?.id
-            });
+        if (mounted && clerkLoaded && userLoaded) {
+            // Add a small delay to ensure everything is properly synchronized
+            const timer = setTimeout(() => {
+                setAuthReady(true);
+            }, 200);
+
+            return () => clearTimeout(timer);
         }
-    }, [mounted, isLoaded, isSignedIn, user, session]);
+    }, [mounted, clerkLoaded, userLoaded]);
 
     useEffect(() => {
         if (!mounted) return;
@@ -72,8 +72,28 @@ export function Header() {
         }
     }, [mounted]);
 
-    // Show a loading state during SSR to prevent hydration mismatch
-    if (!mounted) {
+    // Function to clear Clerk cache and reload
+    const clearClerkCache = () => {
+        // Clear localStorage
+        Object.keys(localStorage).forEach(key => {
+            if (key.includes('clerk') || key.includes('__clerk')) {
+                localStorage.removeItem(key);
+            }
+        });
+
+        // Clear sessionStorage
+        Object.keys(sessionStorage).forEach(key => {
+            if (key.includes('clerk') || key.includes('__clerk')) {
+                sessionStorage.removeItem(key);
+            }
+        });
+
+        // Reload the page
+        window.location.reload();
+    };
+
+    // Show a loading state during SSR or while auth is initializing
+    if (!mounted || !clerkLoaded || !userLoaded || !authReady) {
         return (
             <header className="fixed top-0 w-full z-50 bg-white/95 backdrop-blur-lg shadow-lg">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -183,30 +203,20 @@ export function Header() {
                             <ShoppingCart size={20} />
                         </motion.button>
 
-                        {/* Debug info - remove this later */}
+                        {/* Development cache clear button */}
                         {process.env.NODE_ENV === 'development' && (
-                            <div className="text-xs text-gray-500 flex items-center gap-2">
-                                <span>
-                                    Loaded: {isLoaded ? 'Yes' : 'No'} |
-                                    SignedIn: {isSignedIn ? 'Yes' : 'No'} |
-                                    User: {user ? 'Yes' : 'No'} |
-                                    Session: {session ? 'Yes' : 'No'}
-                                </span>
-                                <button
-                                    onClick={() => window.location.reload()}
-                                    className="px-2 py-1 bg-gray-200 rounded text-xs hover:bg-gray-300"
-                                >
-                                    Refresh
-                                </button>
-                                {isSignedIn && (
-                                    <button
-                                        onClick={() => signOut()}
-                                        className="px-2 py-1 bg-red-200 rounded text-xs hover:bg-red-300"
-                                    >
-                                        Sign Out
-                                    </button>
-                                )}
-                            </div>
+                            <motion.button
+                                onClick={clearClerkCache}
+                                className={`p-2 rounded-full transition-all duration-300 ${isScrolled
+                                    ? 'text-gray-700 hover:text-orange-600 hover:bg-orange-50'
+                                    : 'text-white/90 hover:text-orange-300 hover:bg-white/10'
+                                    }`}
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                title="Clear Clerk Cache (Dev Only)"
+                            >
+                                <RefreshCw size={16} />
+                            </motion.button>
                         )}
 
                         <SignedOut>
