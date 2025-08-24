@@ -34,42 +34,6 @@ export function useFarmerDashboard(userProfile: FarmerUserProfile) {
         userId: userProfile.clerkUserId,
     });
 
-    // Mutations
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const upsertBalance = useMutation((api as unknown as any).balances.upsertUserBalance);
-
-    // Balance refresh effect
-    useEffect(() => {
-        if (!user?.id) return;
-
-        const refreshBalances = async () => {
-            try {
-                if (!userProfile?.liskId) {
-                    console.log('No payment account found for user');
-                    return;
-                }
-
-                const { walletService } = await import('../../../../lib/services/wallet/wallet.service');
-                const balances = await walletService.fetchBalances(userProfile.liskId);
-
-                // Preserve existing ledger balance from Convex
-                const currentBalance = balance;
-                const currentLedgerBalance = currentBalance?.ledgerBalance || 0;
-
-                await upsertBalance({
-                    clerkUserId: user.id,
-                    token: LZC_TOKEN_NAME,
-                    walletBalance: balances.walletBalance, // Update from stablecoin API
-                    ledgerBalance: currentLedgerBalance, // Keep existing ledger balance from Convex
-                });
-            } catch (error) {
-                console.log('Failed to refresh wallet balance:', error);
-            }
-        };
-
-        refreshBalances();
-    }, [user?.id, userProfile?.liskId, balance]);
-
     // Transform orders
     const transformOrders = (convexOrders: ConvexOrder[]): TransformedOrder[] => {
         return convexOrders?.map((order: ConvexOrder) => ({

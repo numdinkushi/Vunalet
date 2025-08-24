@@ -97,52 +97,12 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
         role: 'dispatcher',
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const upsertBalance = useMutation((api as unknown as any).balances.upsertUserBalance);
-
     // Fetch real data from Convex
     const orders = useQuery(api.orders.getOrdersByDispatcherWithUserInfo, { dispatcherId: userProfile.clerkUserId });
     const orderStats = useQuery(api.orders.getOrderStats, {
         role: 'dispatcher',
         userId: userProfile.clerkUserId
     });
-
-    useEffect(() => {
-        if (!user?.id) return;
-
-        const refreshBalances = async () => {
-            try {
-                const { walletService } = await import('../../../lib/services/wallet/wallet.service');
-                const balances = await walletService.fetchBalances(userProfile?.liskId || user.id);
-
-                // Only update wallet balance, preserve existing ledger balance
-                const currentBalance = await getCurrentBalance();
-
-                await upsertBalance({
-                    clerkUserId: user.id,
-                    token: LZC_TOKEN_NAME,
-                    walletBalance: balances.walletBalance, // Update from Lisk
-                    ledgerBalance: currentBalance?.ledgerBalance || 0, // Keep existing ledger balance
-                });
-            } catch (error) {
-                console.log('Failed to refresh balances:', error);
-            }
-        };
-
-        refreshBalances();
-    }, [user?.id, userProfile?.liskId]);
-
-    // Helper function to get current balance
-    const getCurrentBalance = async () => {
-        try {
-            // Use Lisk ID for stablecoin API, fallback to Clerk ID if no Lisk ID
-            const userId = userProfile?.liskId || user?.id;
-            const balance = await fetch(`/api/stablecoin/balance/${userId}`).then(r => r.json());
-            return balance;
-        } catch (error) {
-            return null;
-        }
-    };
 
     const walletBalance = balance?.walletBalance ?? 0;
     const ledgerBalance = balance?.ledgerBalance ?? 0;
