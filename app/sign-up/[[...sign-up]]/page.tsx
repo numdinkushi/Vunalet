@@ -3,8 +3,11 @@
 import { SignUp } from '@clerk/nextjs';
 import { motion } from 'framer-motion';
 import { VideoBackground } from '../../../components/ui/VideoBackground';
+import { useMounted } from '@/hooks/use-mounted';
 
 export default function SignUpPage() {
+    useMounted();
+
     return (
         <div className="min-h-screen relative">
             {/* Background */}

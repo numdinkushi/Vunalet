@@ -110,13 +110,12 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
     });
 
     useEffect(() => {
-        if (!user?.id || !userProfile?.liskId ) return;
+        if (!user?.id || !userProfile?.liskId) return;
 
         const refreshBalances = async () => {
-            if (!userProfile.liskId) return;
             try {
                 const { walletService } = await import('../../../lib/services/wallet/wallet.service');
-                const balances = await walletService.fetchBalances(userProfile.liskId);
+                const balances = await walletService.fetchBalances(userProfile.liskId!);
 
                 // Only update wallet balance, preserve existing ledger balance
                 const currentBalance = await getCurrentBalance();

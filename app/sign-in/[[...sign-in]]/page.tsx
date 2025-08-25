@@ -3,8 +3,11 @@
 import { SignIn } from '@clerk/nextjs';
 import { motion } from 'framer-motion';
 import { VideoBackground } from '../../../components/ui/VideoBackground';
+import { useMounted } from '@/hooks/use-mounted';
 
 export default function SignInPage() {
+    useMounted();
+
     return (
         <div className="min-h-screen relative">
             {/* Background */}
@@ -27,7 +30,7 @@ export default function SignInPage() {
 
                         <SignIn
                             appearance={{
-                                baseTheme: undefined,
+                                // baseTheme: {},
                                 variables: {
                                     colorPrimary: '#147A4E',
                                     colorBackground: 'transparent',

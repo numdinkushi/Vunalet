@@ -40,17 +40,12 @@ export function useFarmerDashboard(userProfile: FarmerUserProfile) {
 
     // Balance refresh effect
     useEffect(() => {
-        if (!user?.id) return;
+        if (!user?.id || !userProfile?.liskId) return;
 
         const refreshBalances = async () => {
             try {
-                if (!userProfile?.liskId) {
-                    toast.error('No payment account found for user');
-                    return;
-                }
-
                 const { walletService } = await import('../../../../lib/services/wallet/wallet.service');
-                const balances = await walletService.fetchBalances(userProfile.liskId);
+                const balances = await walletService.fetchBalances(userProfile.liskId!);
 
                 await upsertBalance({
                     clerkUserId: user.id,
