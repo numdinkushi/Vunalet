@@ -44,15 +44,35 @@ interface ConfirmDeliveryData {
     products: Array<{ name: string; }>;
 }
 
-// Helper function to get current wallet balance
-const getCurrentWalletBalance = async (userId: string): Promise<number> => {
+// Helper function to get current wallet balance from stablecoin API (for purchase validation)
+const getCurrentWalletBalanceFromAPI = async (clerkUserId: string): Promise<number> => {
     try {
-        const balance = await fetch(`/api/stablecoin/balance/${userId}`).then(r => r.json());
+        // First get the user's Lisk ID from their profile
+        const userProfile = await fetch(`/api/stablecoin/users?userId=${clerkUserId}`).then(r => r.json()).catch(() => null);
+
+        if (!userProfile?.liskId) {
+            console.error('User Lisk ID not found');
+            return 0;
+        }
+
+        // Then fetch the balance using the Lisk ID
+        const balance = await fetch(`/api/stablecoin/balance/${userProfile.liskId}`).then(r => r.json());
         const tokens = balance?.tokens || [];
         const zarToken = tokens.find((t: { name: string; balance: string | number; }) => t.name === 'L ZAR Coin');
         return zarToken ? Number(zarToken.balance) : 0;
     } catch (error) {
-        console.error('Failed to get wallet balance:', error);
+        console.error('Failed to get wallet balance from API:', error);
+        return 0;
+    }
+};
+
+// Helper function to get current wallet balance from local database (for balance updates)
+const getCurrentWalletBalance = async (clerkUserId: string): Promise<number> => {
+    try {
+        const balance = await fetch(`/api/balances/${clerkUserId}`).then(r => r.json());
+        return balance?.walletBalance || 0;
+    } catch (error) {
+        console.error('Failed to get wallet balance from local DB:', error);
         return 0;
     }
 };
@@ -99,6 +119,29 @@ export function useOrderManagement() {
             const farmerAmount = orderData.totalAmount; // Product cost goes to farmer
             const dispatcherAmount = orderData.deliveryCost; // Delivery cost goes to dispatcher
 
+            // Get user profile to check if payment account is set up
+            const userProfile = await fetch(`/api/stablecoin/users?userId=${user.id}`).then(r => r.json()).catch(() => null);
+
+            // Check wallet balance before proceeding (fetch from stablecoin API)
+            const currentBuyerBalance = await getCurrentWalletBalanceFromAPI(user.id);
+
+            // Check if user has payment account set up
+            if (currentBuyerBalance === 0 && !userProfile?.liskId) {
+                toast.error('Payment account not set up. Please complete your profile setup to make purchases.');
+                return null;
+            }
+
+            if (currentBuyerBalance < orderData.totalCost) {
+                toast.error(`Insufficient wallet balance. You have R${currentBuyerBalance.toFixed(2)} but need R${orderData.totalCost.toFixed(2)}`);
+                return null;
+            }
+
+            // Additional validation: ensure balance is not negative
+            if (currentBuyerBalance < 0) {
+                toast.error('Invalid wallet balance. Please contact support.');
+                return null;
+            }
+
             // 2. Create order with assigned dispatcher
             const orderId = await createOrder({
                 ...orderData,
@@ -141,7 +184,6 @@ export function useOrderManagement() {
             }
 
             // 6. Update buyer's wallet balance (decrease by total cost)
-            const currentBuyerBalance = await getCurrentWalletBalance(user.id);
             const newBuyerWalletBalance = currentBuyerBalance - orderData.totalCost;
 
             await updateBalance({
