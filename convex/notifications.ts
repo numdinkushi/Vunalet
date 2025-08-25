@@ -70,4 +70,19 @@ export const createDeliveryNotification = mutation({
 
         return notification;
     },
+});
+
+// Get all notifications (for migration)
+export const getAllNotifications = query({
+    handler: async (ctx) => {
+        return await ctx.db.query("notifications").collect();
+    },
+});
+
+// Delete notification (for migration)
+export const deleteNotification = mutation({
+    args: { notificationId: v.id("notifications") },
+    handler: async (ctx, args) => {
+        await ctx.db.delete(args.notificationId);
+    },
 }); 

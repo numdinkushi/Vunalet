@@ -99,4 +99,19 @@ export const getUserBalanceWithLedger = query({
             ledgerBalance,
         };
     },
+});
+
+// Get all balances (for migration)
+export const getAllBalances = query({
+    handler: async (ctx) => {
+        return await ctx.db.query("balances").collect();
+    },
+});
+
+// Delete balance (for migration)
+export const deleteBalance = mutation({
+    args: { balanceId: v.id("balances") },
+    handler: async (ctx, args) => {
+        await ctx.db.delete(args.balanceId);
+    },
 }); 
