@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
@@ -12,8 +12,6 @@ export const metadata: Metadata = {
   title: 'Vunalet - Harvesting the Future',
   description: 'Connect directly with local farmers and access the freshest produce while supporting sustainable agriculture in South Africa',
   manifest: '/manifest.json',
-  themeColor: '#22c55e',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -31,6 +29,13 @@ export const metadata: Metadata = {
       { url: '/assets/logo/logo-192x192.png', sizes: '192x192', type: 'image/png' },
     ],
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#22c55e',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({

@@ -21,6 +21,7 @@ import { useEffect } from 'react';
 import { LZC_TOKEN_NAME } from '../../../constants/tokens';
 import { useOrderManagement } from '../../../hooks/use-order-management';
 import { Badge } from '../../ui/badge';
+import { useMounted } from '@/hooks/use-mounted';
 
 // Type for Convex order structure with user info
 interface ConvexOrder {
@@ -87,6 +88,7 @@ interface DispatcherDashboardProps {
 }
 
 export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
+    useMounted();
     const [activeTab, setActiveTab] = useState('overview');
     const { user } = useUser();
 
@@ -108,12 +110,13 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
     });
 
     useEffect(() => {
-        if (!user?.id) return;
+        if (!user?.id || !userProfile?.liskId ) return;
 
         const refreshBalances = async () => {
+            if (!userProfile.liskId) return;
             try {
                 const { walletService } = await import('../../../lib/services/wallet/wallet.service');
-                const balances = await walletService.fetchBalances(userProfile?.liskId || user.id);
+                const balances = await walletService.fetchBalances(userProfile.liskId);
 
                 // Only update wallet balance, preserve existing ledger balance
                 const currentBalance = await getCurrentBalance();

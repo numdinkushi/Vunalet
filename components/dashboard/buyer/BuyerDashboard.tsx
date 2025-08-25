@@ -11,6 +11,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { LZC_TOKEN_NAME } from '../../../constants/tokens';
 import { useOrderManagement } from '../../../hooks/use-order-management';
+import { useMounted } from '@/hooks/use-mounted';
 
 // Type for Convex order structure
 interface ConvexOrder {
@@ -62,6 +63,7 @@ interface ConvexOrder {
 }
 
 export default function BuyerDashboard() {
+    useMounted();
     const [activeTab, setActiveTab] = useState('overview');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);

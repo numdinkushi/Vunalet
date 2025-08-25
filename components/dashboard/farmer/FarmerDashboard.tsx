@@ -8,8 +8,11 @@ import { ProductCard, OrderCard, AddProductModal, DashboardStats, RecentProducts
 import { useFarmerDashboard } from './hooks/use-farmer-dashboard';
 import { WalletCard } from '../shared/WalletCard';
 import { FarmerDashboardProps } from './types/dashboard-types';
+import { useMounted } from '@/hooks/use-mounted';
 
 export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
+    useMounted();
+
     const {
         activeTab,
         setActiveTab,
