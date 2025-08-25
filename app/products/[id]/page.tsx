@@ -201,7 +201,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             estimatedDeliveryTime,
         };
 
-        await initiateOrder(orderData, userProfile.liskId);
+        await initiateOrder(orderData);
     };
 
     // Show loading state
