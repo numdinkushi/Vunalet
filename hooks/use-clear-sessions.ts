@@ -14,14 +14,19 @@ export function useClearSessions() {
      */
     const clearCurrentSession = async () => {
         if (!session) {
-            toast.error('No active session to clear');
+            /* The line `toast.error('No active session to clear');` is displaying an error toast
+            message to the user interface. In this context, it is informing the user that there is
+            no active session to clear when the `clearCurrentSession` function is called without an
+            active session. This helps provide feedback to the user about the current state of the
+            session and what action, if any, needs to be taken. */
+            // toast.error('No active session to clear');
             return;
         }
 
         setIsClearing(true);
         try {
             await signOut();
-            toast.success('Session cleared successfully');
+            // toast.success('Session cleared successfully');
         } catch (error) {
             console.error('Failed to clear current session:', error);
             toast.error('Failed to clear session');
@@ -44,7 +49,7 @@ export function useClearSessions() {
         try {
             // Sign out from current session
             await signOut();
-            toast.success('Session cleared successfully');
+            // toast.success('Session cleared successfully');
         } catch (error) {
             console.error('Failed to clear session:', error);
             toast.error('Failed to clear session');
@@ -59,7 +64,7 @@ export function useClearSessions() {
      */
     const clearSessionById = async () => {
         if (!user) {
-            toast.error('User not authenticated');
+            // toast.error('User not authenticated');
             return;
         }
 
@@ -67,10 +72,10 @@ export function useClearSessions() {
         try {
             // Sign out from current session (Clerk doesn't support revoking specific sessions)
             await signOut();
-            toast.success('Session cleared successfully');
+            // toast.success('Session cleared successfully');
         } catch (error) {
             console.error('Failed to clear session:', error);
-            toast.error('Failed to clear session');
+            // toast.error('Failed to clear session');
         } finally {
             setIsClearing(false);
         }
@@ -99,7 +104,7 @@ export function useClearSessions() {
      */
     const refreshSession = async () => {
         if (!session) {
-            toast.error('No active session to refresh');
+            // toast.error('No active session to refresh');
             return;
         }
 
@@ -110,7 +115,7 @@ export function useClearSessions() {
             toast.success('Session refreshed successfully');
         } catch (error) {
             console.error('Failed to refresh session:', error);
-            toast.error('Failed to refresh session');
+            // toast.error('Failed to refresh session');
         } finally {
             setIsClearing(false);
         }

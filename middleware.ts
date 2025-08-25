@@ -7,7 +7,7 @@ const isPublicRoute = createRouteMatcher([
     "/",
     '/products',
     '/categories(.*)',
-    '/farmers',
+    '/farmers(.*)',
     '/about',
     '/api/webhook(.*)', // allow Clerk webhooks (no auth info)
     '/api/stablecoin/users', // allow stablecoin user creation

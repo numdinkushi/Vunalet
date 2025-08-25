@@ -4,9 +4,17 @@ import { SignUp } from '@clerk/nextjs';
 import { motion } from 'framer-motion';
 import { VideoBackground } from '../../../components/ui/VideoBackground';
 import { useMounted } from '@/hooks/use-mounted';
+import { useClearSessions } from '@/hooks/use-clear-sessions';
+import { useEffect } from 'react';
 
 export default function SignUpPage() {
     useMounted();
+    const { clearCurrentSession } = useClearSessions();
+
+    // Clear any existing session when user visits sign-up page
+    useEffect(() => {
+        clearCurrentSession();
+    }, []); // Run once on mount
 
     return (
         <div className="min-h-screen relative">

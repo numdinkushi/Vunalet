@@ -4,9 +4,18 @@ import { SignIn } from '@clerk/nextjs';
 import { motion } from 'framer-motion';
 import { VideoBackground } from '../../../components/ui/VideoBackground';
 import { useMounted } from '@/hooks/use-mounted';
+import { useClearSessions } from '@/hooks/use-clear-sessions';
+import { useEffect } from 'react';
 
 export default function SignInPage() {
     useMounted();
+    const { clearCurrentSession, clearAllSessions } = useClearSessions();
+
+    // Clear any existing session when user visits sign-in page
+    useEffect(() => {
+        clearCurrentSession();
+        clearAllSessions();
+    }, []); // Run once on mount
 
     return (
         <div className="min-h-screen relative">
@@ -30,7 +39,6 @@ export default function SignInPage() {
 
                         <SignIn
                             appearance={{
-                                // baseTheme: {},
                                 variables: {
                                     colorPrimary: '#147A4E',
                                     colorBackground: 'transparent',
