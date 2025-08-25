@@ -25,7 +25,7 @@ const navItems = [
     { name: 'Farmers', href: '/farmers' },
     { name: 'About', href: '/about' },
     { name: 'Dashboard', href: '/dashboard' },
-];
+]; 
 
 export function Header() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
