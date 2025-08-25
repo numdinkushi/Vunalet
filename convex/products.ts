@@ -255,33 +255,4 @@ export const updateProductQuantity = mutation({
 
         return { success: true, newQuantity };
     },
-});
-
-// Get all products (for migration)
-export const getAllProducts = query({
-    handler: async (ctx) => {
-        return await ctx.db.query("products").collect();
-    },
-});
-
-// Delete product (for migration)
-export const deleteProductById = mutation({
-    args: { productId: v.id("products") },
-    handler: async (ctx, args) => {
-        await ctx.db.delete(args.productId);
-    },
-});
-
-// Update product farmer (for migration)
-export const updateProductFarmer = mutation({
-    args: {
-        productId: v.id("products"),
-        farmerId: v.string()
-    },
-    handler: async (ctx, args) => {
-        await ctx.db.patch(args.productId, {
-            farmerId: args.farmerId,
-            updatedAt: Date.now(),
-        });
-    },
 }); 

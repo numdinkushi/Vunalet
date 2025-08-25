@@ -115,25 +115,10 @@ export const updateRating = mutation({
     },
 });
 
-// Delete rating by string ID
+// Delete rating
 export const deleteRating = mutation({
     args: { ratingId: v.string() },
     handler: async (ctx, args) => {
         return await ctx.db.delete(args.ratingId as Id<"ratings">);
-    },
-});
-
-// Get all ratings (for migration)
-export const getAllRatings = query({
-    handler: async (ctx) => {
-        return await ctx.db.query("ratings").collect();
-    },
-});
-
-// Delete rating (for migration)
-export const deleteRatingById = mutation({
-    args: { ratingId: v.id("ratings") },
-    handler: async (ctx, args) => {
-        await ctx.db.delete(args.ratingId);
     },
 }); 

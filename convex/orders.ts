@@ -627,34 +627,4 @@ export const getDispatcherPendingTotal = query({
         const totalPending = pendingOrders.reduce((sum, order) => sum + order.dispatcherAmount, 0);
         return totalPending;
     },
-});
-
-// Get all orders (for migration)
-export const getAllOrders = query({
-    handler: async (ctx) => {
-        return await ctx.db.query("orders").collect();
-    },
-});
-
-// Delete order (for migration)
-export const deleteOrder = mutation({
-    args: { orderId: v.id("orders") },
-    handler: async (ctx, args) => {
-        await ctx.db.delete(args.orderId);
-    },
-});
-
-// Get all deliveries (for migration)
-export const getAllDeliveries = query({
-    handler: async (ctx) => {
-        return await ctx.db.query("deliveries").collect();
-    },
-});
-
-// Delete delivery (for migration)
-export const deleteDelivery = mutation({
-    args: { deliveryId: v.id("deliveries") },
-    handler: async (ctx, args) => {
-        await ctx.db.delete(args.deliveryId);
-    },
 }); 
