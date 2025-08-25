@@ -8,5 +8,10 @@ export const useMounted = () => {
         setMounted(true);
     }, []);
 
-    return { mounted };
+
+    if (!mounted) {
+        return null;
+    }
+
+    return null;
 };
