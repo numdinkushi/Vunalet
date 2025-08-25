@@ -120,6 +120,8 @@ export const createUserProfile = mutation({
 export const getUserProfile = query({
     args: { clerkUserId: v.string() },
     handler: async (ctx, args) => {
+
+        console.log('getUserProfile called with args:', args);
         // Return null if no clerkUserId provided or if it's empty
         if (!args.clerkUserId || args.clerkUserId.trim() === '') {
             return null;
