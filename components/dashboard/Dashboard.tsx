@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
+import { LoadingSpinner } from '../ui/loading-spinner';
 import {
     User,
     Truck,
@@ -49,9 +50,7 @@ export function Dashboard() {
             <div className="min-h-screen flex items-center justify-center">
                 <Card className="w-full max-w-md">
                     <CardContent className="p-6 text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-                        <h2 className="text-xl font-semibold mb-2">Loading Dashboard</h2>
-                        <p className="text-gray-600">Please wait while we load your profile...</p>
+                        <LoadingSpinner size="lg" text="Loading your dashboard..." />
                     </CardContent>
                 </Card>
             </div>

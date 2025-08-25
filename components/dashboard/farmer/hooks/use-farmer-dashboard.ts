@@ -6,19 +6,23 @@ import { toast } from 'sonner';
 import { LZC_TOKEN_NAME } from '../../../../constants/tokens';
 import { FarmerUserProfile, ConvexOrder, TransformedOrder, DashboardStats } from '../types/dashboard-types';
 import { Product } from '../types';
+import { useBalanceDisplay } from '../../../../hooks/use-balance-display';
 
 export function useFarmerDashboard(userProfile: FarmerUserProfile) {
     const [activeTab, setActiveTab] = useState('overview');
     const [showAddProduct, setShowAddProduct] = useState(false);
     const { user } = useUser();
 
-    // Queries
-    const balance = useQuery(api.balances.getUserBalanceWithLedger, {
-        clerkUserId: user?.id || '',
-        token: LZC_TOKEN_NAME,
-        role: 'farmer',
-    });
+    // Use the enhanced balance display hook
+    const {
+        walletBalance,
+        ledgerBalance,
+        isLoading: balanceLoading,
+        isRefreshing: balanceRefreshing,
+        refreshBalance
+    } = useBalanceDisplay();
 
+    // Queries
     const products = useQuery(api.products.getProductsByFarmer, {
         farmerId: userProfile.clerkUserId
     });
@@ -34,37 +38,8 @@ export function useFarmerDashboard(userProfile: FarmerUserProfile) {
         userId: userProfile.clerkUserId,
     });
 
-    // Mutations
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const upsertBalance = useMutation((api as unknown as any).balances.upsertUserBalance);
-
-    // Balance refresh effect
-    useEffect(() => {
-        if (!user?.id) return;
-
-        const refreshBalances = async () => {
-            try {
-                if (!userProfile?.liskId) {
-                    toast.error('No payment account found for user');
-                    return;
-                }
-
-                const { walletService } = await import('../../../../lib/services/wallet/wallet.service');
-                const balances = await walletService.fetchBalances(userProfile.liskId);
-
-                await upsertBalance({
-                    clerkUserId: user.id,
-                    token: LZC_TOKEN_NAME,
-                    walletBalance: balances.walletBalance,
-                    ledgerBalance: 0,
-                });
-            } catch {
-                toast.error('Failed to refresh wallet balance');
-            }
-        };
-
-        refreshBalances();
-    }, [user?.id, userProfile?.liskId]);
+    // Check if any data is loading
+    const isLoading = products === undefined || orders === undefined || orderStats === undefined || balanceLoading;
 
     // Transform orders
     const transformOrders = (convexOrders: ConvexOrder[]): TransformedOrder[] => {
@@ -112,14 +87,20 @@ export function useFarmerDashboard(userProfile: FarmerUserProfile) {
         setShowAddProduct,
 
         // Data
-        balance,
+        balance: { walletBalance, ledgerBalance },
         products: products as Product[],
         orders: transformedOrders,
         categories,
         orderStats,
         dashboardStats,
 
+        // Loading states
+        isLoading,
+        balanceLoading,
+        balanceRefreshing,
+
         // Actions
+        refreshBalance,
         onProductDeleted: () => {
             toast.success('Product list refreshed');
         },

@@ -22,6 +22,7 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
         orders,
         dashboardStats,
         onProductDeleted,
+        isLoading,
     } = useFarmerDashboard(userProfile);
 
     if (!products || !orders) {
@@ -38,7 +39,7 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
     return (
         <div className="space-y-6">
             {/* Stats Cards */}
-            <DashboardStats stats={dashboardStats} />
+            <DashboardStats stats={dashboardStats} isLoading={isLoading} />
 
             {/* Wallet Card */}
             <WalletCard />

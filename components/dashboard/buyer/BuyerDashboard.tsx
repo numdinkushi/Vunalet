@@ -12,6 +12,7 @@ import { api } from '../../../convex/_generated/api';
 import { LZC_TOKEN_NAME } from '../../../constants/tokens';
 import { useOrderManagement } from '../../../hooks/use-order-management';
 import { useMounted } from '@/hooks/use-mounted';
+import { useBalanceDisplay } from '../../../hooks/use-balance-display';
 
 // Type for Convex order structure
 interface ConvexOrder {
@@ -86,53 +87,12 @@ export default function BuyerDashboard() {
         userId: user?.id || '',
     });
 
-    // Replace the existing balance query
-    const balance = useQuery(api.balances.getUserBalanceWithLedger, {
-        clerkUserId: user?.id || '',
-        token: LZC_TOKEN_NAME,
-        role: 'buyer',
-    });
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const upsertBalance = useMutation((api as unknown as any).balances.upsertUserBalance);
-
-    useEffect(() => {
-        if (!user?.id || !userProfile?.liskId) return;
-
-        const refreshBalances = async () => {
-            try {
-                const { walletService } = await import('../../../lib/services/wallet/wallet.service');
-                const balances = await walletService.fetchBalances(userProfile.liskId!);
-
-                // Only update wallet balance, preserve existing ledger balance
-                const currentBalance = await getCurrentBalance();
-
-                await upsertBalance({
-                    clerkUserId: user.id,
-                    token: LZC_TOKEN_NAME,
-                    walletBalance: balances.walletBalance, // Update from Lisk
-                    ledgerBalance: currentBalance?.ledgerBalance || 0, // Keep existing ledger balance
-                });
-            } catch (error) {
-                console.log('Failed to refresh balances:', error);
-            }
-        };
-
-        refreshBalances();
-    }, [user?.id, userProfile?.liskId]);
-
-    // Helper function to get current balance
-    const getCurrentBalance = async () => {
-        try {
-            const balance = await fetch(`/api/balances/${user?.id}`).then(r => r.json());
-            return balance;
-        } catch (error) {
-            return null;
-        }
-    };
-
-    const walletBalance = balance?.walletBalance ?? 0;
-    const ledgerBalance = balance?.ledgerBalance ?? 0;
+    // Use the enhanced balance display hook instead of direct queries
+    const {
+        walletBalance,
+        ledgerBalance,
+        isLoading: balanceLoading
+    } = useBalanceDisplay();
 
     // Calculate stats from real data
     const stats = {
