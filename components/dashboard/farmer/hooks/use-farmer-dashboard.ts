@@ -58,14 +58,14 @@ export function useFarmerDashboard(userProfile: FarmerUserProfile) {
             estimatedDeliveryTime: order.estimatedDeliveryTime,
             customerName: order.buyerInfo ?
                 `${order.buyerInfo.firstName} ${order.buyerInfo.lastName}` :
-                order.buyerId,
+                'Unknown Customer',
             customerPhone: order.buyerInfo?.phone || '',
             farmName: order.farmerInfo ?
                 (order.farmerInfo.businessName || `${order.farmerInfo.firstName} ${order.farmerInfo.lastName}`) :
-                order.farmerId,
+                'Unknown Farm',
             riderName: order.dispatcherInfo ?
                 `${order.dispatcherInfo.firstName} ${order.dispatcherInfo.lastName}` :
-                order.dispatcherId,
+                'Unknown Dispatcher',
         })) || [];
     };
 

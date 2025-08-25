@@ -121,7 +121,7 @@ export function ProductDetailCard({
 
                 <div className="space-y-3">
                     <p className="text-gray-300">
-                        By {farmer ? (farmer.businessName || `${farmer.firstName} ${farmer.lastName}`) : product.farmerId}
+                        By {farmer ? (farmer.businessName || `${farmer.firstName} ${farmer.lastName}`) : 'Unknown Farmer'}
                     </p>
 
                     <div className="flex items-center text-gray-300">

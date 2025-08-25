@@ -120,10 +120,10 @@ export default function BuyerDashboard() {
             riderId: order.dispatcherId,
             riderName: order.dispatcherInfo ?
                 `${order.dispatcherInfo.firstName} ${order.dispatcherInfo.lastName}` :
-                order.dispatcherId || '',
+                'Unknown Dispatcher',
             farmName: order.farmerInfo ?
                 (order.farmerInfo.businessName || `${order.farmerInfo.firstName} ${order.farmerInfo.lastName}`) :
-                order.farmerId, // Fallback to ID if no farmer info
+                'Unknown Farm', // Fallback to proper name instead of ID
             buyerId: order.buyerId,
             dispatcherId: order.dispatcherId,
             farmerId: order.farmerId,

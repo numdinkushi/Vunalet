@@ -145,13 +145,13 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
             riderId: order.dispatcherId,
             riderName: order.dispatcherInfo ?
                 `${order.dispatcherInfo.firstName} ${order.dispatcherInfo.lastName}` :
-                order.dispatcherId || '',
+                'Unknown Dispatcher',
             farmName: order.farmerInfo ?
                 (order.farmerInfo.businessName || `${order.farmerInfo.firstName} ${order.farmerInfo.lastName}`) :
-                order.farmerId,
+                'Unknown Farm',
             customerName: order.buyerInfo ?
                 `${order.buyerInfo.firstName} ${order.buyerInfo.lastName}` :
-                order.buyerId,
+                'Unknown Customer',
             customerPhone: order.buyerInfo?.phone || '',
         })) || [];
     };
