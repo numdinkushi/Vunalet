@@ -188,6 +188,11 @@ export function useOrderManagement() {
             // Ledger balance is calculated automatically from pending orders
 
             toast.success('Order placed successfully! Your order is being processed.');
+
+            // Redirect to dashboard after successful order placement
+            setTimeout(() => {
+                window.location.href = '/dashboard';
+            }, 1500);
         } catch (error) {
             console.error('Failed to place order:', error);
             const errorMessage = error instanceof Error ? error.message : 'Failed to place order';
