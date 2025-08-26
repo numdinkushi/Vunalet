@@ -23,10 +23,15 @@ export function useBalanceDisplay() {
     const upsertBalance = useMutation((api as unknown as any).balances.upsertUserBalance);
 
     const ledgerBalance = balance?.ledgerBalance ?? 0;
+    const dbWalletBalance = balance?.walletBalance ?? 0;
 
-    // Fetch wallet balance from stablecoin API
+    // Fetch wallet balance from stablecoin API with fallback to DB
     const fetchWalletBalance = async () => {
-        if (!userProfile?.liskId) return;
+        if (!userProfile?.liskId) {
+            // Fallback to DB if no liskId
+            setWalletBalance(dbWalletBalance);
+            return;
+        }
 
         try {
             const response = await fetch(`/api/stablecoin/balance/${userProfile.liskId}`);
@@ -34,18 +39,33 @@ export function useBalanceDisplay() {
                 const data = await response.json();
                 const tokens = data?.tokens || [];
                 const zarToken = tokens.find((t: { name: string; balance: string | number; }) => t.name === 'L ZAR Coin');
-                const balance = zarToken ? Number(zarToken.balance) : 0;
-                setWalletBalance(balance);
+                const stablecoinBalance = zarToken ? Number(zarToken.balance) : 0;
+
+                // Update DB with fresh stablecoin balance
+                await upsertBalance({
+                    clerkUserId: user?.id || '',
+                    token: 'L ZAR Coin',
+                    walletBalance: stablecoinBalance,
+                    ledgerBalance: ledgerBalance, // Preserve existing ledger balance (calculated from orders)
+                });
+
+                setWalletBalance(stablecoinBalance);
+            } else {
+                // API failed, fallback to DB
+                console.log('Stablecoin API failed, using DB balance');
+                setWalletBalance(dbWalletBalance);
             }
         } catch (error) {
-            console.error('Failed to fetch wallet balance:', error);
+            // API error, fallback to DB
+            console.error('Failed to fetch wallet balance from stablecoin API, using DB balance:', error);
+            setWalletBalance(dbWalletBalance);
         }
     };
 
     // Fetch wallet balance on mount and when userProfile changes
     useEffect(() => {
         fetchWalletBalance();
-    }, [userProfile?.liskId]);
+    }, [userProfile?.liskId, dbWalletBalance]);
 
     // Check if balance is loading
     const isLoading = balance === undefined;
@@ -57,14 +77,6 @@ export function useBalanceDisplay() {
         try {
             // Fetch fresh wallet balance from stablecoin API
             await fetchWalletBalance();
-
-            // Update Convex with fresh wallet balance
-            await upsertBalance({
-                clerkUserId: user.id,
-                token: 'L ZAR Coin',
-                walletBalance: walletBalance, // Use the fresh wallet balance
-                ledgerBalance: 0, // Ledger balance is calculated from pending orders
-            });
         } catch (error) {
             console.log('Failed to refresh balance:', error);
         } finally {
