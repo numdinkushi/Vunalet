@@ -10,7 +10,7 @@ const stats = [
         label: "Active Farmers",
         icon: <Users className="w-8 h-8" />,
         color: "from-emerald-400 to-teal-500",
-        description: "Verified sustainable farmers across Nigeria"
+        description: "Verified sustainable farmers across South Africa"
     },
     {
         number: "10K+",
@@ -180,7 +180,7 @@ export function StatsSection() {
                     </h2>
 
                     <p className="text-xl text-white/70 max-w-2xl mx-auto leading-relaxed">
-                        Connecting farmers and consumers across Nigeria with technology,
+                        Connecting farmers and consumers across South Africa with technology,
                         sustainability, and trust at our core.
                     </p>
                 </motion.div>
