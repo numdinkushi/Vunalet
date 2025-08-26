@@ -5,10 +5,11 @@ const isPublicRoute = createRouteMatcher([
     '/sign-in(.*)',
     '/sign-up(.*)',
     "/",
-    '/products',
+    '/products(.*)', // Allow all product routes including /products/[id] and /products/farmer/[id]
     '/categories(.*)',
     '/farmers(.*)',
     '/about',
+    '/dashboard', // Allow dashboard access without auth, let component handle it
     '/api/webhook(.*)', // allow Clerk webhooks (no auth info)
     '/api/stablecoin/users', // allow stablecoin user creation
     '/api/stablecoin/activate-pay(.*)', // allow payment activation
