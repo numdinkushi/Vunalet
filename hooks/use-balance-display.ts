@@ -1,11 +1,12 @@
 import { useQuery, useMutation } from 'convex/react';
 import { useUser } from '@clerk/nextjs';
 import { api } from '../convex/_generated/api';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export function useBalanceDisplay() {
     const { user } = useUser();
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [walletBalance, setWalletBalance] = useState(0);
 
     // Get user profile to determine role
     const userProfile = useQuery(api.users.getUserProfile, {
@@ -21,8 +22,30 @@ export function useBalanceDisplay() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const upsertBalance = useMutation((api as unknown as any).balances.upsertUserBalance);
 
-    const walletBalance = balance?.walletBalance ?? 0;
     const ledgerBalance = balance?.ledgerBalance ?? 0;
+
+    // Fetch wallet balance from stablecoin API
+    const fetchWalletBalance = async () => {
+        if (!userProfile?.liskId) return;
+
+        try {
+            const response = await fetch(`/api/stablecoin/balance/${userProfile.liskId}`);
+            if (response.ok) {
+                const data = await response.json();
+                const tokens = data?.tokens || [];
+                const zarToken = tokens.find((t: { name: string; balance: string | number; }) => t.name === 'L ZAR Coin');
+                const balance = zarToken ? Number(zarToken.balance) : 0;
+                setWalletBalance(balance);
+            }
+        } catch (error) {
+            console.error('Failed to fetch wallet balance:', error);
+        }
+    };
+
+    // Fetch wallet balance on mount and when userProfile changes
+    useEffect(() => {
+        fetchWalletBalance();
+    }, [userProfile?.liskId]);
 
     // Check if balance is loading
     const isLoading = balance === undefined;
@@ -32,17 +55,15 @@ export function useBalanceDisplay() {
 
         setIsRefreshing(true);
         try {
-            const { walletService } = await import('../lib/services/wallet/wallet.service');
-            const balances = await walletService.fetchBalances(userProfile.liskId!);
+            // Fetch fresh wallet balance from stablecoin API
+            await fetchWalletBalance();
 
-            // Only update wallet balance, preserve existing ledger balance
-            const currentBalance = await getCurrentBalance();
-
+            // Update Convex with fresh wallet balance
             await upsertBalance({
                 clerkUserId: user.id,
                 token: 'L ZAR Coin',
-                walletBalance: balances.walletBalance, // Update from Lisk
-                ledgerBalance: currentBalance?.ledgerBalance || 0, // Keep existing ledger balance
+                walletBalance: walletBalance, // Use the fresh wallet balance
+                ledgerBalance: 0, // Ledger balance is calculated from pending orders
             });
         } catch (error) {
             console.log('Failed to refresh balance:', error);
@@ -51,20 +72,10 @@ export function useBalanceDisplay() {
         }
     };
 
-    // Helper function to get current balance
-    const getCurrentBalance = async () => {
-        try {
-            const balance = await fetch(`/api/balances/${user?.id}`).then(r => r.json());
-            return balance;
-        } catch (error) {
-            return null;
-        }
-    };
-
     const getBalanceColor = (type: 'wallet' | 'ledger', amount: number, role?: string) => {
         if (type === 'ledger') {
             if (role === 'buyer') {
-                // Buyers: negative ledger balance (money held for pending orders)
+                // Buyers: positive ledger balance (money held for pending orders)
                 return amount > 0 ? 'text-red-500' : 'text-gray-500';
             } else if (role === 'farmer' || role === 'dispatcher') {
                 // Farmers/Dispatchers: positive ledger balance (money to be earned)

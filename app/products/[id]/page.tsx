@@ -130,7 +130,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         }));
     };
 
-    const { initiateOrder, isProcessing } = useOrderManagement(userProfile || undefined);
+    const { initiateOrder, isProcessing } = useOrderManagement();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -196,6 +196,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             deliveryCost: formData.deliveryCost,
             totalCost: formData.totalCost,
             paymentMethod: "lisk_zar" as const,
+            paymentStatus: "pending" as const,
+            orderStatus: "pending" as const,
             specialInstructions: formData.specialInstructions,
             estimatedPickupTime,
             estimatedDeliveryTime,

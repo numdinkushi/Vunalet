@@ -4,19 +4,45 @@ import { toast } from 'sonner';
 
 interface ConfirmOrderParams {
     orderId: string;
-    buyerId: string; // Clerk ID
-    buyerLiskId: string; // Lisk ID for payments
-    dispatcherId: string;
+    buyerId: string;
+    buyerLiskId: string;
+    dispatcherId?: string;
     farmerId: string;
     totalCost: number;
     dispatcherAmount: number;
     farmerAmount: number;
 }
 
+// Helper function to update wallet balance from stablecoin API
+const updateWalletBalanceFromAPI = async (clerkUserId: string, liskId: string) => {
+    try {
+        const response = await fetch(`/api/stablecoin/balance/${liskId}`);
+        if (response.ok) {
+            const data = await response.json();
+            const tokens = data?.tokens || [];
+            const zarToken = tokens.find((t: { name: string; balance: string | number; }) => t.name === 'L ZAR Coin');
+            const walletBalance = zarToken ? Number(zarToken.balance) : 0;
+
+            // Update the balance in Convex using the Convex client directly
+            const { ConvexHttpClient } = await import('convex/browser');
+            const { api } = await import('../convex/_generated/api');
+
+            const client = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+            await client.mutation(api.balances.upsertUserBalance, {
+                clerkUserId,
+                token: 'L ZAR Coin',
+                walletBalance,
+                ledgerBalance: 0, // Ledger balance is calculated from pending orders
+            });
+        }
+    } catch (error) {
+        console.error('Failed to update wallet balance from API:', error);
+    }
+};
+
 export function useOrderConfirmation() {
     const updateOrderStatus = useMutation(api.orders.updateOrderStatus);
     const updatePaymentStatus = useMutation(api.orders.updatePaymentStatus);
-    const updateBalance = useMutation(api.balances.upsertUserBalance);
 
     const confirmOrder = async ({
         orderId,
@@ -76,14 +102,6 @@ export function useOrderConfirmation() {
                     })
                 ]);
 
-                // Update buyer's ledger balance (decrease by total cost since order is now confirmed)
-                await updateBalance({
-                    clerkUserId: buyerId,
-                    token: 'L ZAR Coin',
-                    walletBalance: 0, // Keep existing wallet balance
-                    ledgerBalance: 0, // Ledger balance will be recalculated from pending orders
-                });
-
                 toast.success('Order confirmed successfully');
                 return true;
             }
@@ -131,13 +149,16 @@ export function useOrderConfirmation() {
                 })
             ]);
 
-            // Step 4: Update buyer's ledger balance (decrease by total cost since order is now confirmed)
-            await updateBalance({
-                clerkUserId: buyerId,
-                token: 'L ZAR Coin',
-                walletBalance: 0, // Keep existing wallet balance
-                ledgerBalance: 0, // Ledger balance will be recalculated from pending orders
-            });
+            // Step 4: Update wallet balances from stablecoin API for all parties
+            // This ensures wallet balances reflect the actual stablecoin balances after payment
+            await Promise.all([
+                // Update buyer's wallet balance (decreased due to payment)
+                updateWalletBalanceFromAPI(buyerId, buyerLiskId),
+                // Update farmer's wallet balance (increased due to payment)
+                farmerProfile?.liskId ? updateWalletBalanceFromAPI(farmerId, farmerProfile.liskId) : Promise.resolve(),
+                // Update dispatcher's wallet balance (increased due to payment)
+                dispatcherProfile?.liskId ? updateWalletBalanceFromAPI(dispatcherId!, dispatcherProfile.liskId) : Promise.resolve(),
+            ]);
 
             toast.success('Order confirmed successfully with payments processed');
             return true;

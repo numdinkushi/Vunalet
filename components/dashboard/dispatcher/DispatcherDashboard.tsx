@@ -158,10 +158,10 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
 
     const transformedOrders = transformOrders(orders || []);
 
-    const { markAsDelivered, isProcessing } = useOrderManagement();
+    const { confirmDelivery, isProcessing } = useOrderManagement();
 
     const handleMarkAsDelivered = async (orderId: string) => {
-        await markAsDelivered(orderId);
+        await confirmDelivery(orderId);
     };
 
     return (
