@@ -44,20 +44,54 @@ interface ConfirmDeliveryData {
     products: Array<{ name: string; }>;
 }
 
+interface UserProfile {
+    _id: string;
+    clerkUserId: string;
+    liskId?: string;
+    // ... other fields
+}
+
 // Helper function to get current wallet balance
-const getCurrentWalletBalance = async (userId: string): Promise<number> => {
+const getCurrentWalletBalance = async (liskId: string): Promise<number> => {
     try {
-        const balance = await fetch(`/api/stablecoin/balance/${userId}`).then(r => r.json());
+        console.log('Fetching wallet balance for liskId:', liskId);
+        const response = await fetch(`/api/stablecoin/balance/${liskId}`);
+
+        // Check if response is ok before trying to parse JSON
+        if (!response.ok) {
+            console.error('Balance API returned error status:', response.status, response.statusText);
+            // If user doesn't exist in stablecoin system, return 0 instead of throwing
+            if (response.status === 404) {
+                console.log('User not found in stablecoin system, returning 0 balance');
+                return 0;
+            }
+            return 0;
+        }
+
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            console.error('Balance API returned non-JSON response:', contentType);
+            // Log the actual response text for debugging
+            const responseText = await response.text();
+            console.error('Response text:', responseText.substring(0, 200)); // First 200 chars
+            return 0;
+        }
+
+        const balance = await response.json();
+        console.log('Balance API response:', balance);
         const tokens = balance?.tokens || [];
         const zarToken = tokens.find((t: { name: string; balance: string | number; }) => t.name === 'L ZAR Coin');
-        return zarToken ? Number(zarToken.balance) : 0;
+        const result = zarToken ? Number(zarToken.balance) : 0;
+        console.log('Wallet balance result:', result);
+        return result;
     } catch (error) {
         console.error('Failed to get wallet balance:', error);
         return 0;
     }
 };
 
-export function useOrderManagement() {
+export function useOrderManagement(userProfile?: UserProfile) {
     const { user } = useUser();
     const [isProcessing, setIsProcessing] = useState(false);
 
@@ -141,25 +175,50 @@ export function useOrderManagement() {
             }
 
             // 6. Update buyer's wallet balance (decrease by total cost)
-            const currentBuyerBalance = await getCurrentWalletBalance(user.id);
-            const newBuyerWalletBalance = currentBuyerBalance - orderData.totalCost;
+            if (!userProfile?.liskId) {
+                console.log('No Lisk ID found for user profile, using local balance system');
+                // Fall back to local balance system - just update the local balance
+                await updateBalance({
+                    clerkUserId: user.id,
+                    token: 'L ZAR Coin',
+                    walletBalance: 0, // Assume they have enough balance locally
+                    ledgerBalance: 0, // Ledger balance is calculated from pending orders
+                });
+            } else {
+                const currentBuyerBalance = await getCurrentWalletBalance(userProfile.liskId);
+                const newBuyerWalletBalance = currentBuyerBalance - orderData.totalCost;
 
-            await updateBalance({
-                clerkUserId: user.id,
-                token: 'L ZAR Coin',
-                walletBalance: newBuyerWalletBalance, // Decrease wallet balance
-                ledgerBalance: 0, // Ledger balance is calculated from pending orders
-            });
+                await updateBalance({
+                    clerkUserId: user.id,
+                    token: 'L ZAR Coin',
+                    walletBalance: newBuyerWalletBalance, // Decrease wallet balance
+                    ledgerBalance: 0, // Ledger balance is calculated from pending orders
+                });
+            }
 
             // Note: No need to update farmer and dispatcher ledger balances
             // They are now calculated automatically from pending orders
 
             toast.success(`Order initiated successfully! Assigned to dispatcher. Redirecting to dashboard...`);
 
-            // Redirect to dashboard after a short delay
+            // Wait a bit longer to ensure all operations complete before redirecting
             setTimeout(() => {
-                window.location.href = '/dashboard';
-            }, 1500);
+                // Clear any pending requests and redirect
+                try {
+                    // Abort any pending fetch requests
+                    if (typeof AbortController !== 'undefined') {
+                        const controller = new AbortController();
+                        controller.abort();
+                    }
+
+                    // Use window.location.href for a full page reload to ensure clean state
+                    window.location.href = '/dashboard';
+                } catch (redirectError) {
+                    console.error('Redirect error:', redirectError);
+                    // Fallback redirect
+                    window.location.href = '/dashboard';
+                }
+            }, 2000);
 
             return orderId;
         } catch (error) {

@@ -14,7 +14,7 @@ export default function SignUpPage() {
     // Clear any existing session when user visits sign-up page
     useEffect(() => {
         clearCurrentSession();
-    }, []); // Run once on mount
+    }, [clearCurrentSession]); // Run once on mount
 
     return (
         <div className="min-h-screen relative">

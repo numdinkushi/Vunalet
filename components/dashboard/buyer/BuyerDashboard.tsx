@@ -152,7 +152,7 @@ export default function BuyerDashboard() {
         setSelectedOrder(null);
     };
 
-    const { confirmDelivery, isProcessing } = useOrderManagement();
+    const { confirmDelivery, isProcessing } = useOrderManagement(userProfile || undefined);
 
     return (
         <div className="min-h-screen bg-gray-50">

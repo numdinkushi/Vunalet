@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { use } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
@@ -63,13 +63,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         }
     }, [user, userProfile, isLoaded]);
 
-    useEffect(() => {
-        if (product) {
-            calculateDeliveryCost();
-        }
-    }, [product, formData.address, formData.quantity, farmer, userProfile]);
-
-    const calculateDeliveryCost = async () => {
+    const calculateDeliveryCost = useCallback(async () => {
         if (!product || !formData.address) return;
 
         setIsCalculating(true);
@@ -120,7 +114,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         } finally {
             setIsCalculating(false);
         }
-    };
+    }, [product, formData.address, formData.quantity, farmer, userProfile]);
+
+    useEffect(() => {
+        if (product) {
+            calculateDeliveryCost();
+        }
+    }, [product, formData.address, formData.quantity, farmer, userProfile, calculateDeliveryCost]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -130,7 +130,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         }));
     };
 
-    const { initiateOrder, isProcessing } = useOrderManagement();
+    const { initiateOrder, isProcessing } = useOrderManagement(userProfile || undefined);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
