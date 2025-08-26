@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { use } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
@@ -63,13 +63,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         }
     }, [user, userProfile, isLoaded]);
 
-    useEffect(() => {
-        if (product) {
-            calculateDeliveryCost();
-        }
-    }, [product, formData.address, formData.quantity, farmer, userProfile]);
-
-    const calculateDeliveryCost = async () => {
+    const calculateDeliveryCost = useCallback(async () => {
         if (!product || !formData.address) return;
 
         setIsCalculating(true);
@@ -120,7 +114,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         } finally {
             setIsCalculating(false);
         }
-    };
+    }, [product, formData.address, formData.quantity, farmer, userProfile]);
+
+    useEffect(() => {
+        if (product) {
+            calculateDeliveryCost();
+        }
+    }, [product, formData.address, formData.quantity, farmer, userProfile, calculateDeliveryCost]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -130,7 +130,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         }));
     };
 
-    const { initiateOrder, isProcessing } = useOrderManagement();
+    const { initiateOrder, isProcessing } = useOrderManagement(userProfile || undefined);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -231,6 +231,46 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     <Link href="/products" className="text-green-600 hover:text-green-700">
                         Browse Products
                     </Link>
+                </div>
+            </div>
+        );
+    }
+
+    // Show authentication prompt for unauthenticated users
+    if (!user) {
+        return (
+            <div className="min-h-screen relative">
+                <div className="absolute inset-0 z-0">
+                    <VideoBackground videoUrl="/assets/video/falling_leaves.mp4" fallbackImage="/assets/background_images/image4.jpg" />
+                </div>
+                <div className="relative z-10 py-8">
+                    <div className="max-w-7xl mx-auto px-4">
+                        <Link href="/products">
+                            <motion.button
+                                initial={{ opacity: 0, x: -50 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                whileHover={{ x: -5 }}
+                                className="flex items-center space-x-2 text-white mb-8 hover:text-green-300 transition-colors"
+                            >
+                                <ArrowLeft className="w-5 h-5" />
+                                <span>Back to Products</span>
+                            </motion.button>
+                        </Link>
+
+                        <div className="flex items-center justify-center min-h-[60vh]">
+                            <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-8 max-w-md w-full text-center">
+                                <h1 className="text-2xl font-bold text-gray-900 mb-4">Sign In Required</h1>
+                                <p className="text-gray-600 mb-6">
+                                    Please sign in to view product details and make purchases.
+                                </p>
+                                <Link href="/sign-in">
+                                    <button className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-2xl font-semibold transition-all duration-300">
+                                        Sign In
+                                    </button>
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         );

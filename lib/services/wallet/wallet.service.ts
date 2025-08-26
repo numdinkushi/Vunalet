@@ -19,6 +19,11 @@ export class WalletService {
     }
 
     async fetchBalances(userId: string): Promise<WalletBalances> {
+        console.log('fetchBalances called with userId:', userId);
+        if (!userId) {
+            return { walletBalance: 0, ledgerBalance: 0 };
+        }
+
         try {
             const res = await fetch(`/api/stablecoin/balance/${encodeURIComponent(userId)}`);
 

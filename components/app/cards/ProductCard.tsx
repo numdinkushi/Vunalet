@@ -56,8 +56,11 @@ export function ProductCard({
         if (isBuyer) {
             // Buyer can proceed to product page
             router.push(`/products/${product._id}`);
-        } else if (hasNoRole || isSignedInButNoProfile) {
-            // User with no role or no profile gets redirected to dashboard (which will redirect to registration)
+        } else if (!user) {
+            // User not signed in - show sign-in modal or redirect to sign-in
+            router.push('/sign-in');
+        } else if (isSignedInButNoProfile || hasNoRole) {
+            // User signed in but no profile/role - redirect to registration
             router.push('/dashboard');
         }
         // Other roles (farmer, dispatcher) won't see the button

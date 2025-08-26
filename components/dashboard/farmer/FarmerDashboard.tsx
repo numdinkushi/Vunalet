@@ -8,8 +8,11 @@ import { ProductCard, OrderCard, AddProductModal, DashboardStats, RecentProducts
 import { useFarmerDashboard } from './hooks/use-farmer-dashboard';
 import { WalletCard } from '../shared/WalletCard';
 import { FarmerDashboardProps } from './types/dashboard-types';
+import { useMounted } from '@/hooks/use-mounted';
 
 export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
+    useMounted();
+
     const {
         activeTab,
         setActiveTab,
@@ -19,6 +22,7 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
         orders,
         dashboardStats,
         onProductDeleted,
+        isLoading,
     } = useFarmerDashboard(userProfile);
 
     if (!products || !orders) {
@@ -35,7 +39,7 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
     return (
         <div className="space-y-6">
             {/* Stats Cards */}
-            <DashboardStats stats={dashboardStats} />
+            <DashboardStats stats={dashboardStats} isLoading={isLoading} />
 
             {/* Wallet Card */}
             <WalletCard />
