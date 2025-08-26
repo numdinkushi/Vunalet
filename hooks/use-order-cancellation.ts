@@ -4,9 +4,9 @@ import { toast } from 'sonner';
 
 interface CancelOrderParams {
     orderId: string;
-    buyerId: string; // Clerk ID
-    buyerLiskId: string; // Lisk ID for payments
-    dispatcherId: string;
+    buyerId: string;
+    buyerLiskId: string;
+    dispatcherId?: string;
     farmerId: string;
     totalCost: number;
     dispatcherAmount: number;
@@ -14,9 +14,35 @@ interface CancelOrderParams {
     reason: string;
 }
 
+// Helper function to update wallet balance from stablecoin API
+const updateWalletBalanceFromAPI = async (clerkUserId: string, liskId: string) => {
+    try {
+        const response = await fetch(`/api/stablecoin/balance/${liskId}`);
+        if (response.ok) {
+            const data = await response.json();
+            const tokens = data?.tokens || [];
+            const zarToken = tokens.find((t: { name: string; balance: string | number; }) => t.name === 'L ZAR Coin');
+            const walletBalance = zarToken ? Number(zarToken.balance) : 0;
+
+            // Update the balance in Convex using the Convex client directly
+            const { ConvexHttpClient } = await import('convex/browser');
+            const { api } = await import('../convex/_generated/api');
+
+            const client = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+            await client.mutation(api.balances.upsertUserBalance, {
+                clerkUserId,
+                token: 'L ZAR Coin',
+                walletBalance,
+                ledgerBalance: 0, // Ledger balance is calculated from pending orders
+            });
+        }
+    } catch (error) {
+        console.error('Failed to update wallet balance from API:', error);
+    }
+};
+
 export function useOrderCancellation() {
     const updateOrderStatus = useMutation(api.orders.updateOrderStatus);
-    const updateBalance = useMutation(api.balances.upsertUserBalance);
 
     const cancelOrder = async ({
         orderId,
@@ -65,19 +91,11 @@ export function useOrderCancellation() {
             if (refundPayments.length === 0) {
                 console.log('No valid recipients found for refunds, cancelling order without refunds');
 
-                // Update order status to cancelled without processing refunds
+                // Update order status to cancelled
                 await updateOrderStatus({
                     orderId,
                     orderStatus: 'cancelled',
                     cancellationReason: reason,
-                });
-
-                // Update buyer's ledger balance (decrease by total cost since order is now cancelled)
-                await updateBalance({
-                    clerkUserId: buyerId,
-                    token: 'L ZAR Coin',
-                    walletBalance: 0, // Keep existing wallet balance
-                    ledgerBalance: 0, // Ledger balance will be recalculated from pending orders
                 });
 
                 toast.success('Order cancelled successfully');
@@ -92,7 +110,7 @@ export function useOrderCancellation() {
                 },
                 body: JSON.stringify({
                     payments: refundPayments,
-                    transactionNotes: `Order cancellation refund - ${reason}`
+                    transactionNotes: `Order cancellation refund - Order #${orderId.slice(-6)}`
                 }),
             });
 
@@ -122,13 +140,16 @@ export function useOrderCancellation() {
                 cancellationReason: reason,
             });
 
-            // Step 4: Update buyer's ledger balance (decrease by total cost since order is now cancelled)
-            await updateBalance({
-                clerkUserId: buyerId,
-                token: 'L ZAR Coin',
-                walletBalance: 0, // Keep existing wallet balance
-                ledgerBalance: 0, // Ledger balance will be recalculated from pending orders
-            });
+            // Step 4: Update wallet balances from stablecoin API for all parties
+            // This ensures wallet balances reflect the actual stablecoin balances after refund
+            await Promise.all([
+                // Update buyer's wallet balance (increased due to refund)
+                updateWalletBalanceFromAPI(buyerId, buyerLiskId),
+                // Update farmer's wallet balance (decreased due to refund)
+                farmerProfile?.liskId ? updateWalletBalanceFromAPI(farmerId, farmerProfile.liskId) : Promise.resolve(),
+                // Update dispatcher's wallet balance (decreased due to refund)
+                dispatcherProfile?.liskId ? updateWalletBalanceFromAPI(dispatcherId!, dispatcherProfile.liskId) : Promise.resolve(),
+            ]);
 
             toast.success('Order cancelled successfully with refunds processed');
             return true;

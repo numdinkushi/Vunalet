@@ -249,7 +249,7 @@ export function ComponentName({ props }: ComponentProps) {
 
 ## 🎯 Hackathon Context
 
-This project was built for the **Lisk ZAR Stablecoin Payments Hackathon** hosted by HackersDAO and Lisk Africa. The goal is to solve the middleman problem between farmers and buyers in Nigeria's agricultural sector.
+This project was built for the **Lisk ZAR Stablecoin Payments Hackathon** hosted by HackersDAO and Lisk Africa. The goal is to solve the middleman problem between farmers and buyers in South Africa's agricultural sector.
 
 ### Problem Statement
 - Farmers often lose profits to middlemen
