@@ -53,15 +53,20 @@ export function Footer() {
           <div>
             <h4 className="text-xl font-semibold mb-6">Quick Links</h4>
             <ul className="space-y-3">
-              {['Products', 'Farmers', 'About', 'Contact'].map((link) => (
-                <li key={link}>
+              {[
+                { name: 'Products', href: '/products' },
+                { name: 'Farmers', href: '/farmers' },
+                { name: 'About', href: '/about' },
+                { name: 'Dashboard', href: '/dashboard' }
+              ].map((link) => (
+                <li key={link.name}>
                   <motion.a
-                    href="#"
+                    href={link.href}
                     className="text-gray-300 hover:text-white transition-colors flex items-center"
                     whileHover={{ x: 5 }}
                   >
                     <span className="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
-                    {link}
+                    {link.name}
                   </motion.a>
                 </li>
               ))}
@@ -72,15 +77,20 @@ export function Footer() {
           <div>
             <h4 className="text-xl font-semibold mb-6">Categories</h4>
             <ul className="space-y-3">
-              {['Vegetables', 'Fruits', 'Grains', 'Herbs'].map((category) => (
-                <li key={category}>
+              {[
+                { name: 'Vegetables', href: '/products?category=vegetables' },
+                { name: 'Fruits', href: '/products?category=fruits' },
+                { name: 'Grains', href: '/products?category=grains_and_cereal' },
+                { name: 'Herbs', href: '/products?category=herbs_and_spices' }
+              ].map((category) => (
+                <li key={category.name}>
                   <motion.a
-                    href="#"
+                    href={category.href}
                     className="text-gray-300 hover:text-white transition-colors flex items-center"
                     whileHover={{ x: 5 }}
                   >
                     <span className="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
-                    {category}
+                    {category.name}
                   </motion.a>
                 </li>
               ))}
