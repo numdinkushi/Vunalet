@@ -25,7 +25,7 @@ const navItems = [
     { name: 'Farmers', href: '/farmers' },
     { name: 'About', href: '/about' },
     { name: 'Dashboard', href: '/dashboard' },
-]; 
+];
 
 export function Header() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -86,33 +86,35 @@ export function Header() {
         >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-20">
-                    <motion.div
-                        className="flex items-center space-x-3 cursor-pointer"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                    >
+                    <Link href="/">
                         <motion.div
-                            className="relative"
-                            whileHover={{ rotate: 360 }}
-                            transition={{ duration: 0.6 }}
+                            className="flex items-center space-x-3 cursor-pointer"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
                         >
-                            <Image
-                                src={isScrolled ? "/assets/logo/logo.png" : "/assets/logo/logo_white.png"}
-                                alt="Vunalet Logo"
-                                width={40}
-                                height={40}
-                                className="rounded-lg"
-                            />
+                            <motion.div
+                                className="relative"
+                                whileHover={{ rotate: 360 }}
+                                transition={{ duration: 0.6 }}
+                            >
+                                <Image
+                                    src={isScrolled ? "/assets/logo/logo.png" : "/assets/logo/logo_white.png"}
+                                    alt="Vunalet Logo"
+                                    width={40}
+                                    height={40}
+                                    className="rounded-lg"
+                                />
+                            </motion.div>
+                            <motion.h1
+                                className={`text-2xl font-bold ${isScrolled ? 'text-green-600' : 'text-white'}`}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.2 }}
+                            >
+                                Vunalet
+                            </motion.h1>
                         </motion.div>
-                        <motion.h1
-                            className={`text-2xl font-bold ${isScrolled ? 'text-green-600' : 'text-white'}`}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.2 }}
-                        >
-                            Vunalet
-                        </motion.h1>
-                    </motion.div>
+                    </Link>
 
                     {/* Desktop Navigation */}
                     <nav className="hidden md:flex items-center space-x-8">

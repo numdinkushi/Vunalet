@@ -4,6 +4,10 @@ import { motion } from 'framer-motion';
 import { Shield, Truck, Leaf, Zap } from 'lucide-react';
 import Image from 'next/image';
 import { VideoBackground } from '../../components/ui/VideoBackground';
+import { useUser } from '@clerk/nextjs';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import Link from 'next/link';
 
 const features = [
     {
@@ -77,6 +81,16 @@ const stats = [
 ];
 
 export function FeaturesSection() {
+    const { user } = useUser();
+
+    // Get user profile to check if they have completed onboarding
+    const userProfile = useQuery(api.users.getUserProfile, {
+        clerkUserId: user?.id || '',
+    });
+
+    // Check if user has completed profile setup (has a role)
+    const hasCompletedProfile = userProfile?.role && userProfile?.liskId;
+
     return (
         <section className="py-24 bg-gradient-to-br from-gray-50 to-white relative overflow-hidden">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -265,30 +279,34 @@ export function FeaturesSection() {
                             ))}
                         </div>
 
-                        {/* Bottom CTA */}
-                        <motion.div
-                            className="text-center mt-12 pt-8 border-t border-gray-100"
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: 0.5, duration: 0.8 }}
-                        >
-                            <div className="flex items-center justify-center space-x-2 mb-4">
-                                <Zap className="w-6 h-6 text-green-300" />
-                                <h4 className="text-2xl font-bold text-white">Growing Fast</h4>
-                            </div>
-                            <p className="text-lg text-gray-200 max-w-2xl mx-auto">
-                                Our network continues to expand across South Africa, connecting more farmers and consumers every day.
-                            </p>
-
-                            <motion.button
-                                className="mt-6 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-xl"
-                                whileHover={{ scale: 1.05, y: -2 }}
-                                whileTap={{ scale: 0.95 }}
+                        {/* Bottom CTA - Only show for users who haven't completed profile */}
+                        {!hasCompletedProfile && (
+                            <motion.div
+                                className="text-center mt-12 pt-8 border-t border-gray-100"
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: 0.5, duration: 0.8 }}
                             >
-                                Join Our Network
-                            </motion.button>
-                        </motion.div>
+                                <div className="flex items-center justify-center space-x-2 mb-4">
+                                    <Zap className="w-6 h-6 text-green-300" />
+                                    <h4 className="text-2xl font-bold text-white">Growing Fast</h4>
+                                </div>
+                                <p className="text-lg text-gray-200 max-w-2xl mx-auto">
+                                    Our network continues to expand across South Africa, connecting more farmers and consumers every day.
+                                </p>
+
+                                <Link href="/dashboard">
+                                    <motion.button
+                                        className="mt-6 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-xl"
+                                        whileHover={{ scale: 1.05, y: -2 }}
+                                        whileTap={{ scale: 0.95 }}
+                                    >
+                                        Join Our Network
+                                    </motion.button>
+                                </Link>
+                            </motion.div>
+                        )}
                     </div>
                 </motion.div>
             </div>
