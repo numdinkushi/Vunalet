@@ -196,4 +196,49 @@ export interface BulkTransferResponse {
         status: number;
         to: string;
     };
+}
+
+// Clerk Webhook Types
+export interface ClerkWebhookEvent {
+    data: {
+        id: string;
+        object: string;
+        email_addresses: Array<{
+            id: string;
+            email_address: string;
+            verification?: {
+                status: string;
+                strategy: string;
+            };
+        }>;
+        first_name: string | null;
+        last_name: string | null;
+        image_url: string | null;
+        primary_email_address_id: string | null;
+        public_metadata: Record<string, unknown>;
+        private_metadata: Record<string, unknown>;
+        unsafe_metadata: Record<string, unknown>;
+        created_at: number;
+        updated_at: number;
+        last_sign_in_at: number | null;
+        profile_image_url: string | null;
+        banned: boolean;
+        locked: boolean;
+    };
+    event_type: 'user.created' | 'user.updated' | 'user.deleted' | 'session.created' | 'session.ended' | 'session.removed' | 'session.revoked';
+    object: string;
+    type: string;
+}
+
+export interface WebhookResponse {
+    success: boolean;
+    message: string;
+    error?: string;
+}
+
+export interface BasicUserProfileData {
+    clerkUserId: string;
+    email: string;
+    firstName: string;
+    lastName: string;
 } 
