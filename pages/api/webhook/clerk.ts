@@ -51,7 +51,7 @@ export default async function handler(
         const result = await webhookService.processClerkWebhook(event);
 
         return res.status(200).json(result);
-
+ 
     } catch (error) {
         console.error('[Webhook] Error:', error);
 
