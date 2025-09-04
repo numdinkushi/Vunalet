@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Webhook } from 'svix';
 import { webhookService } from '../../../lib/services/webhook/webhook.service';
-import { WebhookResponse } from '../../../lib/services/api/types';
+import { WebhookResponse, ClerkWebhookEvent } from '../../../lib/services/api/types';
 
 export default async function handler(
     req: NextApiRequest,
@@ -15,7 +15,7 @@ export default async function handler(
     }
 
     try {
-        const webhookSecret = process.env.CLERK_WEBHOOK_SECRET || 'whsec_q3zl/CZeewZg3XO95rbnFPMTSQ38uwRn';
+        const webhookSecret = process.env.CLERK_WEBHOOK_SECRET || '';
 
         // Get headers
         const svix_id = req.headers['svix-id'] as string;
@@ -36,11 +36,14 @@ export default async function handler(
 
         // Verify webhook
         const webhook = new Webhook(webhookSecret);
-        const event = webhook.verify(body, {
+        const verifiedPayload = webhook.verify(body, {
             'svix-id': svix_id,
             'svix-timestamp': svix_timestamp,
             'svix-signature': svix_signature,
         });
+
+        // Type assertion after verification
+        const event = verifiedPayload as ClerkWebhookEvent;
 
         console.log(`[Webhook] Verified: ${event.type}`);
 
