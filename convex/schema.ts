@@ -112,9 +112,14 @@ export default defineSchema({
         deliveryDistance: v.number(),
         deliveryCost: v.number(),
         totalCost: v.number(),
-        paymentMethod: v.union(v.literal("lisk_zar"), v.literal("cash")),
+        paymentMethod: v.union(v.literal("lisk_zar"), v.literal("celo"), v.literal("cash")),
         paymentStatus: v.union(v.literal("pending"), v.literal("paid"), v.literal("failed")),
         orderStatus: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("arrived"), v.literal("delivered"), v.literal("cancelled")),
+        // Celo blockchain payment fields
+        celoTxHash: v.optional(v.string()),
+        celoBlockNumber: v.optional(v.number()),
+        celoFromAddress: v.optional(v.string()),
+        celoAmountPaid: v.optional(v.number()), // Amount in CELO
         specialInstructions: v.optional(v.string()),
         estimatedPickupTime: v.optional(v.string()), // Add this field
         estimatedDeliveryTime: v.optional(v.string()),
@@ -180,6 +185,7 @@ export default defineSchema({
         title: v.string(),
         message: v.string(),
         isRead: v.boolean(),
+        priority: v.optional(v.union(v.literal("low"), v.literal("medium"), v.literal("high"))),
         metadata: v.optional(v.any()),
         createdAt: v.number(),
     })

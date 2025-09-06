@@ -31,9 +31,14 @@ export const createOrder = mutation({
         deliveryDistance: v.number(),
         deliveryCost: v.number(),
         totalCost: v.number(),
-        paymentMethod: v.union(v.literal("lisk_zar"), v.literal("cash")),
+        paymentMethod: v.union(v.literal("lisk_zar"), v.literal("celo"), v.literal("cash")),
         paymentStatus: v.union(v.literal("pending"), v.literal("paid"), v.literal("failed")),
         orderStatus: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("arrived"), v.literal("delivered"), v.literal("cancelled")),
+        // Celo blockchain payment fields
+        celoTxHash: v.optional(v.string()),
+        celoBlockNumber: v.optional(v.number()),
+        celoFromAddress: v.optional(v.string()),
+        celoAmountPaid: v.optional(v.number()),
         specialInstructions: v.optional(v.string()),
         estimatedPickupTime: v.optional(v.string()),
         estimatedDeliveryTime: v.optional(v.string()),
@@ -626,5 +631,28 @@ export const getDispatcherPendingTotal = query({
 
         const totalPending = pendingOrders.reduce((sum, order) => sum + order.dispatcherAmount, 0);
         return totalPending;
+    },
+});
+
+// Update Celo payment details
+export const updateCeloPayment = mutation({
+    args: {
+        orderId: v.id("orders"),
+        celoTxHash: v.string(),
+        celoBlockNumber: v.optional(v.number()),
+        celoFromAddress: v.string(),
+        celoAmountPaid: v.number(),
+    },
+    handler: async (ctx, args) => {
+        const { orderId, celoTxHash, celoBlockNumber, celoFromAddress, celoAmountPaid } = args;
+
+        return await ctx.db.patch(orderId, {
+            celoTxHash,
+            celoBlockNumber,
+            celoFromAddress,
+            celoAmountPaid,
+            paymentStatus: "paid",
+            updatedAt: Date.now(),
+        });
     },
 }); 

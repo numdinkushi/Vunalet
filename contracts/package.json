@@ -1,0 +1,32 @@
+{
+  "name": "vunalet-contracts",
+  "version": "1.0.0",
+  "description": "Smart contracts for Vunalet payment system",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:alfajores": "hardhat run scripts/deploy.ts --network alfajores",
+    "deploy:celo": "hardhat run scripts/deploy.ts --network celo",
+    "verify:alfajores": "hardhat verify --network alfajores",
+    "verify:celo": "hardhat verify --network celo"
+  },
+  "keywords": [
+    "solidity",
+    "hardhat",
+    "celo",
+    "payments"
+  ],
+  "author": "Vunalet Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox-viem": "^3.0.0",
+    "@types/node": "^20.0.0",
+    "hardhat": "^2.19.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.4.0",
+    "dotenv": "^16.6.1"
+  }
+}
