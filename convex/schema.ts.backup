@@ -36,12 +36,6 @@ export default defineSchema({
         liskId: v.optional(v.string()),
         publicKey: v.optional(v.string()),
         paymentIdentifier: v.optional(v.string()),
-        // Wallet Integration
-        walletAddress: v.optional(v.string()),
-        celoAddress: v.optional(v.string()), // CELO blockchain address for payments
-        walletConnectedAt: v.optional(v.number()),
-        preferredPaymentMethod: v.optional(v.union(v.literal("lisk_zar"), v.literal("celo"), v.literal("cash"))),
-        walletProvider: v.optional(v.string()), // metamask, coinbase, walletconnect
         isVerified: v.boolean(),
         createdAt: v.number(),
         updatedAt: v.number(),
@@ -54,16 +48,12 @@ export default defineSchema({
     // Balances table
     balances: defineTable({
         clerkUserId: v.string(),
-        token: v.string(), // e.g. "L ZAR Coin", "CELO"
+        token: v.string(), // e.g. "L ZAR Coin"
         walletBalance: v.number(),
         ledgerBalance: v.number(),
         updatedAt: v.number(),
-        // Additional fields for CELO balances
-        blockchainAddress: v.optional(v.string()), // For CELO wallet address
-        chainId: v.optional(v.number()), // For CELO network (42220 for mainnet, 44787 for alfajores)
     })
-        .index("by_user_token", ["clerkUserId", "token"])
-        .index("by_user_chain", ["clerkUserId", "chainId"]),
+        .index("by_user_token", ["clerkUserId", "token"]),
 
     // Products table
     products: defineTable({
@@ -130,10 +120,6 @@ export default defineSchema({
         celoBlockNumber: v.optional(v.number()),
         celoFromAddress: v.optional(v.string()),
         celoAmountPaid: v.optional(v.number()), // Amount in CELO
-        // Celo recipient addresses for payment distribution
-        celoFarmerAddress: v.optional(v.string()),
-        celoDispatcherAddress: v.optional(v.string()),
-        celoPlatformAddress: v.optional(v.string()),
         specialInstructions: v.optional(v.string()),
         estimatedPickupTime: v.optional(v.string()), // Add this field
         estimatedDeliveryTime: v.optional(v.string()),

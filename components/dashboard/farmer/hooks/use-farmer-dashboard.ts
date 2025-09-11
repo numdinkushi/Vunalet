@@ -53,6 +53,7 @@ export function useFarmerDashboard(userProfile: FarmerUserProfile) {
             totalCost: order.totalCost,
             orderStatus: order.orderStatus as 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'arrived' | 'delivered' | 'cancelled',
             paymentStatus: order.paymentStatus as 'pending' | 'paid' | 'failed',
+            paymentMethod: order.paymentMethod as 'lisk_zar' | 'celo' | 'cash',
             createdAt: new Date(order.createdAt).toISOString(),
             deliveryAddress: order.deliveryAddress,
             estimatedDeliveryTime: order.estimatedDeliveryTime,

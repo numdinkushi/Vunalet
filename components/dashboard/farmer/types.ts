@@ -33,6 +33,7 @@ export interface FarmerOrder {
     totalCost: number;
     orderStatus: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'arrived' | 'delivered' | 'cancelled';
     paymentStatus: 'paid' | 'pending' | 'failed';
+    paymentMethod: 'lisk_zar' | 'celo' | 'cash';
     createdAt: string;
     deliveryAddress: string;
     estimatedDeliveryTime?: string;

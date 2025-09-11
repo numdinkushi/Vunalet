@@ -22,6 +22,7 @@ import { LZC_TOKEN_NAME } from '../../../constants/tokens';
 import { useOrderManagement } from '../../../hooks/use-order-management';
 import { Badge } from '../../ui/badge';
 import { useBalanceDisplay } from '../../../hooks/use-balance-display';
+import { DispatcherOrder } from './types';
 
 // Type for Convex order structure with user info
 interface ConvexOrder {
@@ -52,7 +53,7 @@ interface ConvexOrder {
     deliveryDistance: number;
     deliveryCost: number;
     totalCost: number;
-    paymentMethod: 'lisk_zar' | 'cash';
+    paymentMethod: 'lisk_zar' | 'celo' | 'cash';
     paymentStatus: 'pending' | 'paid' | 'failed';
     orderStatus: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'arrived' | 'delivered' | 'cancelled';
     specialInstructions?: string;
@@ -128,7 +129,7 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
     };
 
     // Transform Convex orders to match the expected interface
-    const transformOrders = (convexOrders: ConvexOrder[]) => {
+    const transformOrders = (convexOrders: ConvexOrder[]): DispatcherOrder[] => {
         return convexOrders?.map((order: ConvexOrder) => ({
             _id: order._id,
             products: order.products.map((p: { name: string; quantity: number; price: number; unit: string; productId: string; }) => ({
@@ -139,10 +140,10 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
             totalCost: order.totalCost,
             orderStatus: order.orderStatus,
             paymentStatus: order.paymentStatus,
+            paymentMethod: order.paymentMethod,
             createdAt: new Date(order.createdAt).toISOString(),
             deliveryAddress: order.deliveryAddress,
             estimatedDeliveryTime: order.estimatedDeliveryTime,
-            riderId: order.dispatcherId,
             riderName: order.dispatcherInfo ?
                 `${order.dispatcherInfo.firstName} ${order.dispatcherInfo.lastName}` :
                 order.dispatcherId || '',

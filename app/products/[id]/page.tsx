@@ -9,19 +9,24 @@ import { useQuery } from 'convex/react';
 import { useUser } from '@clerk/nextjs';
 import { getDistance } from 'geolib';
 import { api } from '../../../convex/_generated/api';
+import { Id } from '../../../convex/_generated/dataModel';
 import { VideoBackground } from '../../../components/ui/VideoBackground';
 import { ProductDetailCard } from '../../../components/app/cards/product-detail';
 import { DeliveryMap } from '../../../components/app/maps/delivery-map/index';
+import { PaymentMethodSelector } from '../../../components/payments/PaymentMethodSelector';
 import { PurchaseFormData } from '../../../app/types';
+import { PaymentMethod } from '../../../constants';
 import Link from 'next/link';
 import { DELIVERY_CONSTANTS } from '../../../constants/delivery';
-import { useOrderManagement } from '../../../hooks/use-order-management';
+import { useRouter } from 'next/navigation';
+import { useMutation } from 'convex/react';
 import { toast } from 'sonner';
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string; }>; }) {
     // Unwrap params using React.use()
     const { id } = use(params);
     const { user, isLoaded } = useUser();
+    const router = useRouter();
 
     const [formData, setFormData] = useState<PurchaseFormData>({
         name: '',
@@ -31,9 +36,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         quantity: 1,
         deliveryDistance: 0,
         deliveryCost: 0,
-        totalCost: 0
+        totalCost: 0,
+        paymentMethod: 'lisk_zar', // Default payment method
     });
     const [isCalculating, setIsCalculating] = useState(false);
+    const [showPaymentSelector, setShowPaymentSelector] = useState(false);
+    const [orderId, setOrderId] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Get product from database
     const product = useQuery(api.products.getProductById, { productId: id });
@@ -130,7 +139,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         }));
     };
 
-    const { initiateOrder, isProcessing } = useOrderManagement();
+    const createOrder = useMutation(api.orders.createOrder);
+    const updatePaymentMethod = useMutation(api.orders.updatePaymentMethod);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -167,13 +177,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             return;
         }
 
+        // Create order first to get orderId
         const totalAmount = product.price * formData.quantity;
-        const farmerAmount = totalAmount; // Product cost goes to farmer
-        const dispatcherAmount = formData.deliveryCost; // Delivery cost goes to dispatcher
+        const farmerAmount = totalAmount;
+        const dispatcherAmount = formData.deliveryCost;
 
-        // Calculate estimated times
-        const estimatedPickupTime = new Date(Date.now() + 30 * 60 * 1000).toISOString(); // 30 minutes from now
-        const estimatedDeliveryTime = new Date(Date.now() + (30 + formData.deliveryDistance * 2) * 60 * 1000).toISOString(); // 30 min + 2 min per km
+        const estimatedPickupTime = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+        const estimatedDeliveryTime = new Date(Date.now() + (30 + formData.deliveryDistance * 2) * 60 * 1000).toISOString();
 
         const orderData = {
             buyerId: user.id,
@@ -195,7 +205,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             deliveryDistance: formData.deliveryDistance,
             deliveryCost: formData.deliveryCost,
             totalCost: formData.totalCost,
-            paymentMethod: "lisk_zar" as const,
+            paymentMethod: formData.paymentMethod, // Use selected payment method
             paymentStatus: "pending" as const,
             orderStatus: "pending" as const,
             specialInstructions: formData.specialInstructions,
@@ -203,7 +213,42 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             estimatedDeliveryTime,
         };
 
-        await initiateOrder(orderData);
+        setIsSubmitting(true);
+
+        try {
+            const newOrderId = await createOrder(orderData);
+            setOrderId(newOrderId);
+            setShowPaymentSelector(true);
+        } catch (error) {
+            console.error('Failed to create order:', error);
+            toast.error('Failed to create order. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handlePaymentSuccess = async (paymentId: string, method: PaymentMethod) => {
+        // Update the payment method in the order
+        if (orderId) {
+            try {
+                await updatePaymentMethod({
+                    orderId: orderId as Id<"orders">,
+                    paymentMethod: method,
+                });
+            } catch (error) {
+                console.error('Failed to update payment method:', error);
+            }
+        }
+
+        toast.success(`Payment successful with ${method}!`);
+        setTimeout(() => {
+            router.push('/dashboard');
+        }, 1500);
+    };
+
+    const handlePaymentError = (error: string) => {
+        toast.error(`Payment failed: ${error}`);
+        setShowPaymentSelector(false);
     };
 
     // Show loading state
@@ -288,16 +333,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             <div className="relative z-10 py-8">
                 <div className="max-w-7xl mx-auto px-4">
                     {/* Back Button */}
-                    <Link href="/products">
-                        <motion.button
-                            initial={{ opacity: 0, x: -50 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            whileHover={{ x: -5 }}
-                            className="flex items-center space-x-2 text-white mb-8 hover:text-green-300 transition-colors"
-                        >
-                            <ArrowLeft className="w-5 h-5" />
-                            <span>Back to Products</span>
-                        </motion.button>
+                    <Link href="/products" className="inline-flex items-center text-green-600 hover:text-green-700 mb-6">
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        Back to Products
                     </Link>
 
                     <div className="grid lg:grid-cols-2 gap-8">
@@ -307,7 +345,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                             farmer={farmer}
                             formData={formData}
                             isCalculating={isCalculating}
-                            isProcessing={isProcessing} // Pass the processing state
+                            isProcessing={isSubmitting}
                             handleInputChange={handleInputChange}
                             handleSubmit={handleSubmit}
                         />
@@ -331,6 +369,26 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     </div>
                 </div>
             </div>
+
+            {/* Payment Method Selector Modal */}
+            {showPaymentSelector && orderId && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-white/10 backdrop-blur-md rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto"
+                    >
+                        <PaymentMethodSelector
+                            zarAmount={formData.totalCost}
+                            orderId={orderId}
+                            farmerZarAmount={product.price * formData.quantity}
+                            dispatcherZarAmount={formData.deliveryCost}
+                            onPaymentSuccess={handlePaymentSuccess}
+                            onPaymentError={handlePaymentError}
+                        />
+                    </motion.div>
+                </div>
+            )}
         </div>
     );
 } 

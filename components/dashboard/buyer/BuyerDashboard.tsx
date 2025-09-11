@@ -43,7 +43,7 @@ interface ConvexOrder {
     deliveryDistance: number;
     deliveryCost: number;
     totalCost: number;
-    paymentMethod: 'lisk_zar' | 'cash';
+    paymentMethod: 'lisk_zar' | 'celo' | 'cash';
     paymentStatus: 'pending' | 'paid' | 'failed';
     orderStatus: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'arrived' | 'delivered' | 'cancelled';
     specialInstructions?: string;
@@ -114,6 +114,7 @@ export default function BuyerDashboard() {
             totalCost: order.totalCost,
             orderStatus: order.orderStatus,
             paymentStatus: order.paymentStatus,
+            paymentMethod: order.paymentMethod, // Add payment method
             createdAt: new Date(order.createdAt).toISOString(),
             deliveryAddress: order.deliveryAddress,
             estimatedDeliveryTime: order.estimatedDeliveryTime,

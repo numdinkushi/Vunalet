@@ -22,6 +22,7 @@ export interface PurchaseFormData {
     deliveryDistance: number;
     deliveryCost: number;
     totalCost: number;
+    paymentMethod: 'lisk_zar' | 'celo';
     specialInstructions?: string;
 }
 

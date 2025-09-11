@@ -5,6 +5,18 @@ import { Star, Heart, MapPin, Truck, Calculator, User, Clock, Thermometer, Snowf
 import { ProductCarousel } from '../../carousel/ProductCarousel';
 import { PurchaseFormData } from '../../../app/types';
 import { getExpiryStatus, getDaysUntilExpiry } from '../../../lib/utils/product-utils';
+// Constants for CELO conversion
+const ZAR_TO_CELO = 0.003;
+const PLATFORM_FEE_RATE = 2.5;
+
+// Helper functions
+const convertZarToCelo = (zarAmount: number): number => {
+    return Number((zarAmount * ZAR_TO_CELO).toFixed(6));
+};
+
+const calculatePlatformFee = (amount: number): number => {
+    return Number((amount * PLATFORM_FEE_RATE / 100).toFixed(6));
+};
 
 interface ProductDetailCardProps {
     product: {
@@ -271,16 +283,41 @@ export function ProductDetailCard({
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-gray-300">Delivery Cost:</span>
-                                        <span className="text-white">R{formData.deliveryCost.toFixed(2)}</span>
+                                        <span className="text-white">
+                                            {formData.paymentMethod === 'celo'
+                                                ? `${convertZarToCelo(formData.deliveryCost).toFixed(6)} CELO`
+                                                : `R${formData.deliveryCost.toFixed(2)}`
+                                            }
+                                        </span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-gray-300">Product Cost:</span>
-                                        <span className="text-white">R{(product.price * formData.quantity).toFixed(2)}</span>
+                                        <span className="text-white">
+                                            {formData.paymentMethod === 'celo'
+                                                ? `${convertZarToCelo(product.price * formData.quantity).toFixed(6)} CELO`
+                                                : `R${(product.price * formData.quantity).toFixed(2)}`
+                                            }
+                                        </span>
                                     </div>
+                                    {formData.paymentMethod === 'celo' && (
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-300">Platform Fee (2.5%):</span>
+                                            <span className="text-white">
+                                                {calculatePlatformFee(convertZarToCelo(formData.totalCost)).toFixed(6)} CELO
+                                            </span>
+                                        </div>
+                                    )}
                                     <div className="border-t border-gray-600 pt-2">
                                         <div className="flex justify-between text-lg font-bold">
-                                            <span className="text-green-300">Total Cost:</span>
-                                            <span className="text-green-300">R{formData.totalCost.toFixed(2)}</span>
+                                            <span className="text-green-300">
+                                                {formData.paymentMethod === 'celo' ? 'Total Cost (incl. fees):' : 'Total Cost:'}
+                                            </span>
+                                            <span className="text-green-300">
+                                                {formData.paymentMethod === 'celo'
+                                                    ? `${(convertZarToCelo(formData.totalCost) + calculatePlatformFee(convertZarToCelo(formData.totalCost))).toFixed(6)} CELO`
+                                                    : `R${formData.totalCost.toFixed(2)}`
+                                                }
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -288,13 +325,50 @@ export function ProductDetailCard({
                         )}
                     </div>
 
+                    {/* Payment Method Selection */}
+                    <div className="space-y-3">
+                        <label className="block text-gray-300 text-sm font-medium">
+                            Payment Method *
+                        </label>
+                        <div className="grid gap-3">
+                            <label className="flex items-center space-x-3 p-3 bg-black/20 border border-gray-600 rounded-lg cursor-pointer hover:border-green-500 transition-colors">
+                                <input
+                                    type="radio"
+                                    name="paymentMethod"
+                                    value="lisk_zar"
+                                    checked={formData.paymentMethod === 'lisk_zar'}
+                                    onChange={handleInputChange}
+                                    className="text-green-500"
+                                />
+                                <div className="flex items-center space-x-2">
+                                    <span className="text-green-400">💚</span>
+                                    <span className="text-white">Lisk ZAR Stablecoin</span>
+                                </div>
+                            </label>
+                            <label className="flex items-center space-x-3 p-3 bg-black/20 border border-gray-600 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
+                                <input
+                                    type="radio"
+                                    name="paymentMethod"
+                                    value="celo"
+                                    checked={formData.paymentMethod === 'celo'}
+                                    onChange={handleInputChange}
+                                    className="text-blue-500"
+                                />
+                                <div className="flex items-center space-x-2">
+                                    <span className="text-blue-400">🔵</span>
+                                    <span className="text-white">CELO Blockchain</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
                     {/* Submit Button */}
                     <motion.button
                         type="submit"
                         whileHover={{ scale: isProcessing ? 1 : 1.02 }}
                         whileTap={{ scale: isProcessing ? 1 : 0.98 }}
-                        disabled={isCalculating || isProcessing || !formData.address}
-                        className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center"
+                        disabled={isProcessing || !formData.address || (!isCalculating && formData.deliveryDistance === 0)}
+                        className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed cursor-pointer text-white py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center"
                     >
                         {isCalculating ? (
                             <>
@@ -304,7 +378,7 @@ export function ProductDetailCard({
                         ) : isProcessing ? (
                             <>
                                 <div className="w-5 h-5 mr-2 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                                Processing Order...
+                                {formData.paymentMethod === 'celo' ? 'Processing CELO Payment...' : 'Processing Order...'}
                             </>
                         ) : (
                             <>

@@ -54,7 +54,7 @@ export function DeliveryCard({ order, showActions = true }: DeliveryCardProps) {
                     <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                             <span className="font-medium">Total:</span>
-                            <p className="text-lg font-bold text-green-600">{formatCurrency(order.totalCost)}</p>
+                            <p className="text-lg font-bold text-green-600">{formatCurrency(order.totalCost, order.paymentMethod)}</p>
                         </div>
                         <div>
                             <span className="font-medium">Products:</span>
@@ -69,7 +69,7 @@ export function DeliveryCard({ order, showActions = true }: DeliveryCardProps) {
                                 <div key={index} className="flex items-center justify-between text-sm">
                                     <span>{product.name}</span>
                                     <span className="text-gray-600">
-                                        {product.quantity} x {formatCurrency(product.price)}
+                                        {product.quantity} x {formatCurrency(product.price, order.paymentMethod)}
                                     </span>
                                 </div>
                             ))}

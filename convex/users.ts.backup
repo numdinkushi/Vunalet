@@ -656,9 +656,6 @@ export const updateWalletData = mutation({
         if (args.walletProvider !== undefined) {
             updateData.walletProvider = args.walletProvider;
         }
-        if (args.celoAddress !== undefined) {
-            updateData.celoAddress = args.celoAddress;
-        }
 
         await ctx.db.patch(existingProfile._id, updateData);
 

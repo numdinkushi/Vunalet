@@ -79,7 +79,7 @@ export function OrderList({
                                 <div className="flex items-center space-x-2 text-sm">
                                     <DollarSign className="w-4 h-4 text-green-600" />
                                     <span className="font-medium text-gray-700">Total:</span>
-                                    <span className="text-gray-900 font-semibold">{formatCurrency(order.totalCost)}</span>
+                                    <span className="text-gray-900 font-semibold">{formatCurrency(order.totalCost, order.paymentMethod)}</span>
                                 </div>
                                 <div className="flex items-center space-x-2 text-sm">
                                     <MapPin className="w-4 h-4 text-red-600" />

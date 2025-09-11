@@ -39,6 +39,10 @@ export const createOrder = mutation({
         celoBlockNumber: v.optional(v.number()),
         celoFromAddress: v.optional(v.string()),
         celoAmountPaid: v.optional(v.number()),
+        // Celo recipient addresses for payment distribution
+        celoFarmerAddress: v.optional(v.string()),
+        celoDispatcherAddress: v.optional(v.string()),
+        celoPlatformAddress: v.optional(v.string()),
         specialInstructions: v.optional(v.string()),
         estimatedPickupTime: v.optional(v.string()),
         estimatedDeliveryTime: v.optional(v.string()),
@@ -397,6 +401,20 @@ export const updatePaymentStatus = mutation({
     },
 });
 
+// Update payment method
+export const updatePaymentMethod = mutation({
+    args: {
+        orderId: v.id("orders"),
+        paymentMethod: v.union(v.literal("lisk_zar"), v.literal("celo"), v.literal("cash")),
+    },
+    handler: async (ctx, args) => {
+        return await ctx.db.patch(args.orderId, {
+            paymentMethod: args.paymentMethod,
+            updatedAt: Date.now(),
+        });
+    },
+});
+
 // Assign dispatcher to order
 export const assignDispatcher = mutation({
     args: {
@@ -642,15 +660,21 @@ export const updateCeloPayment = mutation({
         celoBlockNumber: v.optional(v.number()),
         celoFromAddress: v.string(),
         celoAmountPaid: v.number(),
+        celoFarmerAddress: v.optional(v.string()),
+        celoDispatcherAddress: v.optional(v.string()),
+        celoPlatformAddress: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-        const { orderId, celoTxHash, celoBlockNumber, celoFromAddress, celoAmountPaid } = args;
+        const { orderId, celoTxHash, celoBlockNumber, celoFromAddress, celoAmountPaid, celoFarmerAddress, celoDispatcherAddress, celoPlatformAddress } = args;
 
         return await ctx.db.patch(orderId, {
             celoTxHash,
             celoBlockNumber,
             celoFromAddress,
             celoAmountPaid,
+            celoFarmerAddress,
+            celoDispatcherAddress,
+            celoPlatformAddress,
             paymentStatus: "paid",
             updatedAt: Date.now(),
         });

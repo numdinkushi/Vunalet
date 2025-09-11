@@ -29,7 +29,7 @@ export function OrderCard({ order, showActions = false }: OrderCardProps) {
 
                     <div className="flex items-center text-sm text-gray-600">
                         <Package className="w-4 h-4 mr-2" />
-                        <span>{order.products.length} items • {formatCurrency(order.totalCost)}</span>
+                        <span>{order.products.length} items • {formatCurrency(order.totalCost, order.paymentMethod)}</span>
                     </div>
 
                     <div className="flex items-center text-sm text-gray-600">

@@ -1,7 +1,9 @@
 import { useBalanceDisplay } from '../../../hooks/use-balance-display';
+import { useWalletBalance } from '../../../hooks/use-wallet-balance';
 import { BalanceLoading } from '../../ui/balance-loading';
+import { WalletConnect } from '../../web3/WalletConnect';
 import { motion } from 'framer-motion';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Wallet } from 'lucide-react';
 
 interface WalletCardProps {
     className?: string;
@@ -19,6 +21,12 @@ export function WalletCard({ className = '' }: WalletCardProps) {
         isRefreshing,
         refreshBalance
     } = useBalanceDisplay();
+
+    const {
+        isWalletConnected,
+        walletAddress,
+        refreshBalances
+    } = useWalletBalance();
 
     if (isLoading) {
         return (
@@ -40,32 +48,70 @@ export function WalletCard({ className = '' }: WalletCardProps) {
         >
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Wallet Overview</h3>
-                <motion.button
-                    onClick={refreshBalance}
-                    disabled={isRefreshing}
-                    className={`p-2 rounded-full transition-all duration-300 ${isRefreshing
+                <div className="flex items-center gap-2">
+                    {!isWalletConnected && (
+                        <WalletConnect size="sm" variant="outline" />
+                    )}
+                    <motion.button
+                        onClick={refreshBalance}
+                        disabled={isRefreshing}
+                        className={`p-2 rounded-full transition-all duration-300 ${isRefreshing
                             ? 'text-gray-400 cursor-not-allowed'
                             : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
-                        }`}
-                    whileHover={!isRefreshing ? { scale: 1.1 } : {}}
-                    whileTap={!isRefreshing ? { scale: 0.9 } : {}}
-                    title="Refresh balance"
-                >
-                    <motion.div
-                        animate={isRefreshing ? { rotate: 360 } : {}}
-                        transition={isRefreshing ? { duration: 1, repeat: Infinity, ease: "linear" } : {}}
+                            }`}
+                        whileHover={!isRefreshing ? { scale: 1.1 } : {}}
+                        whileTap={!isRefreshing ? { scale: 0.9 } : {}}
+                        title="Refresh balance"
                     >
-                        <RefreshCw size={16} />
-                    </motion.div>
-                </motion.button>
+                        <motion.div
+                            animate={isRefreshing ? { rotate: 360 } : {}}
+                            transition={isRefreshing ? { duration: 1, repeat: Infinity, ease: "linear" } : {}}
+                        >
+                            <RefreshCw size={16} />
+                        </motion.div>
+                    </motion.button>
+                </div>
             </div>
+
+            {/* Wallet Connection Status */}
+            {isWalletConnected && walletAddress ? (
+                <motion.div
+                    className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                >
+                    <div className="flex items-center gap-2 text-green-700">
+                        <Wallet className="h-4 w-4" />
+                        <span className="text-sm font-medium">Wallet Connected</span>
+                    </div>
+                    <div className="text-xs text-green-600 mt-1">
+                        {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                    </div>
+                </motion.div>
+            ) : (
+                <motion.div
+                    className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                >
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-amber-700">
+                            <Wallet className="h-4 w-4" />
+                            <span className="text-sm font-medium">Connect Wallet for CELO Payments</span>
+                        </div>
+                        <WalletConnect size="sm" variant="outline" />
+                    </div>
+                </motion.div>
+            )}
 
             <div className="space-y-4">
                 <motion.div
                     className="flex justify-between items-center"
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1 }}
+                    transition={{ delay: 0.2 }}
                 >
                     <span className="flex items-center text-gray-600">
                         <span className="mr-2">{getBalanceIcon('wallet', walletBalance)}</span>
@@ -79,7 +125,7 @@ export function WalletCard({ className = '' }: WalletCardProps) {
                     className="flex justify-between items-center"
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.2 }}
+                    transition={{ delay: 0.3 }}
                 >
                     <span className="flex items-center text-gray-600">
                         <span className="mr-2">{getBalanceIcon('ledger', ledgerBalance, userRole)}</span>

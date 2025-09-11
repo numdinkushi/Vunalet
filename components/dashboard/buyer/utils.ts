@@ -1,6 +1,14 @@
 import { Clock, CheckCircle, Package, Truck, X } from 'lucide-react';
 import { Order } from './types';
 
+// Constants for CELO conversion
+const ZAR_TO_CELO = 0.003;
+
+// Helper function
+const convertZarToCelo = (zarAmount: number): number => {
+    return Number((zarAmount * ZAR_TO_CELO).toFixed(6));
+};
+
 export const getStatusColor = (status: string) => {
     const colors = {
         pending: 'bg-amber-50 text-amber-700 border-amber-200',
@@ -27,7 +35,13 @@ export const getStatusIcon = (status: string) => {
     return icons[status as keyof typeof icons] || Clock;
 };
 
-export const formatCurrency = (amount: number) => {
+export const formatCurrency = (amount: number, paymentMethod?: 'lisk_zar' | 'celo' | 'cash') => {
+    if (paymentMethod === 'celo') {
+        const celoAmount = convertZarToCelo(amount);
+        return `${celoAmount.toFixed(6)} CELO`;
+    }
+
+    // Default to ZAR for lisk_zar and cash
     return `R ${amount.toLocaleString('en-ZA', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2

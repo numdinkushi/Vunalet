@@ -41,7 +41,7 @@ export function OrderCard({ order, showActions = true }: OrderCardProps) {
                                 <DollarSign className="w-4 h-4 text-green-600" />
                                 <span className="font-medium text-gray-700 text-sm">Total Revenue</span>
                             </div>
-                            <p className="text-2xl font-bold text-green-600">{formatCurrency(order.totalCost)}</p>
+                            <p className="text-2xl font-bold text-green-600">{formatCurrency(order.totalCost, order.paymentMethod)}</p>
                         </div>
                         <div className="text-center">
                             <div className="flex items-center justify-center space-x-2 mb-1">

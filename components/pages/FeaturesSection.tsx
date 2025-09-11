@@ -81,12 +81,13 @@ const stats = [
 ];
 
 export function FeaturesSection() {
-    const { user } = useUser();
+    const { user, isLoaded } = useUser();
 
-    // Get user profile to check if they have completed onboarding
-    const userProfile = useQuery(api.users.getUserProfile, {
-        clerkUserId: user?.id || '',
-    });
+    // Only make the query if user is loaded and exists
+    const userProfile = useQuery(
+        api.users.getUserProfile,
+        user?.id ? { clerkUserId: user.id } : "skip"
+    );
 
     // Check if user has completed profile setup (has a role)
     const hasCompletedProfile = userProfile?.role && userProfile?.liskId;

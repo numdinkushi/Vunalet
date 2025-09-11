@@ -10,20 +10,30 @@ const API_KEY = process.env.NEXT_PRIVATE_API_KEY || process.env.STABLECOIN_API_K
  */
 class StablecoinApiService {
     private api: AxiosInstance;
+    private isApiKeyAvailable: boolean;
 
     constructor() {
-        if (!API_KEY) {
-            console.error('Missing API key for stablecoin service. Please set NEXT_PRIVATE_API_KEY or STABLECOIN_API_KEY environment variable.');
+        this.isApiKeyAvailable = !!API_KEY;
+
+        if (!this.isApiKeyAvailable) {
+            console.warn('Stablecoin API key not available. Lisk ZAR payment functionality will be disabled.');
         }
 
         this.api = axios.create({
             baseURL: API_BASE_URL,
-            timeout: 60000, // Increased to 60 seconds for blockchain operations
+            timeout: 60000,
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': API_KEY ? `Bearer ${API_KEY}` : '',
             },
         });
+    }
+
+    /**
+     * Check if API key is available
+     */
+    public isAvailable(): boolean {
+        return this.isApiKeyAvailable;
     }
 
     /**
@@ -159,5 +169,19 @@ class StablecoinApiService {
     }
 }
 
-// Export singleton instance
-export const stablecoinApiService = new StablecoinApiService(); 
+// Export singleton instance - only create if API key is available
+export const stablecoinApiService = (() => {
+    const apiKey = process.env.NEXT_PRIVATE_API_KEY || process.env.STABLECOIN_API_KEY || '';
+    if (!apiKey) {
+        // Return a mock service that doesn't do anything
+        return {
+            isAvailable: () => false,
+            createUser: () => Promise.reject(new Error('Stablecoin API not available')),
+            getUserBalance: () => Promise.reject(new Error('Stablecoin API not available')),
+            mintStablecoins: () => Promise.reject(new Error('Stablecoin API not available')),
+            transferStablecoins: () => Promise.reject(new Error('Stablecoin API not available')),
+            bulkTransferStablecoins: () => Promise.reject(new Error('Stablecoin API not available')),
+        } as any;
+    }
+    return new StablecoinApiService();
+})(); 
