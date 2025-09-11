@@ -23,6 +23,7 @@ import { useOrderManagement } from '../../../hooks/use-order-management';
 import { Badge } from '../../ui/badge';
 import { useBalanceDisplay } from '../../../hooks/use-balance-display';
 import { DispatcherOrder } from './types';
+import { Button } from '../../ui/button';
 
 // Type for Convex order structure with user info
 interface ConvexOrder {
@@ -90,7 +91,7 @@ interface DispatcherDashboardProps {
 
 export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
     const [activeTab, setActiveTab] = useState('overview');
-    const { user } = useUser();
+    const { user, isLoaded } = useUser();
 
     // Use the enhanced balance display hook instead of direct queries
     const {
@@ -99,15 +100,36 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
         isLoading: balanceLoading
     } = useBalanceDisplay();
 
-    // Fetch real data from Convex
-    const orders = useQuery(api.orders.getOrdersByDispatcherWithUserInfo, { dispatcherId: userProfile.clerkUserId });
-    const orderStats = useQuery(api.orders.getOrderStats, {
-        role: 'dispatcher',
-        userId: userProfile.clerkUserId
-    });
+    // Fetch real data from Convex - Add skip conditions to prevent "Failed to fetch" errors
+    const orders = useQuery(
+        api.orders.getOrdersByDispatcherWithUserInfo,
+        user?.id && userProfile?.clerkUserId ? { dispatcherId: userProfile.clerkUserId } : "skip"
+    );
+
+    const orderStats = useQuery(
+        api.orders.getOrderStats,
+        user?.id && userProfile?.clerkUserId ? {
+            role: 'dispatcher',
+            userId: userProfile.clerkUserId
+        } : "skip"
+    );
 
     // Mutations
     const updateOrderStatus = useMutation(api.orders.updateOrderStatus);
+
+    // Show loading state while user is being loaded
+    if (!isLoaded || !user) {
+        return (
+            <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {[...Array(4)].map((_, i) => (
+                        <div key={i} className="h-24 bg-gray-200 animate-pulse rounded-lg"></div>
+                    ))}
+                </div>
+                <div className="h-64 bg-gray-200 animate-pulse rounded-lg"></div>
+            </div>
+        );
+    }
 
     const handleUpdateStatus = async (orderId: string, status: string) => {
         try {
@@ -129,149 +151,137 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
     };
 
     // Transform Convex orders to match the expected interface
-    const transformOrders = (convexOrders: ConvexOrder[]): DispatcherOrder[] => {
-        return convexOrders?.map((order: ConvexOrder) => ({
-            _id: order._id,
-            products: order.products.map((p: { name: string; quantity: number; price: number; unit: string; productId: string; }) => ({
-                name: p.name,
-                quantity: p.quantity,
-                price: p.price,
-            })),
-            totalCost: order.totalCost,
-            orderStatus: order.orderStatus,
-            paymentStatus: order.paymentStatus,
-            paymentMethod: order.paymentMethod,
-            createdAt: new Date(order.createdAt).toISOString(),
-            deliveryAddress: order.deliveryAddress,
-            estimatedDeliveryTime: order.estimatedDeliveryTime,
-            riderName: order.dispatcherInfo ?
-                `${order.dispatcherInfo.firstName} ${order.dispatcherInfo.lastName}` :
-                order.dispatcherId || '',
-            farmName: order.farmerInfo ?
-                (order.farmerInfo.businessName || `${order.farmerInfo.firstName} ${order.farmerInfo.lastName}`) :
-                order.farmerId,
-            customerName: order.buyerInfo ?
-                `${order.buyerInfo.firstName} ${order.buyerInfo.lastName}` :
-                order.buyerId,
-            customerPhone: order.buyerInfo?.phone || '',
-        })) || [];
-    };
+    const transformedOrders = orders?.map(order => ({
+        _id: order._id,
+        products: order.products,
+        totalCost: order.totalCost,
+        orderStatus: order.orderStatus,
+        paymentStatus: order.paymentStatus,
+        paymentMethod: order.paymentMethod,
+        createdAt: new Date(order.createdAt).toISOString(),
+        deliveryAddress: order.deliveryAddress,
+        estimatedDeliveryTime: order.estimatedDeliveryTime,
+        farmName: order.farmerInfo?.businessName || `${order.farmerInfo?.firstName} ${order.farmerInfo?.lastName}` || 'Unknown Farm',
+        customerName: order.buyerInfo ? `${order.buyerInfo.firstName} ${order.buyerInfo.lastName}` : 'Unknown Customer',
+        customerPhone: order.buyerInfo?.phone || 'No phone provided',
+    })) || [];
 
-    const transformedOrders = transformOrders(orders || []);
+    // Remove the useOrderManagement hook since it's not needed
+    // const { confirmDelivery, isProcessing } = useOrderManagement();
 
-    const { confirmDelivery, isProcessing } = useOrderManagement();
-
-    const handleMarkAsDelivered = async (orderId: string) => {
-        await confirmDelivery(orderId);
-    };
+    // Remove the handleMarkAsDelivered function since it's not used
+    // const handleMarkAsDelivered = async (orderId: string) => {
+    //     await confirmDelivery(orderId);
+    // };
 
     return (
         <div className="space-y-6">
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
-                    icon={Truck}
                     title="Total Deliveries"
                     value={stats.totalDeliveries}
-                    color="bg-blue-100 text-blue-600"
-                    delay={0.1}
+                    icon={Truck}
+                    color="blue"
                 />
                 <StatCard
-                    icon={Clock}
                     title="Active Deliveries"
                     value={stats.activeDeliveries}
-                    color="bg-orange-100 text-orange-600"
-                    delay={0.2}
+                    icon={Clock}
+                    color="orange"
                 />
                 <StatCard
-                    icon={CheckCircle}
                     title="Completed"
                     value={stats.completedDeliveries}
-                    color="bg-green-100 text-green-600"
-                    delay={0.3}
+                    icon={CheckCircle}
+                    color="green"
                 />
                 <StatCard
-                    icon={DollarSign}
                     title="Total Earnings"
-                    value={`R ${stats.totalEarnings.toLocaleString('en-ZA', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    })}`}
-                    color="bg-amber-100 text-amber-600"
-                    delay={0.4}
+                    value={`R ${stats.totalEarnings.toFixed(2)}`}
+                    icon={DollarSign}
+                    color="green"
                 />
             </div>
 
-            {/* Wallet & Ledger */}
+            {/* Wallet Card */}
             <WalletCard />
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="overview">Overview</TabsTrigger>
-                    <TabsTrigger value="active">Active Deliveries</TabsTrigger>
-                    <TabsTrigger value="completed">Completed</TabsTrigger>
+                    <TabsTrigger value="orders">My Orders ({transformedOrders.length})</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="overview" className="space-y-6">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Today's Deliveries */}
+                        {/* Recent Orders */}
                         <Card>
                             <CardHeader>
-                                <CardTitle>Today&apos;s Deliveries</CardTitle>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Package className="w-5 h-5" />
+                                    Recent Orders
+                                </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
                                     {transformedOrders.slice(0, 3).map((order) => (
-                                        <DeliveryCard key={order._id} order={order} showActions={false} />
+                                        <DeliveryCard
+                                            key={order._id}
+                                            order={order}
+                                            showActions={false}
+                                        />
                                     ))}
+                                    {transformedOrders.length === 0 && (
+                                        <p className="text-gray-500 text-center py-4">No recent orders</p>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
 
-                        {/* Recent Activity */}
+                        {/* Quick Actions */}
                         <Card>
                             <CardHeader>
-                                <CardTitle>Recent Activity</CardTitle>
+                                <CardTitle className="flex items-center gap-2">
+                                    <MapPin className="w-5 h-5" />
+                                    Quick Actions
+                                </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
-                                    {transformedOrders.slice(0, 3).map((order) => (
-                                        <DeliveryCard key={order._id} order={order} showActions={false} />
-                                    ))}
+                                    <Button className="w-full" variant="outline">
+                                        <User className="w-4 h-4 mr-2" />
+                                        Update Profile
+                                    </Button>
+                                    <Button className="w-full" variant="outline">
+                                        <Truck className="w-4 h-4 mr-2" />
+                                        View All Orders
+                                    </Button>
                                 </div>
                             </CardContent>
                         </Card>
                     </div>
                 </TabsContent>
 
-                <TabsContent value="active" className="space-y-6">
+                <TabsContent value="orders" className="space-y-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Active Deliveries</CardTitle>
+                            <CardTitle>My Orders</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
-                                {transformedOrders.filter(order =>
-                                    ['pending', 'confirmed', 'preparing', 'ready', 'in_transit', 'arrived'].includes(order.orderStatus)
-                                ).map((order) => (
-                                    <DeliveryCard key={order._id} order={order} />
+                                {transformedOrders.map((order) => (
+                                    <DeliveryCard
+                                        key={order._id}
+                                        order={order}
+                                        showActions={true}
+                                    // Remove this line: onUpdateStatus={handleUpdateStatus}
+                                    />
                                 ))}
-                            </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                <TabsContent value="completed" className="space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Completed Deliveries</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                {transformedOrders.filter(order => order.orderStatus === 'delivered' || order.orderStatus === 'cancelled').map((order) => (
-                                    <DeliveryCard key={order._id} order={order} />
-                                ))}
+                                {transformedOrders.length === 0 && (
+                                    <p className="text-gray-500 text-center py-8">No orders assigned</p>
+                                )}
                             </div>
                         </CardContent>
                     </Card>

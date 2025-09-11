@@ -217,8 +217,18 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
         try {
             const newOrderId = await createOrder(orderData);
-            setOrderId(newOrderId);
-            setShowPaymentSelector(true);
+
+            // For CELO payments, redirect to dashboard immediately
+            if (formData.paymentMethod === 'celo') {
+                toast.success('Order created successfully! You can pay when the order arrives.');
+                setTimeout(() => {
+                    router.push('/dashboard');
+                }, 1500);
+            } else {
+                // For Lisk ZAR, show payment selector
+                setOrderId(newOrderId);
+                setShowPaymentSelector(true);
+            }
         } catch (error) {
             console.error('Failed to create order:', error);
             toast.error('Failed to create order. Please try again.');

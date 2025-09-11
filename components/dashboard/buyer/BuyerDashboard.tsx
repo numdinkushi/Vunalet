@@ -64,35 +64,54 @@ interface ConvexOrder {
 }
 
 export default function BuyerDashboard() {
-    useMounted();
+    const mounted = useMounted();
     const [activeTab, setActiveTab] = useState('overview');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const { user } = useUser();
+    const { user, isLoaded } = useUser();
 
-    const userProfile = useQuery(api.users.getUserProfile, {
-        clerkUserId: user?.id || '',
-    });
+    // Move all hooks to the top, before any conditional returns
+    const userProfile = useQuery(
+        api.users.getUserProfile,
+        user?.id ? { clerkUserId: user.id } : "skip"
+    );
 
-    // Fetch real orders from Convex
-    const buyerOrders = useQuery(api.orders.getOrdersByBuyerWithFarmerInfo, {
-        buyerId: user?.id || '',
-    });
+    const buyerOrders = useQuery(
+        api.orders.getOrdersByBuyerWithFarmerInfo,
+        user?.id ? { buyerId: user.id } : "skip"
+    );
 
-    // Fetch order stats from Convex
-    const orderStats = useQuery(api.orders.getOrderStats, {
-        role: 'buyer',
-        userId: user?.id || '',
-    });
+    const orderStats = useQuery(
+        api.orders.getOrderStats,
+        user?.id ? {
+            role: 'buyer',
+            userId: user.id,
+        } : "skip"
+    );
 
-    // Use the enhanced balance display hook instead of direct queries
     const {
         walletBalance,
         ledgerBalance,
         isLoading: balanceLoading
     } = useBalanceDisplay();
+
+    const { confirmDelivery, isProcessing } = useOrderManagement();
+
+    // Now handle conditional returns after all hooks
+    if (!isLoaded || !user) {
+        return (
+            <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {[...Array(4)].map((_, i) => (
+                        <div key={i} className="h-24 bg-gray-200 animate-pulse rounded-lg"></div>
+                    ))}
+                </div>
+                <div className="h-64 bg-gray-200 animate-pulse rounded-lg"></div>
+            </div>
+        );
+    }
 
     // Calculate stats from real data
     const stats = {
@@ -152,8 +171,6 @@ export default function BuyerDashboard() {
         setIsModalOpen(false);
         setSelectedOrder(null);
     };
-
-    const { confirmDelivery, isProcessing } = useOrderManagement();
 
     return (
         <div className="min-h-screen bg-gray-50">

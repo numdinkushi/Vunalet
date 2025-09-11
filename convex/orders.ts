@@ -1,6 +1,14 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+import { api } from './_generated/api';
+
+// Define interfaces for type safety
+interface DispatcherWorkload {
+    dispatcherId: string;
+    pendingOrders: number;
+    totalOrders: number;
+}
 
 // Create a new order
 export const createOrder = mutation({
@@ -48,10 +56,17 @@ export const createOrder = mutation({
         estimatedDeliveryTime: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
+        const now = Date.now();
+        const assignmentExpiryTime = now + (10 * 60 * 1000); // 10 minutes from now
+
         return await ctx.db.insert("orders", {
             ...args,
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
+            // Hybrid Assignment System - Initialize as available for manual claiming
+            assignmentStatus: "available",
+            assignmentExpiryTime: assignmentExpiryTime,
+            assignmentMethod: undefined, // Will be set when assigned
+            createdAt: now,
+            updatedAt: now,
         });
     },
 });
@@ -678,5 +693,167 @@ export const updateCeloPayment = mutation({
             paymentStatus: "paid",
             updatedAt: Date.now(),
         });
+    },
+});
+
+// Claim an order manually (dispatcher self-assignment)
+export const claimOrder = mutation({
+    args: {
+        orderId: v.string(),
+        dispatcherId: v.string(),
+    },
+    handler: async (ctx, args) => {
+        const order = await ctx.db.get(args.orderId as Id<"orders">);
+
+        if (!order) {
+            throw new Error("Order not found");
+        }
+
+        if (order.assignmentStatus !== "available") {
+            throw new Error("Order is not available for claiming");
+        }
+
+        if (order.assignmentExpiryTime && Date.now() > order.assignmentExpiryTime) {
+            throw new Error("Order claiming window has expired");
+        }
+
+        return await ctx.db.patch(args.orderId as Id<"orders">, {
+            dispatcherId: args.dispatcherId,
+            assignmentStatus: "claimed",
+            assignmentMethod: "manual",
+            updatedAt: Date.now(),
+        });
+    },
+});
+
+// Auto-assign orders that have expired their manual claiming window
+export const autoAssignExpiredOrders = mutation({
+    args: {},
+    handler: async (ctx) => {
+        const now = Date.now();
+
+        // Get all orders that are available and have expired their claiming window
+        const expiredOrders = await ctx.db
+            .query("orders")
+            .withIndex("by_assignment_status", (q) => q.eq("assignmentStatus", "available"))
+            .filter((q) => q.and(
+                q.eq(q.field("assignmentExpiryTime"), now),
+                q.lt(q.field("assignmentExpiryTime"), now)
+            ))
+            .collect();
+
+        if (expiredOrders.length === 0) {
+            return { assigned: 0, message: "No expired orders to assign" };
+        }
+
+        // Get all dispatchers
+        const dispatchers = await ctx.db
+            .query("userProfiles")
+            .withIndex("by_role", (q) => q.eq("role", "dispatcher"))
+            .collect();
+
+        if (dispatchers.length === 0) {
+            throw new Error("No dispatchers available for auto-assignment");
+        }
+
+        // Get workload for all dispatchers
+        const dispatcherIds = dispatchers.map(d => d.clerkUserId);
+        const workloads: DispatcherWorkload[] = await ctx.runQuery(api.users.getDispatcherWorkload, {
+            dispatcherIds
+        });
+
+        // Sort dispatchers by workload (least busy first)
+        const sortedWorkloads = workloads.sort((a: DispatcherWorkload, b: DispatcherWorkload) => {
+            if (a.pendingOrders !== b.pendingOrders) {
+                return a.pendingOrders - b.pendingOrders;
+            }
+            return a.totalOrders - b.totalOrders;
+        });
+
+        let assignedCount = 0;
+
+        // Assign each expired order to the least busy dispatcher
+        for (const order of expiredOrders) {
+            const bestDispatcher = sortedWorkloads[0];
+
+            await ctx.db.patch(order._id, {
+                dispatcherId: bestDispatcher.dispatcherId,
+                assignmentStatus: "auto_assigned",
+                assignmentMethod: "auto",
+                updatedAt: now,
+            });
+
+            assignedCount++;
+        }
+
+        return {
+            assigned: assignedCount,
+            message: `Auto-assigned ${assignedCount} expired orders`
+        };
+    },
+});
+
+// Get orders available for manual claiming (within claiming window)
+export const getAvailableOrders = query({
+    args: {},
+    handler: async (ctx) => {
+        const now = Date.now();
+
+        // Get all orders that are available and within claiming window
+        const availableOrders = await ctx.db
+            .query("orders")
+            .withIndex("by_assignment_status", (q) => q.eq("assignmentStatus", "available"))
+            .filter((q) => q.gt(q.field("assignmentExpiryTime"), now))
+            .order("desc")
+            .collect();
+
+        // Get unique buyer and farmer IDs from available orders
+        const buyerIds = [...new Set(availableOrders.map(order => order.buyerId))];
+        const farmerIds = [...new Set(availableOrders.map(order => order.farmerId))];
+
+        // Fetch buyer profiles
+        const buyerProfiles = await Promise.all(
+            buyerIds.map(async (buyerId) => {
+                const profile = await ctx.db
+                    .query("userProfiles")
+                    .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", buyerId))
+                    .first();
+                return { buyerId, profile };
+            })
+        );
+
+        // Fetch farmer profiles
+        const farmerProfiles = await Promise.all(
+            farmerIds.map(async (farmerId) => {
+                const profile = await ctx.db
+                    .query("userProfiles")
+                    .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", farmerId))
+                    .first();
+                return { farmerId, profile };
+            })
+        );
+
+        // Create maps of ID to profile
+        const buyerMap = new Map();
+        buyerProfiles.forEach(({ buyerId, profile }) => {
+            if (profile) {
+                buyerMap.set(buyerId, profile);
+            }
+        });
+
+        const farmerMap = new Map();
+        farmerProfiles.forEach(({ farmerId, profile }) => {
+            if (profile) {
+                farmerMap.set(farmerId, profile);
+            }
+        });
+
+        // Add user information to orders
+        return availableOrders.map(order => ({
+            ...order,
+            buyerInfo: buyerMap.get(order.buyerId) || null,
+            farmerInfo: farmerMap.get(order.farmerId) || null,
+            timeRemaining: order.assignmentExpiryTime ? order.assignmentExpiryTime - now : 0,
+        }));
     },
 }); 

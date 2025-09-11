@@ -22,6 +22,13 @@ export class PaymentService {
     }
 
     /**
+     * Check if the payment service is available
+     */
+    public isAvailable(): boolean {
+        return stablecoinApiService.isAvailable();
+    }
+
+    /**
      * Process a payment using stablecoin
      */
     async processPayment(
@@ -31,6 +38,11 @@ export class PaymentService {
     ): Promise<PaymentResponse> {
         try {
             console.log('Processing payment:', { amount, paymentIdentifier, description });
+
+            // Check if API is available before processing
+            if (!this.isAvailable()) {
+                throw new Error('Stablecoin API not available');
+            }
 
             const paymentData: PaymentRequest = {
                 amount,
@@ -61,9 +73,16 @@ export class PaymentService {
             return payment;
         } catch (error) {
             console.log('Payment processing failed:', error);
+
+            // Handle specific API errors
+            if (stablecoinApiService.handleApiError) {
+                const apiError = stablecoinApiService.handleApiError(error);
+                throw new Error(`API Error (${apiError.status}): ${apiError.message}`);
+            }
+
             const errorMessage = error instanceof Error ? error.message : 'Payment failed';
             toast.error(`Payment failed: ${errorMessage}`);
-            throw error;
+            throw new Error(errorMessage);
         }
     }
 

@@ -1,16 +1,18 @@
 import { useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { toast } from 'sonner';
+import { useCeloOrderProcessing } from './use-celo-order-processing';
 
 interface ConfirmOrderParams {
     orderId: string;
     buyerId: string;
-    buyerLiskId: string;
+    buyerLiskId?: string; // Make optional for CELO payments
     dispatcherId?: string;
     farmerId: string;
     totalCost: number;
     dispatcherAmount: number;
     farmerAmount: number;
+    paymentMethod?: 'lisk_zar' | 'celo' | 'cash'; // Add payment method
 }
 
 // Helper function to update wallet balance from stablecoin API
@@ -43,6 +45,7 @@ const updateWalletBalanceFromAPI = async (clerkUserId: string, liskId: string) =
 export function useOrderConfirmation() {
     const updateOrderStatus = useMutation(api.orders.updateOrderStatus);
     const updatePaymentStatus = useMutation(api.orders.updatePaymentStatus);
+    const { processOrderWithCeloPayment } = useCeloOrderProcessing();
 
     const confirmOrder = async ({
         orderId,
@@ -52,10 +55,29 @@ export function useOrderConfirmation() {
         farmerId,
         totalCost,
         dispatcherAmount,
-        farmerAmount
+        farmerAmount,
+        paymentMethod = 'lisk_zar' // Default to lisk_zar for backward compatibility
     }: ConfirmOrderParams) => {
         try {
-            // Validate required parameters
+            // Handle CELO payments differently
+            if (paymentMethod === 'celo') {
+                // For CELO payments, we just update the order status to delivered
+                // The actual CELO payment should be handled separately when the order is created
+                await updateOrderStatus({
+                    orderId,
+                    orderStatus: 'delivered',
+                });
+
+                await updatePaymentStatus({
+                    orderId,
+                    paymentStatus: 'paid',
+                });
+
+                toast.success('Order confirmed successfully!');
+                return true;
+            }
+
+            // Handle Lisk ZAR payments (existing logic)
             if (!buyerLiskId) {
                 toast.error('Buyer payment account not found');
                 return false;
@@ -163,9 +185,8 @@ export function useOrderConfirmation() {
             toast.success('Order confirmed successfully with payments processed');
             return true;
         } catch (error) {
-            console.log('Failed to confirm order:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Failed to confirm order';
-            toast.error(errorMessage);
+            console.error('Failed to confirm order:', error);
+            toast.error('Failed to confirm order');
             return false;
         }
     };

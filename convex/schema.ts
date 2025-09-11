@@ -125,6 +125,12 @@ export default defineSchema({
         paymentMethod: v.union(v.literal("lisk_zar"), v.literal("celo"), v.literal("cash")),
         paymentStatus: v.union(v.literal("pending"), v.literal("paid"), v.literal("failed")),
         orderStatus: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("arrived"), v.literal("delivered"), v.literal("cancelled")),
+
+        // Hybrid Assignment System Fields
+        assignmentStatus: v.union(v.literal("available"), v.literal("claimed"), v.literal("auto_assigned")), // New field
+        assignmentExpiryTime: v.optional(v.number()), // When manual claiming window expires
+        assignmentMethod: v.optional(v.union(v.literal("manual"), v.literal("auto"))), // How it was assigned
+
         // Celo blockchain payment fields
         celoTxHash: v.optional(v.string()),
         celoBlockNumber: v.optional(v.number()),
@@ -147,7 +153,9 @@ export default defineSchema({
         .index("by_dispatcher", ["dispatcherId"])
         .index("by_status", ["orderStatus"])
         .index("by_payment_status", ["paymentStatus"])
-        .index("by_created_at", ["createdAt"]),
+        .index("by_created_at", ["createdAt"])
+        .index("by_assignment_status", ["assignmentStatus"]) // New index for hybrid assignment
+        .index("by_assignment_expiry", ["assignmentExpiryTime"]), // New index for timeout queries
 
     // Deliveries table (for dispatcher tracking)
     deliveries: defineTable({

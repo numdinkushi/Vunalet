@@ -96,32 +96,66 @@ export function OrderModal({ order, isOpen, onClose, buyerLiskId }: OrderModalPr
     };
 
     const handleConfirmOrder = async () => {
-        if (!buyerLiskId) {
-            toast.error('Payment account not found. Please contact support.');
-            return;
-        }
-
-        setIsConfirming(true);
-        try {
-            const success = await confirmOrder({
-                orderId: order._id,
-                buyerId: order.buyerId || '',
-                buyerLiskId: buyerLiskId,
-                dispatcherId: order.dispatcherId || '',
-                farmerId: order.farmerId || '',
-                totalCost: order.totalCost,
-                dispatcherAmount: order.dispatcherAmount || 0,
-                farmerAmount: order.farmerAmount || 0,
-            });
-
-            if (success) {
-                setCanShowRating(true);
+        // For CELO payments, we need different parameters
+        if (order.paymentMethod === 'celo') {
+            if (!buyerLiskId) {
+                toast.error('Payment account not found. Please contact support.');
+                return;
             }
-        } catch (error) {
-            console.log('Failed to confirm order:', error);
-            toast.error('Failed to confirm order');
-        } finally {
-            setIsConfirming(false);
+
+            setIsConfirming(true);
+            try {
+                const success = await confirmOrder({
+                    orderId: order._id,
+                    buyerId: order.buyerId || '',
+                    buyerLiskId: buyerLiskId,
+                    dispatcherId: order.dispatcherId || '',
+                    farmerId: order.farmerId || '',
+                    totalCost: order.totalCost,
+                    dispatcherAmount: order.dispatcherAmount || 0,
+                    farmerAmount: order.farmerAmount || 0,
+                    paymentMethod: order.paymentMethod, // Pass the payment method
+                });
+
+                if (success) {
+                    setCanShowRating(true);
+                }
+            } catch (error) {
+                console.log('Failed to confirm order:', error);
+                toast.error('Failed to confirm order');
+            } finally {
+                setIsConfirming(false);
+            }
+        } else {
+            // Existing Lisk ZAR logic
+            if (!buyerLiskId) {
+                toast.error('Payment account not found. Please contact support.');
+                return;
+            }
+
+            setIsConfirming(true);
+            try {
+                const success = await confirmOrder({
+                    orderId: order._id,
+                    buyerId: order.buyerId || '',
+                    buyerLiskId: buyerLiskId,
+                    dispatcherId: order.dispatcherId || '',
+                    farmerId: order.farmerId || '',
+                    totalCost: order.totalCost,
+                    dispatcherAmount: order.dispatcherAmount || 0,
+                    farmerAmount: order.farmerAmount || 0,
+                    paymentMethod: order.paymentMethod,
+                });
+
+                if (success) {
+                    setCanShowRating(true);
+                }
+            } catch (error) {
+                console.log('Failed to confirm order:', error);
+                toast.error('Failed to confirm order');
+            } finally {
+                setIsConfirming(false);
+            }
         }
     };
 
