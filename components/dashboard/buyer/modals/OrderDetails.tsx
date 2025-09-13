@@ -65,7 +65,7 @@ export function OrderDetails({ order }: OrderDetailsProps) {
                 </div>
                 <div className="flex justify-between items-center pt-2 border-t">
                     <span className="font-semibold">Total</span>
-                    <span className="font-bold text-lg">{formatCurrency(order.totalCost)}</span>
+                    <span className="font-bold text-lg">{formatCurrency(order.totalCost, order.paymentMethod)}</span>
                 </div>
             </div>
 

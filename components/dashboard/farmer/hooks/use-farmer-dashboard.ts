@@ -38,11 +38,20 @@ export function useFarmerDashboard(userProfile: FarmerUserProfile) {
         userId: userProfile.clerkUserId,
     });
 
+    // Debug logging
+    console.log('Farmer Dashboard Debug:', {
+        userProfile: userProfile.clerkUserId,
+        orders: orders,
+        orderStats: orderStats,
+        products: products
+    });
+
     // Check if any data is loading
     const isLoading = products === undefined || orders === undefined || orderStats === undefined || balanceLoading;
 
     // Transform orders
     const transformOrders = (convexOrders: ConvexOrder[]): TransformedOrder[] => {
+        console.log('Transforming orders:', convexOrders);
         return convexOrders?.map((order: ConvexOrder) => ({
             _id: order._id,
             products: order.products.map((p) => ({

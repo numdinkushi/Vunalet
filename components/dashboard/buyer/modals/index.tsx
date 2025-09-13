@@ -23,6 +23,7 @@ import { CancellationForm } from './CancellationForm';
 import { RatingForm } from './RatingForm';
 import { OrderActions } from './OrderActions';
 import { OrderCompletionMessage } from './OrderCompletionMessage';
+import { convertZarToCelo } from '../../../../constants/payments';
 
 interface OrderModalProps {
     order: Order | null;
@@ -68,7 +69,7 @@ export function OrderModal({ order, isOpen, onClose, buyerLiskId }: OrderModalPr
 
         setIsCancelling(true);
         try {
-            const success = await cancelOrder({
+            const result = await cancelOrder({
                 orderId: order._id,
                 buyerId: order.buyerId || '',
                 buyerLiskId: buyerLiskId,
@@ -77,13 +78,21 @@ export function OrderModal({ order, isOpen, onClose, buyerLiskId }: OrderModalPr
                 totalCost: order.totalCost,
                 dispatcherAmount: order.dispatcherAmount || 0,
                 farmerAmount: order.farmerAmount || 0,
-                reason: cancellationReason.trim()
+                reason: cancellationReason.trim(),
+                paymentMethod: order.paymentMethod // Pass payment method
             });
 
-            if (success) {
-                setCancellationReason('');
-                setShowCancellationForm(false);
-                onClose();
+            if (result.success) {
+                if (result.waitingForConfirmation) {
+                    // CELO cancellation submitted, wait for blockchain confirmation
+                    toast.info('Cancellation submitted to blockchain. Please wait for confirmation...');
+                    // Don't close modal yet - wait for blockchain confirmation
+                } else {
+                    // Lisk ZAR cancellation completed immediately
+                    setCancellationReason('');
+                    setShowCancellationForm(false);
+                    onClose();
+                }
             }
         } finally {
             setIsCancelling(false);
@@ -105,7 +114,7 @@ export function OrderModal({ order, isOpen, onClose, buyerLiskId }: OrderModalPr
 
             setIsConfirming(true);
             try {
-                const success = await confirmOrder({
+                const result = await confirmOrder({
                     orderId: order._id,
                     buyerId: order.buyerId || '',
                     buyerLiskId: buyerLiskId,
@@ -114,11 +123,18 @@ export function OrderModal({ order, isOpen, onClose, buyerLiskId }: OrderModalPr
                     totalCost: order.totalCost,
                     dispatcherAmount: order.dispatcherAmount || 0,
                     farmerAmount: order.farmerAmount || 0,
-                    paymentMethod: order.paymentMethod, // Pass the payment method
+                    paymentMethod: order.paymentMethod,
                 });
 
-                if (success) {
-                    setCanShowRating(true);
+                if (result.success) {
+                    if (result.waitingForConfirmation) {
+                        // CELO payment submitted, wait for blockchain confirmation
+                        toast.info('Payment submitted to blockchain. Please wait for confirmation...');
+                        // Don't show rating modal yet
+                    } else {
+                        // Lisk ZAR payment completed immediately
+                        setCanShowRating(true);
+                    }
                 }
             } catch (error) {
                 console.log('Failed to confirm order:', error);

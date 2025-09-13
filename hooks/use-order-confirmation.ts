@@ -45,7 +45,7 @@ const updateWalletBalanceFromAPI = async (clerkUserId: string, liskId: string) =
 export function useOrderConfirmation() {
     const updateOrderStatus = useMutation(api.orders.updateOrderStatus);
     const updatePaymentStatus = useMutation(api.orders.updatePaymentStatus);
-    const { processOrderWithCeloPayment } = useCeloOrderProcessing();
+    const { processCeloPayment } = useCeloOrderProcessing(); // Use the payment function, not order creation
 
     const confirmOrder = async ({
         orderId,
@@ -56,31 +56,30 @@ export function useOrderConfirmation() {
         totalCost,
         dispatcherAmount,
         farmerAmount,
-        paymentMethod = 'lisk_zar' // Default to lisk_zar for backward compatibility
+        paymentMethod = 'lisk_zar'
     }: ConfirmOrderParams) => {
         try {
-            // Handle CELO payments differently
+            // Handle CELO payments
             if (paymentMethod === 'celo') {
-                // For CELO payments, we just update the order status to delivered
-                // The actual CELO payment should be handled separately when the order is created
-                await updateOrderStatus({
-                    orderId,
-                    orderStatus: 'delivered',
-                });
+                console.log('💰 Processing CELO payment for order:', orderId);
 
-                await updatePaymentStatus({
-                    orderId,
-                    paymentStatus: 'paid',
-                });
+                // Process CELO payment through smart contract
+                const paymentResult = await processCeloPayment(orderId, totalCost);
 
-                toast.success('Order confirmed successfully!');
-                return true;
+                if (paymentResult.success) {
+                    // Payment was submitted to blockchain, wait for confirmation
+                    toast.success('CELO payment submitted! Waiting for blockchain confirmation...');
+                    return { success: true, waitingForConfirmation: true };
+                } else {
+                    toast.error('CELO payment failed. Please try again.');
+                    return { success: false };
+                }
             }
 
             // Handle Lisk ZAR payments (existing logic)
             if (!buyerLiskId) {
                 toast.error('Buyer payment account not found');
-                return false;
+                return { success: false };
             }
 
             // Step 1: Get payment identifiers for dispatcher and farmer
@@ -125,7 +124,7 @@ export function useOrderConfirmation() {
                 ]);
 
                 toast.success('Order confirmed successfully');
-                return true;
+                return { success: true };
             }
 
             // Call bulk transfer API using buyer's liskId with longer timeout
@@ -156,7 +155,7 @@ export function useOrderConfirmation() {
                 }
 
                 toast.error(errorMessage);
-                return false;
+                return { success: false };
             }
 
             // Step 3: Update order status to delivered and payment status to paid after successful payment processing
@@ -183,11 +182,10 @@ export function useOrderConfirmation() {
             ]);
 
             toast.success('Order confirmed successfully with payments processed');
-            return true;
+            return { success: true };
         } catch (error) {
-            console.error('Failed to confirm order:', error);
-            toast.error('Failed to confirm order');
-            return false;
+            console.error('Order confirmation failed:', error);
+            return { success: false };
         }
     };
 

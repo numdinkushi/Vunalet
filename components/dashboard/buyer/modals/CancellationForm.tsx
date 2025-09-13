@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { XCircle } from 'lucide-react';
 import { Order } from '../types';
+import { convertZarToCelo } from '../../../../constants/payments';
 
 interface CancellationFormProps {
     order: Order;
@@ -23,6 +24,15 @@ export function CancellationForm({
     onCancelConfirm,
     isCancelling
 }: CancellationFormProps) {
+    // Calculate CELO amounts if payment method is CELO
+    const formatCancellationAmount = (amount: number) => {
+        if (order.paymentMethod === 'celo') {
+            const celoAmount = convertZarToCelo(amount / 2); // Half the amount for cancellation
+            return `${celoAmount.toFixed(6)} CELO`;
+        }
+        return `R ${(amount / 2).toFixed(2)}`;
+    };
+
     return (
         <div className="space-y-4">
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -33,10 +43,10 @@ export function CancellationForm({
                 <div className="text-sm text-red-700 space-y-2">
                     <p><strong>You will lose the following amounts if you cancel:</strong></p>
                     <ul className="list-disc list-inside space-y-1 ml-2">
-                        <li>Dispatcher refund: R {((order.dispatcherAmount || 0) / 2).toFixed(2)}</li>
-                        <li>Farmer refund: R {((order.farmerAmount || 0) / 2).toFixed(2)}</li>
+                        <li>Dispatcher refund: {formatCancellationAmount(order.dispatcherAmount || 0)}</li>
+                        <li>Farmer refund: {formatCancellationAmount(order.farmerAmount || 0)}</li>
                     </ul>
-                    <p className="mt-3 font-medium">Total amount you will lose: R {(((order.dispatcherAmount || 0) + (order.farmerAmount || 0)) / 2).toFixed(2)}</p>
+                    <p className="mt-3 font-medium">Total amount you will lose: {formatCancellationAmount((order.dispatcherAmount || 0) + (order.farmerAmount || 0))}</p>
                 </div>
             </div>
 

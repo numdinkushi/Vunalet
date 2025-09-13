@@ -21,6 +21,7 @@ import { DELIVERY_CONSTANTS } from '../../../constants/delivery';
 import { useRouter } from 'next/navigation';
 import { useMutation } from 'convex/react';
 import { toast } from 'sonner';
+import { useCeloOrderProcessing } from '../../../hooks/use-celo-order-processing';
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string; }>; }) {
     // Unwrap params using React.use()
@@ -142,6 +143,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     const createOrder = useMutation(api.orders.createOrder);
     const updatePaymentMethod = useMutation(api.orders.updatePaymentMethod);
 
+    // Add CELO order processing hook
+    const { processOrderWithCeloPayment, isProcessing: isCeloProcessing } = useCeloOrderProcessing();
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -150,40 +154,29 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             return;
         }
 
-        if (!user) {
+        if (!user || !userProfile) {
             toast.error('Please sign in to place an order');
             return;
         }
 
-        if (!userProfile) {
-            toast.error('Please complete your profile to place an order');
+        if (!formData.address) {
+            toast.error('Please enter your delivery address');
             return;
         }
 
-        if (!farmer) {
-            toast.error('Farmer information not available');
+        if (formData.quantity <= 0) {
+            toast.error('Please enter a valid quantity');
             return;
         }
 
-        // Check if requested quantity is available
-        if (formData.quantity > product.quantity) {
-            toast.error(`Only ${product.quantity} ${product.unit} available`);
-            return;
-        }
-
-        // Check if product is out of stock
-        if (product.quantity <= 0) {
-            toast.error('This product is currently out of stock');
-            return;
-        }
-
-        // Create order first to get orderId
-        const totalAmount = product.price * formData.quantity;
-        const farmerAmount = totalAmount;
+        // Calculate amounts
+        const farmerAmount = product.price * formData.quantity;
         const dispatcherAmount = formData.deliveryCost;
+        const totalAmount = farmerAmount + dispatcherAmount;
 
-        const estimatedPickupTime = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-        const estimatedDeliveryTime = new Date(Date.now() + (30 + formData.deliveryDistance * 2) * 60 * 1000).toISOString();
+        // Calculate estimated times
+        const estimatedPickupTime = new Date(Date.now() + (2 * 60 * 60 * 1000)).toISOString(); // 2 hours from now
+        const estimatedDeliveryTime = new Date(Date.now() + (4 * 60 * 60 * 1000)).toISOString(); // 4 hours from now
 
         const orderData = {
             buyerId: user.id,
@@ -205,9 +198,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             deliveryDistance: formData.deliveryDistance,
             deliveryCost: formData.deliveryCost,
             totalCost: formData.totalCost,
-            paymentMethod: formData.paymentMethod, // Use selected payment method
-            paymentStatus: "pending" as const,
-            orderStatus: "pending" as const,
             specialInstructions: formData.specialInstructions,
             estimatedPickupTime,
             estimatedDeliveryTime,
@@ -216,15 +206,31 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         setIsSubmitting(true);
 
         try {
-            const newOrderId = await createOrder(orderData);
-
-            // For CELO payments, redirect to dashboard immediately
+            // Use CELO order processing for CELO payments
             if (formData.paymentMethod === 'celo') {
-                toast.success('Order created successfully! You can pay when the order arrives.');
-                setTimeout(() => {
+                console.log('🚀 Processing CELO order...');
+                const result = await processOrderWithCeloPayment(orderData);
+
+                if (result.success) {
+                    toast.success('Order created successfully! You can pay when the order arrives.');
+                    // Redirect to dashboard after successful CELO order creation
                     router.push('/dashboard');
-                }, 1500);
+                    
+                    setTimeout(() => {
+                        router.push('/dashboard');
+                    }, 500);
+                } else {
+                    toast.error('Failed to process CELO order. Please try again.');
+                }
             } else {
+                // Use regular order creation for other payment methods
+                const newOrderId = await createOrder({
+                    ...orderData,
+                    paymentMethod: formData.paymentMethod,
+                    paymentStatus: "pending" as const,
+                    orderStatus: "pending" as const,
+                });
+
                 // For Lisk ZAR, show payment selector
                 setOrderId(newOrderId);
                 setShowPaymentSelector(true);
