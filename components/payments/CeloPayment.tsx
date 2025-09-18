@@ -52,29 +52,57 @@ export function CeloPayment({
     });
 
     // Convert amounts to CELO
-    const celoAmount = convertZarToCelo(zarAmount);
+    const baseCeloAmount = convertZarToCelo(zarAmount);
     const farmerCeloAmount = convertZarToCelo(farmerZarAmount);
     const dispatcherCeloAmount = convertZarToCelo(dispatcherZarAmount);
-    const platformFeeCelo = calculatePlatformFee(celoAmount);
+    
+    // Calculate platform fee and total amount including fee
+    const platformFeeCelo = calculatePlatformFee(baseCeloAmount);
+    const totalCeloAmount = baseCeloAmount + platformFeeCelo;
 
     const isCorrectChain = chain?.id === CELO_NETWORKS.MAINNET.chainId || chain?.id === CELO_NETWORKS.ALFAJORES.chainId;
 
     const handlePayment = async () => {
+        console.log('🚀 Starting CELO payment process...');
+
         if (!isConnected) {
+            console.log('❌ Wallet not connected');
             toast.error('Please connect your wallet');
             return;
         }
 
         if (!isCorrectChain) {
+            console.log('❌ Wrong network:', chain?.name);
             toast.error('Please switch to Celo network');
             return;
         }
 
         if (!CELO_CONTRACT_ADDRESS) {
+            console.error('❌ Contract address not configured');
             toast.error('Contract address not configured');
             onPaymentError('Contract address not configured');
             return;
         }
+
+        if (!PAYMENT_SECURITY.SECRET) {
+            console.error('❌ Payment secret not configured');
+            toast.error('Payment configuration error');
+            onPaymentError('Payment secret not configured');
+            return;
+        }
+
+        console.log('✅ Payment validation passed:', {
+            contractAddress: CELO_CONTRACT_ADDRESS,
+            orderId,
+            farmerAddress,
+            dispatcherAddress,
+            baseCeloAmount,
+            farmerCeloAmount,
+            dispatcherCeloAmount,
+            platformFeeCelo,
+            totalCeloAmount,
+            secret: PAYMENT_SECURITY.SECRET
+        });
 
         setIsProcessing(true);
 
@@ -91,10 +119,12 @@ export function CeloPayment({
                     parseEther(dispatcherCeloAmount.toString()),
                     PAYMENT_SECURITY.SECRET
                 ],
-                value: parseEther(celoAmount.toString()),
+                value: parseEther(totalCeloAmount.toString()), // Send total amount including platform fee
             });
+
+            console.log('✅ Transaction submitted to blockchain');
         } catch (error) {
-            console.error('Payment failed:', error);
+            console.error('❌ Payment failed:', error);
             const errorMessage = error instanceof Error ? error.message : 'Payment failed';
             onPaymentError(errorMessage);
             toast.error(`Payment failed: ${errorMessage}`);
@@ -105,6 +135,7 @@ export function CeloPayment({
     // Handle transaction confirmation
     useEffect(() => {
         if (isConfirmed && hash) {
+            console.log('🎉 Payment confirmed:', hash);
             onPaymentSuccess(hash);
             setIsProcessing(false);
             toast.success('Payment processed successfully!');
@@ -125,140 +156,111 @@ export function CeloPayment({
     // Handle transaction error
     useEffect(() => {
         if (error) {
-            const errorMessage = error.message || 'Transaction failed';
+            console.error('❌ Transaction error:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Transaction failed';
             onPaymentError(errorMessage);
             toast.error(`Transaction failed: ${errorMessage}`);
             setIsProcessing(false);
         }
     }, [error, onPaymentError]);
 
-    const getStatusIcon = () => {
-        if (isConfirmed) {
-            return <CheckCircle className="h-5 w-5 text-green-500" />;
-        }
-        if (error) {
-            return <XCircle className="h-5 w-5 text-red-500" />;
-        }
-        if (isPending || isConfirming) {
-            return <Loader2 className="h-5 w-5 animate-spin text-blue-500" />;
-        }
-        return <Wallet className="h-5 w-5 text-blue-600" />;
-    };
+    if (!isConnected) {
+        return (
+            <Card className="w-full">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Wallet className="h-5 w-5" />
+                        Connect Wallet
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4">
+                        Connect your wallet to pay with CELO
+                    </p>
+                    <WalletConnect />
+                </CardContent>
+            </Card>
+        );
+    }
 
-    const getStatusText = () => {
-        if (isConfirmed) return 'Payment Successful';
-        if (error) return 'Payment Failed';
-        if (isConfirming) return 'Confirming Transaction...';
-        if (isPending) return 'Waiting for Confirmation...';
-        return 'Ready to Pay';
-    };
+    if (!isCorrectChain) {
+        return (
+            <Card className="w-full">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-destructive">
+                        <AlertTriangle className="h-5 w-5" />
+                        Wrong Network
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4">
+                        Please switch to Celo network to continue
+                    </p>
+                    <WalletConnect />
+                </CardContent>
+            </Card>
+        );
+    }
 
     return (
         <Card className="w-full">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                    {getStatusIcon()}
-                    Pay with Celo
+                    <Wallet className="h-5 w-5" />
+                    Pay with CELO
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-                {/* Payment Summary */}
-                <div className="p-4 border rounded-lg bg-blue-50 dark:bg-blue-950/20">
-                    <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                            <span className="text-sm text-blue-700 dark:text-blue-300">Total Amount:</span>
-                            <div className="text-right">
-                                <div className="font-semibold text-blue-900 dark:text-blue-100">
-                                    {celoAmount.toFixed(6)} {Currency.CELO}
-                                </div>
-                                <div className="text-xs text-blue-600 dark:text-blue-400">
-                                    ≈ R {zarAmount.toFixed(2)}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1 pt-2 border-t border-blue-200 dark:border-blue-800">
-                            <div className="flex justify-between">
-                                <span>Farmer:</span>
-                                <span>{farmerCeloAmount.toFixed(6)} {Currency.CELO}</span>
-                            </div>
-                            {dispatcherCeloAmount > 0 && (
-                                <div className="flex justify-between">
-                                    <span>Dispatcher:</span>
-                                    <span>{dispatcherCeloAmount.toFixed(6)} {Currency.CELO}</span>
-                                </div>
-                            )}
-                            <div className="flex justify-between">
-                                <span>Platform fee:</span>
-                                <span>{platformFeeCelo.toFixed(6)} {Currency.CELO}</span>
-                            </div>
-                        </div>
+                <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                        <span>Base Amount:</span>
+                        <span>{baseCeloAmount.toFixed(6)} CELO</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                        <span>Platform Fee (2.5%):</span>
+                        <span>{platformFeeCelo.toFixed(6)} CELO</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-medium border-t pt-2">
+                        <span>Total Amount:</span>
+                        <span>{totalCeloAmount.toFixed(6)} CELO</span>
                     </div>
                 </div>
 
-                {/* Status Display */}
-                <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900">
-                    <div className="text-sm font-medium text-center">
-                        {getStatusText()}
+                <div className="space-y-2 text-xs text-muted-foreground">
+                    <div className="flex justify-between">
+                        <span>Farmer Amount:</span>
+                        <span>{farmerCeloAmount.toFixed(6)} CELO</span>
                     </div>
-                    {hash && (
-                        <div className="text-xs text-center text-muted-foreground mt-1">
-                            Tx: {hash.slice(0, 10)}...{hash.slice(-8)}
-                        </div>
+                    <div className="flex justify-between">
+                        <span>Dispatcher Amount:</span>
+                        <span>{dispatcherCeloAmount.toFixed(6)} CELO</span>
+                    </div>
+                </div>
+
+                <Button
+                    onClick={handlePayment}
+                    disabled={isProcessing || isPending || isConfirming}
+                    className="w-full"
+                >
+                    {isProcessing || isPending || isConfirming ? (
+                        <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            {isPending ? 'Confirming...' : isConfirming ? 'Processing...' : 'Submitting...'}
+                        </>
+                    ) : (
+                        <>
+                            <Wallet className="mr-2 h-4 w-4" />
+                            Pay {totalCeloAmount.toFixed(6)} CELO
+                        </>
                     )}
-                </div>
+                </Button>
 
-                {/* Wallet Connection or Payment Button */}
-                {!isConnected ? (
-                    <div className="text-center space-y-3">
-                        <p className="text-sm text-muted-foreground">
-                            Connect your wallet to pay with Celo
-                        </p>
-                        <WalletConnect size="lg" variant="default" />
-                    </div>
-                ) : !isCorrectChain ? (
-                    <div className="text-center space-y-3">
-                        <div className="flex items-center justify-center gap-2 text-amber-600">
-                            <AlertTriangle className="h-4 w-4" />
-                            <span className="text-sm">Wrong Network</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                            Please switch to Celo network to continue
-                        </p>
-                    </div>
-                ) : (
-                    <Button
-                        onClick={handlePayment}
-                        disabled={isProcessing || isPending || isConfirming || isConfirmed}
-                        className="w-full"
-                        size="lg"
-                    >
-                        {isProcessing || isPending || isConfirming ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                {isPending ? 'Confirming...' : isConfirming ? 'Processing...' : 'Preparing...'}
-                            </>
-                        ) : isConfirmed ? (
-                            <>
-                                <CheckCircle className="mr-2 h-4 w-4" />
-                                Payment Complete
-                            </>
-                        ) : (
-                            <>
-                                <Wallet className="mr-2 h-4 w-4" />
-                                Pay {celoAmount.toFixed(6)} {Currency.CELO}
-                            </>
-                        )}
-                    </Button>
-                )}
-
-                {/* Network Info */}
-                {isConnected && (
-                    <div className="text-xs text-center text-muted-foreground">
-                        Connected to {chain?.name || 'Unknown Network'}
+                {hash && (
+                    <div className="text-xs text-muted-foreground">
+                        Transaction Hash: {hash.slice(0, 10)}...{hash.slice(-8)}
                     </div>
                 )}
             </CardContent>
         </Card>
     );
-} 
+}

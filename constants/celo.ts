@@ -34,6 +34,24 @@ export const VUNALET_PAYMENTS_ABI = [
         type: "event"
     },
     {
+        anonymous: false,
+        inputs: [
+            { indexed: false, name: "oldFee", type: "uint256" },
+            { indexed: false, name: "newFee", type: "uint256" }
+        ],
+        name: "PlatformFeeUpdated",
+        type: "event"
+    },
+    {
+        anonymous: false,
+        inputs: [
+            { indexed: false, name: "oldRecipient", type: "address" },
+            { indexed: false, name: "newRecipient", type: "address" }
+        ],
+        name: "FeeRecipientUpdated",
+        type: "event"
+    },
+    {
         inputs: [
             { name: "orderId", type: "string" },
             { name: "farmer", type: "address" },
@@ -74,6 +92,19 @@ export const VUNALET_PAYMENTS_ABI = [
     },
     {
         inputs: [
+            { name: "user", type: "address" }
+        ],
+        name: "getUserStats",
+        outputs: [
+            { name: "totalPaid", type: "uint256" },
+            { name: "totalEarnedAsFarmer", type: "uint256" },
+            { name: "totalEarnedAsDispatcher", type: "uint256" }
+        ],
+        stateMutability: "view",
+        type: "function"
+    },
+    {
+        inputs: [
             { name: "_feeRate", type: "uint256" }
         ],
         name: "setPlatformFeeRate",
@@ -105,42 +136,18 @@ export const VUNALET_PAYMENTS_ABI = [
         type: "function"
     },
     {
-        inputs: [],
-        name: "emergencyWithdraw",
-        outputs: [],
-        stateMutability: "nonpayable",
-        type: "function"
-    },
-    {
-        inputs: [],
-        name: "platformFeeRate",
-        outputs: [{ name: "", type: "uint256" }],
-        stateMutability: "view",
-        type: "function"
-    },
-    {
-        inputs: [],
-        name: "feeRecipient",
-        outputs: [{ name: "", type: "address" }],
-        stateMutability: "view",
-        type: "function"
-    },
-    {
-        inputs: [],
-        name: "secretHash",
-        outputs: [{ name: "", type: "bytes32" }],
-        stateMutability: "view",
-        type: "function"
-    },
-    {
-        inputs: [{ name: "_secretHash", type: "bytes32" }],
+        inputs: [
+            { name: "_secretHash", type: "bytes32" }
+        ],
         name: "setSecretHash",
         outputs: [],
         stateMutability: "nonpayable",
         type: "function"
     },
     {
-        inputs: [{ name: "amount", type: "uint256" }],
+        inputs: [
+            { name: "amount", type: "uint256" }
+        ],
         name: "withdraw",
         outputs: [],
         stateMutability: "nonpayable",
@@ -155,6 +162,114 @@ export const VUNALET_PAYMENTS_ABI = [
         outputs: [],
         stateMutability: "nonpayable",
         type: "function"
+    },
+    {
+        inputs: [],
+        name: "emergencyWithdraw",
+        outputs: [],
+        stateMutability: "nonpayable",
+        type: "function"
+    },
+    {
+        inputs: [],
+        name: "getContractBalance",
+        outputs: [
+            { name: "", type: "uint256" }
+        ],
+        stateMutability: "view",
+        type: "function"
+    },
+    {
+        inputs: [],
+        name: "platformFeeRate",
+        outputs: [
+            { name: "", type: "uint256" }
+        ],
+        stateMutability: "view",
+        type: "function"
+    },
+    {
+        inputs: [],
+        name: "feeRecipient",
+        outputs: [
+            { name: "", type: "address" }
+        ],
+        stateMutability: "view",
+        type: "function"
+    },
+    {
+        inputs: [],
+        name: "secretHash",
+        outputs: [
+            { name: "", type: "bytes32" }
+        ],
+        stateMutability: "view",
+        type: "function"
+    },
+    {
+        inputs: [
+            { name: "orderId", type: "string" }
+        ],
+        name: "payments",
+        outputs: [
+            { name: "buyer", type: "address" },
+            { name: "farmer", type: "address" },
+            { name: "dispatcher", type: "address" },
+            { name: "totalAmount", type: "uint256" },
+            { name: "farmerAmount", type: "uint256" },
+            { name: "dispatcherAmount", type: "uint256" },
+            { name: "orderId", type: "string" },
+            { name: "timestamp", type: "uint256" },
+            { name: "completed", type: "bool" }
+        ],
+        stateMutability: "view",
+        type: "function"
+    },
+    {
+        inputs: [
+            { name: "", type: "address" }
+        ],
+        name: "userTotalPaid",
+        outputs: [
+            { name: "", type: "uint256" }
+        ],
+        stateMutability: "view",
+        type: "function"
+    },
+    {
+        inputs: [
+            { name: "", type: "address" }
+        ],
+        name: "farmerTotalEarned",
+        outputs: [
+            { name: "", type: "uint256" }
+        ],
+        stateMutability: "view",
+        type: "function"
+    },
+    {
+        inputs: [
+            { name: "", type: "address" }
+        ],
+        name: "dispatcherTotalEarned",
+        outputs: [
+            { name: "", type: "uint256" }
+        ],
+        stateMutability: "view",
+        type: "function"
+    },
+    {
+        inputs: [],
+        name: "MAX_FEE_RATE",
+        outputs: [
+            { name: "", type: "uint256" }
+        ],
+        stateMutability: "view",
+        type: "function"
+    },
+    {
+        stateMutability: "payable",
+        type: "receive"
     }
 ] as const;
 

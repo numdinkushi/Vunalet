@@ -61,7 +61,9 @@ export function PaymentMethodSelector({
     const updatePaymentMethod = useMutation(api.orders.updatePaymentMethod);
 
     // Convert ZAR to CELO for display
-    const celoAmount = convertZarToCelo(zarAmount);
+    const baseCeloAmount = convertZarToCelo(zarAmount);
+    const platformFeeCelo = calculatePlatformFee(baseCeloAmount);
+    const celoAmount = baseCeloAmount + platformFeeCelo;
     const farmerCeloAmount = convertZarToCelo(farmerZarAmount);
     const dispatcherCeloAmount = convertZarToCelo(dispatcherZarAmount);
 

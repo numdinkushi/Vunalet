@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther } from 'viem';
 import { CELO_CONTRACT_ADDRESS, VUNALET_PAYMENTS_ABI } from '../constants/celo';
-import { PAYMENT_SECURITY, convertZarToCelo } from '../constants/payments';
+import { PAYMENT_SECURITY, convertZarToCelo, calculatePlatformFee } from '../constants/payments';
 import { Id } from '../convex/_generated/dataModel';
 
 interface CeloOrderData {
@@ -186,13 +186,6 @@ export function useCeloOrderProcessing() {
 
             toast.success('Order created successfully! You can pay when the order arrives.');
 
-            // Remove the redirect from here - let the calling component handle it
-            // setTimeout(() => {
-            //     if (typeof window !== 'undefined') {
-            //         window.location.href = '/dashboard';
-            //     }
-            // }, 1000);
-
             return { success: true, orderId };
 
         } catch (error) {
@@ -219,6 +212,15 @@ export function useCeloOrderProcessing() {
             return { success: false };
         }
 
+        // Validate contract address
+        if (!CELO_CONTRACT_ADDRESS) {
+            console.error('❌ Contract address not configured');
+            toast.error('Contract address not configured. Please contact support.');
+            return { success: false };
+        }
+
+        console.log('✅ Contract address validated:', CELO_CONTRACT_ADDRESS);
+
         setIsProcessing(true);
 
         try {
@@ -226,23 +228,69 @@ export function useCeloOrderProcessing() {
             const order = await fetch(`/api/orders/${orderId}`).then(r => r.json()).catch(() => null);
 
             if (!order) {
+                console.error('❌ Order not found:', orderId);
                 toast.error('Order not found');
                 return { success: false };
             }
 
+            console.log('📋 Order retrieved:', {
+                orderId: order._id,
+                celoFarmerAddress: order.celoFarmerAddress,
+                celoDispatcherAddress: order.celoDispatcherAddress,
+                celoPlatformAddress: order.celoPlatformAddress,
+                farmerAmount: order.farmerAmount,
+                dispatcherAmount: order.dispatcherAmount
+            });
+
             if (!order.celoFarmerAddress || !order.celoDispatcherAddress || !order.celoPlatformAddress) {
+                console.error('❌ Missing CELO addresses in order:', {
+                    celoFarmerAddress: order.celoFarmerAddress,
+                    celoDispatcherAddress: order.celoDispatcherAddress,
+                    celoPlatformAddress: order.celoPlatformAddress
+                });
                 toast.error('CELO addresses not found in order. Please contact support.');
                 return { success: false };
             }
 
             // Convert amounts to CELO
-            const celoAmount = convertZarToCelo(totalAmount);
+            const baseCeloAmount = convertZarToCelo(totalAmount);
+            const platformFeeCelo = calculatePlatformFee(baseCeloAmount);
+            const celoAmount = baseCeloAmount + platformFeeCelo;
             const farmerCeloAmount = convertZarToCelo(order.farmerAmount);
             const dispatcherCeloAmount = convertZarToCelo(order.dispatcherAmount);
+
+            console.log('💰 Amount conversions:', {
+                totalAmount,
+                celoAmount,
+                farmerAmount: order.farmerAmount,
+                farmerCeloAmount,
+                dispatcherAmount: order.dispatcherAmount,
+                dispatcherCeloAmount
+            });
 
             // Set state for transaction tracking
             setCurrentOrderId(orderId);
             setCurrentTotalAmount(totalAmount);
+
+            // Validate payment secret
+            if (!PAYMENT_SECURITY.SECRET) {
+                console.error('❌ Payment secret not configured');
+                toast.error('Payment configuration error. Please contact support.');
+                return { success: false };
+            }
+
+            console.log('🚀 Calling smart contract with:', {
+                contractAddress: CELO_CONTRACT_ADDRESS,
+                orderId,
+                farmerAddress: order.celoFarmerAddress,
+                dispatcherAddress: order.celoDispatcherAddress,
+                farmerAmount: parseEther(farmerCeloAmount.toString()),
+                dispatcherAmount: parseEther(dispatcherCeloAmount.toString()),
+                totalValue: parseEther(celoAmount.toString()),
+                baseAmount: parseEther(baseCeloAmount.toString()),
+                platformFee: parseEther(platformFeeCelo.toString()),
+                secret: PAYMENT_SECURITY.SECRET
+            });
 
             // Process CELO payment through smart contract
             await writeContract({
@@ -260,11 +308,12 @@ export function useCeloOrderProcessing() {
                 value: parseEther(celoAmount.toString()),
             });
 
+            console.log('✅ Transaction submitted successfully');
             toast.success('Transaction submitted! Please wait for confirmation...');
             return { success: true };
 
         } catch (error) {
-            console.error('CELO payment processing failed:', error);
+            console.error('❌ CELO payment processing failed:', error);
             const errorMessage = error instanceof Error ? error.message : 'Payment processing failed';
             toast.error(`Payment failed: ${errorMessage}`);
             return { success: false, error: errorMessage };
@@ -276,6 +325,8 @@ export function useCeloOrderProcessing() {
     // Handle successful transaction
     const handleTransactionSuccess = async (orderId: string, txHash: string, blockNumber?: number, totalAmount?: number) => {
         try {
+            console.log('🎉 Transaction confirmed:', { orderId, txHash, blockNumber, totalAmount });
+
             // Update order with CELO payment details
             await updateCeloPayment({
                 orderId: orderId as Id<"orders">,
@@ -285,17 +336,11 @@ export function useCeloOrderProcessing() {
                 celoAmountPaid: totalAmount ? convertZarToCelo(totalAmount) : 0,
             });
 
+            console.log('✅ Order updated with payment details');
             toast.success('Order placed and payment processed successfully!');
 
-            // Remove the redirect to see console logs
-            // setTimeout(() => {
-            //     if (typeof window !== 'undefined') {
-            //         window.location.href = '/dashboard';
-            //     }
-            // }, 2000);
-
         } catch (error) {
-            console.error('Failed to update CELO payment details:', error);
+            console.error('❌ Failed to update CELO payment details:', error);
             toast.error('Payment processed but failed to update order. Please contact support.');
         }
     };
