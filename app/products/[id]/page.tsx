@@ -46,7 +46,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Get product from database
-    const product = useQuery(api.products.getProductById, { productId: id });
+    const product = useQuery(
+        api.products.getProductById,
+        id ? { productId: id } : "skip"
+    );
 
     // Get farmer profile if product exists
     const farmer = useQuery(

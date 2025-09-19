@@ -21,7 +21,6 @@ import { useRouter } from 'next/navigation';
 import { OrderDetails } from './OrderDetails';
 import { CancellationForm } from './CancellationForm';
 import { RatingForm } from './RatingForm';
-import { CeloPayment } from "../../../payments/CeloPayment";
 import { OrderActions } from './OrderActions';
 import { OrderCompletionMessage } from './OrderCompletionMessage';
 import { convertZarToCelo } from '../../../../constants/payments';
@@ -238,19 +237,6 @@ export function OrderModal({ order, isOpen, onClose, buyerLiskId }: OrderModalPr
                 <div className="space-y-6">
                     <OrderDetails order={order} />
 
-                    {/* CELO Payment Component */}
-                    {order.paymentMethod === 'celo' && order.paymentStatus === 'pending' && (
-                        <CeloPayment
-                            zarAmount={order.totalCost}
-                            orderId={order._id}
-                            farmerAddress={order.celoFarmerAddress || ''}
-                            dispatcherAddress={order.celoDispatcherAddress}
-                            farmerZarAmount={order.farmerAmount || 0}
-                            dispatcherZarAmount={order.dispatcherAmount || 0}
-                            onPaymentSuccess={handleCeloPaymentSuccess}
-                            onPaymentError={(error) => toast.error(error)}
-                        />
-                    )}
                     {/* Cancellation Form */}
                     {showCancellationForm && (order.orderStatus === 'arrived' || order.orderStatus === 'delivered') && (
                         <>

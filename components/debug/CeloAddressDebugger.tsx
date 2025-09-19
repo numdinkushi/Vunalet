@@ -14,10 +14,10 @@ export function CeloAddressDebugger() {
     const [isUpdating, setIsUpdating] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
 
-    const userProfile = useQuery(api.users.getUserProfile, {
-        clerkUserId: user?.id || '',
-    });
-
+    const userProfile = useQuery(
+        api.users.getUserProfile,
+        user?.id ? { clerkUserId: user.id } : "skip"
+    );
     const updateUserWallet = useMutation(api.users.updateWalletData);
 
     // Prevent hydration mismatch by only showing wallet data after mount

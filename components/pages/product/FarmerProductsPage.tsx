@@ -44,11 +44,17 @@ export function FarmerProductsPage({ farmerId }: FarmerProductsPageProps) {
     const [currentImageIndexes, setCurrentImageIndexes] = useState<{ [key: string]: number; }>({});
 
     // Get farmer-specific products
-    const farmerProducts = useQuery(api.products.getProductsByFarmer, { farmerId });
+    const farmerProducts = useQuery(
+        api.products.getProductsByFarmer,
+        farmerId ? { farmerId } : "skip"
+    );
     const farmers = useQuery(api.users.getAllFarmers);
 
     // Get farmer info
-    const farmerInfo = useQuery(api.users.getUserProfile, { clerkUserId: farmerId });
+    const farmerInfo = useQuery(
+        api.users.getUserProfile,
+        farmerId ? { clerkUserId: farmerId } : "skip"
+    );
 
     // Auto-rotate images for products with multiple images
     useEffect(() => {

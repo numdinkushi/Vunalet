@@ -20,9 +20,6 @@ import {
 } from '@/constants';
 import { submitReferral } from '@divvi/referral-sdk';
 import { WalletConnect } from '@/components/web3/WalletConnect';
-import { useMutation } from 'convex/react';
-import { api } from '../../convex/_generated/api';
-import { Id } from '../../convex/_generated/dataModel';
 
 interface CeloPaymentProps {
     zarAmount: number;
@@ -54,16 +51,11 @@ export function CeloPayment({
         hash,
     });
 
-    // Convex mutations for order updates
-    const updateOrderStatus = useMutation(api.orders.updateOrderStatus);
-    const updatePaymentStatus = useMutation(api.orders.updatePaymentStatus);
-    const updateCeloPayment = useMutation(api.orders.updateCeloPayment);
-
     // Convert amounts to CELO - Frontend is the single source of truth
     const baseCeloAmount = convertZarToCelo(zarAmount);
     const farmerCeloAmount = convertZarToCelo(farmerZarAmount);
     const dispatcherCeloAmount = convertZarToCelo(dispatcherZarAmount);
-
+    
     // Calculate platform fee and total amount including fee
     const platformFeeCelo = calculatePlatformFee(baseCeloAmount);
     const totalCeloAmount = baseCeloAmount + platformFeeCelo;
@@ -94,6 +86,7 @@ export function CeloPayment({
             onPaymentError('Contract address not configured');
             return;
         }
+
 
         setIsProcessing(true);
 
@@ -128,58 +121,22 @@ export function CeloPayment({
     useEffect(() => {
         if (isConfirmed && hash) {
             console.log('🎉 Payment confirmed:', hash);
+            onPaymentSuccess(hash);
+            setIsProcessing(false);
+            toast.success('Payment processed successfully!');
 
-            // Update order status and payment status
-            const updateOrderData = async () => {
-                try {
-                    // Update order with CELO payment details
-                    await updateCeloPayment({
-                        orderId: orderId as Id<"orders">,
-                        celoTxHash: hash,
-                        celoFromAddress: address!,
-                        celoAmountPaid: totalCeloAmount,
-                    });
-
-                    // Update order status to delivered and payment status to paid
-                    await Promise.all([
-                        updateOrderStatus({
-                            orderId: orderId as Id<"orders">,
-                            orderStatus: 'delivered',
-                        }),
-                        updatePaymentStatus({
-                            orderId: orderId as Id<"orders">,
-                            paymentStatus: 'paid',
-                        })
-                    ]);
-
-                    console.log('✅ Order status updated to delivered and payment to paid');
-                    console.log('🔍 Order ID:' + orderId + ' - Status should be delivered');
-                    toast.success('Payment processed successfully! Order delivered.');
-
-                    // Call the success callback to trigger rating modal
-                    onPaymentSuccess(hash);
-                    setIsProcessing(false);
-
-                    // Report to Divvi for referral tracking
-                    if (DIVVI_CONFIG.consumer !== "0x0000000000000000000000000000000000000000") {
-                        submitReferral({
-                            txHash: hash,
-                            chainId: chain?.id || CELO_NETWORKS.MAINNET.chainId,
-                        }).catch((error) => {
-                            console.log('Divvi referral submission failed:', error);
-                            // Don't show error to user as this is not critical
-                        });
-                    }
-                } catch (error) {
-                    console.error('❌ Failed to update order status:', error);
-                    toast.error('Payment successful but failed to update order status. Please contact support.');
-                    setIsProcessing(false);
-                }
-            };
-
-            updateOrderData();
+            // Report to Divvi for referral tracking
+            if (DIVVI_CONFIG.consumer !== "0x0000000000000000000000000000000000000000") {
+                submitReferral({
+                    txHash: hash,
+                    chainId: chain?.id || CELO_NETWORKS.MAINNET.chainId,
+                }).catch((error) => {
+                    console.log('Divvi referral submission failed:', error);
+                    // Don't show error to user as this is not critical
+                });
+            }
         }
-    }, [isConfirmed, hash, onPaymentSuccess, chain?.id, orderId, address, totalCeloAmount, updateCeloPayment, updateOrderStatus, updatePaymentStatus]);
+    }, [isConfirmed, hash, onPaymentSuccess, chain?.id]);
 
     // Handle transaction error
     useEffect(() => {

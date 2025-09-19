@@ -33,6 +33,10 @@ export interface Order {
     farmerId?: string;
     dispatcherAmount?: number;
     farmerAmount?: number;
+    celoFarmerAddress?: string;
+    celoDispatcherAddress?: string;
+    celoPlatformAddress?: string;
+    celoFromAddress?: string;
 }
 
 export interface DashboardStats {
@@ -59,4 +63,4 @@ export interface TabItem {
     id: string;
     label: string;
     icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-} 
+}

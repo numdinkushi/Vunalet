@@ -38,7 +38,10 @@ export function CategoryPage({ categoryId }: CategoryPageProps) {
     const [currentImageIndexes, setCurrentImageIndexes] = useState<{ [key: string]: number; }>({});
 
     const category = categories.find(cat => cat.id === categoryId);
-    const products = useQuery(api.products.getProductsByCategory, { categoryId });
+    const products = useQuery(
+        api.products.getProductsByCategory,
+        categoryId ? { categoryId } : "skip"
+    );
     const farmers = useQuery(api.users.getAllFarmers);
 
     // Auto-rotate images for products with multiple images

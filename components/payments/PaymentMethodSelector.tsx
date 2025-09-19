@@ -10,6 +10,7 @@ import {
     PAYMENT_METHOD_LABELS,
     PAYMENT_METHOD_DESCRIPTIONS,
     convertZarToCelo,
+    calculatePlatformFee,
     Currency
 } from '@/constants';
 import { useWalletBalance } from '@/hooks/use-wallet-balance';
@@ -55,7 +56,7 @@ export function PaymentMethodSelector({
         walletAddress
     } = useWalletBalance();
 
-    const { farmerProfile, dispatcherProfile } = useWalletProfile();
+    // const { farmerProfile, dispatcherProfile } = useWalletProfile();
 
     // Mutation to update payment method
     const updatePaymentMethod = useMutation(api.orders.updatePaymentMethod);
@@ -113,7 +114,7 @@ export function PaymentMethodSelector({
             {/* Header */}
             <div className="text-center">
                 <h2 className="text-2xl font-bold text-white mb-2">Select Payment Method</h2>
-                <p className="text-gray-300">Choose how you'd like to pay for your order</p>
+                <p className="text-gray-300">Choose how you&apos;d like to pay for your order</p>
             </div>
 
             {/* Payment Method Cards */}
@@ -148,7 +149,7 @@ export function PaymentMethodSelector({
                                     className="text-green-500"
                                 />
                                 <Badge variant="outline" className="text-green-400 border-green-400">
-                                    {Currency.LISK_ZAR} {zarAmount.toFixed(2)}
+                                    {Currency.ZAR} {zarAmount.toFixed(2)}
                                 </Badge>
                             </div>
                         </div>
@@ -157,15 +158,15 @@ export function PaymentMethodSelector({
                         <div className="space-y-2 text-sm text-gray-300">
                             <div className="flex justify-between">
                                 <span>Farmer Payment:</span>
-                                <span className="text-green-400">{Currency.LISK_ZAR} {farmerZarAmount.toFixed(2)}</span>
+                                <span className="text-green-400">{Currency.ZAR} {farmerZarAmount.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span>Dispatcher Payment:</span>
-                                <span className="text-green-400">{Currency.LISK_ZAR} {dispatcherZarAmount.toFixed(2)}</span>
+                                <span className="text-green-400">{Currency.ZAR} {dispatcherZarAmount.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between font-semibold border-t border-gray-600 pt-2">
                                 <span>Total:</span>
-                                <span className="text-green-400">{Currency.LISK_ZAR} {zarAmount.toFixed(2)}</span>
+                                <span className="text-green-400">{Currency.ZAR} {zarAmount.toFixed(2)}</span>
                             </div>
                         </div>
                     </CardContent>

@@ -22,25 +22,30 @@ export function useFarmerDashboard(userProfile: FarmerUserProfile) {
         refreshBalance
     } = useBalanceDisplay();
 
-    // Queries
-    const products = useQuery(api.products.getProductsByFarmer, {
-        farmerId: userProfile.clerkUserId
-    });
+    // Queries with skip safety
+    const products = useQuery(
+        api.products.getProductsByFarmer,
+        userProfile?.clerkUserId ? { farmerId: userProfile.clerkUserId } : "skip"
+    );
 
-    const orders = useQuery(api.orders.getOrdersByFarmerWithUserInfo, {
-        farmerId: userProfile.clerkUserId
-    });
+    const orders = useQuery(
+        api.orders.getOrdersByFarmerWithUserInfo,
+        userProfile?.clerkUserId ? { farmerId: userProfile.clerkUserId } : "skip"
+    );
 
     const categories = useQuery(api.categories.getActiveCategories);
 
-    const orderStats = useQuery(api.orders.getOrderStats, {
-        role: 'farmer',
-        userId: userProfile.clerkUserId,
-    });
+    const orderStats = useQuery(
+        api.orders.getOrderStats,
+        userProfile?.clerkUserId ? {
+            role: 'farmer',
+            userId: userProfile.clerkUserId,
+        } : "skip"
+    );
 
     // Debug logging
     console.log('Farmer Dashboard Debug:', {
-        userProfile: userProfile.clerkUserId,
+        userProfile: userProfile?.clerkUserId,
         orders: orders,
         orderStats: orderStats,
         products: products
@@ -51,8 +56,7 @@ export function useFarmerDashboard(userProfile: FarmerUserProfile) {
 
     // Transform orders
     const transformOrders = (convexOrders: ConvexOrder[]): TransformedOrder[] => {
-        console.log('Transforming orders:', convexOrders);
-        return convexOrders?.map((order: ConvexOrder) => ({
+        return convexOrders?.map(order => ({
             _id: order._id,
             products: order.products.map((p) => ({
                 name: p.name,
@@ -60,59 +64,52 @@ export function useFarmerDashboard(userProfile: FarmerUserProfile) {
                 price: p.price,
             })),
             totalCost: order.totalCost,
-            orderStatus: order.orderStatus as 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'arrived' | 'delivered' | 'cancelled',
-            paymentStatus: order.paymentStatus as 'pending' | 'paid' | 'failed',
-            paymentMethod: order.paymentMethod as 'lisk_zar' | 'celo' | 'cash',
+            orderStatus: order.orderStatus,
+            paymentStatus: order.paymentStatus,
+            paymentMethod: order.paymentMethod,
             createdAt: new Date(order.createdAt).toISOString(),
             deliveryAddress: order.deliveryAddress,
             estimatedDeliveryTime: order.estimatedDeliveryTime,
-            customerName: order.buyerInfo ?
-                `${order.buyerInfo.firstName} ${order.buyerInfo.lastName}` :
-                'Unknown Customer',
-            customerPhone: order.buyerInfo?.phone || '',
-            farmName: order.farmerInfo ?
-                (order.farmerInfo.businessName || `${order.farmerInfo.firstName} ${order.farmerInfo.lastName}`) :
-                'Unknown Farm',
+            riderId: order.dispatcherId,
             riderName: order.dispatcherInfo ?
                 `${order.dispatcherInfo.firstName} ${order.dispatcherInfo.lastName}` :
-                'Unknown Dispatcher',
+                order.dispatcherId || '',
+            buyerName: order.buyerInfo ?
+                `${order.buyerInfo.firstName} ${order.buyerInfo.lastName}` :
+                order.buyerId,
+            buyerId: order.buyerId,
+            dispatcherId: order.dispatcherId,
+            farmerId: order.farmerId,
+            dispatcherAmount: order.dispatcherAmount,
+            farmerAmount: order.farmerAmount,
         })) || [];
     };
 
     const transformedOrders = transformOrders(orders || []);
 
-    // Calculate dashboard stats
-    const dashboardStats: DashboardStats = {
-        totalProducts: products?.length || 0,
-        activeOrders: orderStats ? (orderStats.pending + orderStats.confirmed + orderStats.preparing + orderStats.ready + orderStats.inTransit + (orderStats.arrived || 0)) : 0,
-        totalRevenue: orderStats?.totalRevenue || 0,
-        pendingOrders: orderStats?.pending || 0,
+    // Calculate stats from real data
+    const stats: DashboardStats = {
+        totalOrders: orderStats?.total ?? 0,
+        activeOrders: orderStats ? (orderStats.pending + orderStats.confirmed + orderStats.preparing + orderStats.ready + orderStats.inTransit) : 0,
+        completedOrders: orderStats?.delivered ?? 0,
+        totalRevenue: orderStats?.totalRevenue ?? 0,
     };
 
     return {
-        // State
         activeTab,
         setActiveTab,
         showAddProduct,
         setShowAddProduct,
-
-        // Data
-        balance: { walletBalance, ledgerBalance },
-        products: products as Product[],
+        products: products || [],
         orders: transformedOrders,
-        categories,
-        orderStats,
-        dashboardStats,
-
-        // Loading states
+        categories: categories || [],
+        stats,
         isLoading,
+        walletBalance,
+        ledgerBalance,
         balanceLoading,
         balanceRefreshing,
-
-        // Actions
         refreshBalance,
-        onProductDeleted: () => {
-            toast.success('Product list refreshed');
-        },
+        userProfile
     };
-} 
+}

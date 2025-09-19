@@ -52,12 +52,18 @@ interface ConvexOrder {
     actualDeliveryTime?: string;
     createdAt: number;
     updatedAt: number;
+    celoFarmerAddress?: string;
+    celoDispatcherAddress?: string;
+    celoPlatformAddress?: string;
+    celoFromAddress?: string;
     farmerInfo?: {
+        celoAddress?: string;
         firstName: string;
         lastName: string;
         businessName?: string;
     } | null;
     dispatcherInfo?: {
+        celoAddress?: string;
         firstName: string;
         lastName: string;
     } | null;
@@ -133,7 +139,7 @@ export default function BuyerDashboard() {
             totalCost: order.totalCost,
             orderStatus: order.orderStatus,
             paymentStatus: order.paymentStatus,
-            paymentMethod: order.paymentMethod, // Add payment method
+            paymentMethod: order.paymentMethod,
             createdAt: new Date(order.createdAt).toISOString(),
             deliveryAddress: order.deliveryAddress,
             estimatedDeliveryTime: order.estimatedDeliveryTime,
@@ -143,12 +149,16 @@ export default function BuyerDashboard() {
                 order.dispatcherId || '',
             farmName: order.farmerInfo ?
                 (order.farmerInfo.businessName || `${order.farmerInfo.firstName} ${order.farmerInfo.lastName}`) :
-                order.farmerId, // Fallback to ID if no farmer info
+                order.farmerId,
             buyerId: order.buyerId,
             dispatcherId: order.dispatcherId,
             farmerId: order.farmerId,
             dispatcherAmount: order.dispatcherAmount,
             farmerAmount: order.farmerAmount,
+            celoFarmerAddress: order.farmerInfo?.celoAddress || order.celoFarmerAddress,
+            celoDispatcherAddress: order.dispatcherInfo?.celoAddress || order.celoDispatcherAddress,
+            celoPlatformAddress: order.celoPlatformAddress,
+            celoFromAddress: order.celoFromAddress,
         })) || [];
     };
 
@@ -173,65 +183,46 @@ export default function BuyerDashboard() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <DashboardHeader />
+        <div className="space-y-6">
+            <DashboardHeader
+            />
 
-            <div className="max-w-7xl mx-auto px-6 py-8">
-                <StatsGrid stats={stats} />
+            <WalletCard
+            />
 
-                {/* Wallet Card */}
-                <WalletCard className="mt-4" />
-                <div className="mt-8">
-                    <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-                </div>
+            <StatsGrid stats={stats} />
 
-                {/* Content */}
-                {activeTab === 'overview' && (
-                    <div className="space-y-6">
-                        <OrderList
-                            title="Recent Orders"
-                            orders={transformedOrders.slice(0, 3)}
-                            searchTerm={searchTerm}
-                            onSearchChange={setSearchTerm}
-                            onRowClick={handleRowClick}
-                        />
-                    </div>
-                )}
+            <TabNavigation
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+            />
 
-                {activeTab === 'active' && (
-                    <div className="space-y-6">
-                        <OrderList
-                            title="Active Orders"
-                            orders={getActiveOrders()}
-                            searchTerm={searchTerm}
-                            onSearchChange={setSearchTerm}
-                            onRowClick={handleRowClick}
-                        />
-                    </div>
-                )}
-
-                {activeTab === 'history' && (
-                    <div className="space-y-6">
-                        <OrderList
-                            title="Order History"
-                            orders={getHistoryOrders()}
-                            searchTerm={searchTerm}
-                            onSearchChange={setSearchTerm}
-                            onRowClick={handleRowClick}
-                        />
-                    </div>
-                )}
-            </div>
-
-            {/* Modal */}
-            {isModalOpen && (
-                <OrderModal
-                    order={selectedOrder}
-                    isOpen={isModalOpen}
-                    onClose={handleCloseModal}
-                    buyerLiskId={userProfile?.liskId}
+            {activeTab === 'overview' && (
+                <OrderList
+                    title="Recent Orders"
+                    orders={getActiveOrders()}
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    onRowClick={handleRowClick}
                 />
             )}
+
+            {activeTab === 'history' && (
+                <OrderList
+                    title="Order History"
+                    orders={getHistoryOrders()}
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    onRowClick={handleRowClick}
+                />
+            )}
+
+            <OrderModal
+                order={selectedOrder}
+                isOpen={isModalOpen}
+                onClose={handleCloseModal}
+                buyerLiskId={userProfile?.liskId}
+            />
         </div>
     );
-} 
+}
