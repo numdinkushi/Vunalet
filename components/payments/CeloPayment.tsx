@@ -117,9 +117,34 @@ export function CeloPayment({
             console.log('✅ Transaction submitted to blockchain');
         } catch (error) {
             console.error('❌ Payment failed:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Payment failed';
+
+            // Handle different types of errors gracefully
+            let errorMessage = 'Payment failed';
+
+            if (error instanceof Error) {
+                if (error.message.includes('User rejected') ||
+                    error.message.includes('User denied') ||
+                    error.message.includes('denied transaction signature') ||
+                    error.message.includes('User rejected the request')) {
+                    errorMessage = 'Transaction cancelled';
+                    toast.info('Transaction cancelled');
+                } else if (error.message.includes('insufficient funds')) {
+                    errorMessage = 'Insufficient funds';
+                    toast.error('Insufficient funds');
+                } else if (error.message.includes('network')) {
+                    errorMessage = 'Network error';
+                    toast.error('Network error');
+                } else {
+                    // Truncate long error messages
+                    const truncatedMessage = error.message.length > 20
+                        ? error.message.substring(0, 20) + '...'
+                        : error.message;
+                    errorMessage = truncatedMessage;
+                    toast.error(`Payment failed: ${truncatedMessage}`);
+                }
+            }
+
             onPaymentError(errorMessage);
-            toast.error(`Payment failed: ${errorMessage}`);
             setIsProcessing(false);
         }
     };

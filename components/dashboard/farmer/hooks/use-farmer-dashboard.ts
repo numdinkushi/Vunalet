@@ -74,25 +74,25 @@ export function useFarmerDashboard(userProfile: FarmerUserProfile) {
             riderName: order.dispatcherInfo ?
                 `${order.dispatcherInfo.firstName} ${order.dispatcherInfo.lastName}` :
                 order.dispatcherId || '',
-            buyerName: order.buyerInfo ?
+            customerName: order.buyerInfo ?
                 `${order.buyerInfo.firstName} ${order.buyerInfo.lastName}` :
                 order.buyerId,
+            customerPhone: order.buyerInfo?.phone || '',
+            farmName: userProfile?.firstName ? `${userProfile.firstName}'s Farm` : 'My Farm',
             buyerId: order.buyerId,
             dispatcherId: order.dispatcherId,
             farmerId: order.farmerId,
-            dispatcherAmount: order.dispatcherAmount,
-            farmerAmount: order.farmerAmount,
         })) || [];
     };
 
     const transformedOrders = transformOrders(orders || []);
 
-    // Calculate stats from real data
-    const stats: DashboardStats = {
-        totalOrders: orderStats?.total ?? 0,
+    // Calculate stats from real data - FIXED: Add missing properties and rename to dashboardStats
+    const dashboardStats: DashboardStats = {
+        totalProducts: products?.length ?? 0,
         activeOrders: orderStats ? (orderStats.pending + orderStats.confirmed + orderStats.preparing + orderStats.ready + orderStats.inTransit) : 0,
-        completedOrders: orderStats?.delivered ?? 0,
         totalRevenue: orderStats?.totalRevenue ?? 0,
+        pendingOrders: orderStats?.pending ?? 0,
     };
 
     return {
@@ -103,7 +103,7 @@ export function useFarmerDashboard(userProfile: FarmerUserProfile) {
         products: products || [],
         orders: transformedOrders,
         categories: categories || [],
-        stats,
+        dashboardStats, // FIXED: Return dashboardStats instead of stats
         isLoading,
         walletBalance,
         ledgerBalance,

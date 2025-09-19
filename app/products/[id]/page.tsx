@@ -51,16 +51,16 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         id ? { productId: id } : "skip"
     );
 
-    // Get farmer profile if product exists
+    // Get farmer profile if product exists - FIXED: Add proper skip condition
     const farmer = useQuery(
         api.users.getUserProfile,
-        { clerkUserId: product?.farmerId || "" }
+        product?.farmerId ? { clerkUserId: product.farmerId } : "skip"
     );
 
-    // Get current user's profile
+    // Get current user's profile - FIXED: Add proper skip condition
     const userProfile = useQuery(
         api.users.getUserProfile,
-        { clerkUserId: user?.id || "" }
+        user?.id ? { clerkUserId: user.id } : "skip"
     );
 
     // Auto-populate form with user data when available
@@ -218,7 +218,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     toast.success('Order created successfully! You can pay when the order arrives.');
                     // Redirect to dashboard after successful CELO order creation
                     router.push('/dashboard');
-                    
+
                     setTimeout(() => {
                         router.push('/dashboard');
                     }, 500);

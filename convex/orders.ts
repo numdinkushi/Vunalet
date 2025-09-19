@@ -237,9 +237,17 @@ export const getOrdersByBuyerWithFarmerInfo = query({
             }
         });
 
-        // Add farmer and dispatcher information to orders
+        // Add farmer and dispatcher information to orders - FIXED: Explicitly include CELO addresses
         return orders.map(order => ({
             ...order,
+            // Explicitly include CELO address fields
+            celoFarmerAddress: order.celoFarmerAddress,
+            celoDispatcherAddress: order.celoDispatcherAddress,
+            celoPlatformAddress: order.celoPlatformAddress,
+            celoFromAddress: order.celoFromAddress,
+            celoTxHash: order.celoTxHash,
+            celoBlockNumber: order.celoBlockNumber,
+            celoAmountPaid: order.celoAmountPaid,
             farmerInfo: farmerMap.get(order.farmerId) || null,
             dispatcherInfo: order.dispatcherId ? dispatcherMap.get(order.dispatcherId) || null : null
         }));
@@ -454,7 +462,12 @@ export const getOrdersByDispatcherWithUserInfo = query({
 export const getOrderById = query({
     args: { orderId: v.string() },
     handler: async (ctx, args) => {
-        return await ctx.db.get(args.orderId as Id<"orders">);
+        const order = await ctx.db
+            .query("orders")
+            .filter((q) => q.eq(q.field("_id"), args.orderId))
+            .first();
+
+        return order;
     },
 });
 

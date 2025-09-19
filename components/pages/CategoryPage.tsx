@@ -42,7 +42,11 @@ export function CategoryPage({ categoryId }: CategoryPageProps) {
         api.products.getProductsByCategory,
         categoryId ? { categoryId } : "skip"
     );
-    const farmers = useQuery(api.users.getAllFarmers);
+    // FIXED: Add skip condition to prevent fetch errors
+    const farmers = useQuery(
+        api.users.getAllFarmers,
+        categoryId ? {} : "skip"
+    );
 
     // Auto-rotate images for products with multiple images
     useEffect(() => {

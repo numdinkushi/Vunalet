@@ -25,6 +25,8 @@ import { CeloPayment } from "../../../payments/CeloPayment";
 import { OrderActions } from './OrderActions';
 import { OrderCompletionMessage } from './OrderCompletionMessage';
 import { convertZarToCelo } from '../../../../constants/payments';
+import { XCircle } from 'lucide-react';
+import { CeloPaymentWithAddressFallback } from '../../../payments/CeloPaymentWithAddressFallback';
 
 interface OrderModalProps {
     order: Order | null;
@@ -238,19 +240,65 @@ export function OrderModal({ order, isOpen, onClose, buyerLiskId }: OrderModalPr
                 <div className="space-y-6">
                     <OrderDetails order={order} />
 
-                    {/* CELO Payment Component */}
-                    {order.paymentMethod === 'celo' && order.paymentStatus === 'pending' && (
-                        <CeloPayment
-                            zarAmount={order.totalCost}
-                            orderId={order._id}
-                            farmerAddress={order.celoFarmerAddress || ''}
-                            dispatcherAddress={order.celoDispatcherAddress}
-                            farmerZarAmount={order.farmerAmount || 0}
-                            dispatcherZarAmount={order.dispatcherAmount || 0}
-                            onPaymentSuccess={handleCeloPaymentSuccess}
-                            onPaymentError={(error) => toast.error(error)}
-                        />
+                    {/* Debug: Log order data */}
+                    {order.paymentMethod === 'celo' && order.orderStatus === 'arrived' && (
+                        <div className="p-2 bg-gray-100 text-xs">
+                            <p>Debug - CELO Addresses:</p>
+                            <p>Farmer: {order.celoFarmerAddress || 'NULL/UNDEFINED'}</p>
+                            <p>Dispatcher: {order.celoDispatcherAddress || 'NULL/UNDEFINED'}</p>
+                            <p>Payment Status: {order.paymentStatus}</p>
+                            <p>Order ID: {order._id}</p>
+                            <p>Farmer ID: {order.farmerId}</p>
+                            <p>Dispatcher ID: {order.dispatcherId}</p>
+                            <p>Full Order Object: {JSON.stringify(order, null, 2)}</p>
+                        </div>
                     )}
+
+                    {/* CELO Payment Component - FIXED: Fetch addresses if missing */}
+                    {order.paymentMethod === 'celo' &&
+                        order.orderStatus === 'arrived' &&
+                        order.paymentStatus === 'pending' && (
+                            <CeloPaymentWithAddressFallback
+                                order={order}
+                                onPaymentSuccess={handleCeloPaymentSuccess}
+                                onPaymentError={(error) => toast.error(error)}
+                            />
+                        )}
+
+                    {/* Show error message if CELO addresses are missing */}
+                    {order.paymentMethod === 'celo' &&
+                        order.orderStatus === 'arrived' &&
+                        order.paymentStatus === 'pending' &&
+                        (!order.celoFarmerAddress ||
+                            order.celoFarmerAddress.trim() === '' ||
+                            !order.celoDispatcherAddress ||
+                            order.celoDispatcherAddress.trim() === '') && (
+                            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                                <p className="text-red-600 text-sm">
+                                    ⚠️ CELO addresses are missing or empty.
+                                    <br />
+                                    Farmer: {order.celoFarmerAddress || 'NULL'}
+                                    <br />
+                                    Dispatcher: {order.celoDispatcherAddress || 'NULL'}
+                                </p>
+                            </div>
+                        )}
+
+                    {/* Cancel Order Button for CELO - NEW: Only show when order status is 'arrived' and below payment */}
+                    {order.paymentMethod === 'celo' && order.orderStatus === 'arrived' && order.paymentStatus === 'pending' && (
+                        <div className="flex justify-center">
+                            <Button
+                                variant="outline"
+                                onClick={handleCancelClick}
+                                className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
+                                disabled={isCancelling}
+                            >
+                                <XCircle className="w-4 h-4 mr-2" />
+                                Cancel Order
+                            </Button>
+                        </div>
+                    )}
+
                     {/* Cancellation Form */}
                     {showCancellationForm && (order.orderStatus === 'arrived' || order.orderStatus === 'delivered') && (
                         <>
