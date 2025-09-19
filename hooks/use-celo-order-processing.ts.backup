@@ -286,12 +286,12 @@ export function useCeloOrderProcessing() {
                 dispatcherAddress: order.celoDispatcherAddress,
                 farmerAmount: parseEther(farmerCeloAmount.toString()),
                 dispatcherAmount: parseEther(dispatcherCeloAmount.toString()),
-                platformAmount: parseEther(platformFeeCelo.toString()),
                 totalValue: parseEther(celoAmount.toString()),
                 baseAmount: parseEther(baseCeloAmount.toString()),
                 platformFee: parseEther(platformFeeCelo.toString()),
                 secret: PAYMENT_SECURITY.SECRET
             });
+
             // Process CELO payment through smart contract
             await writeContract({
                 address: CELO_CONTRACT_ADDRESS,
@@ -303,7 +303,6 @@ export function useCeloOrderProcessing() {
                     order.celoDispatcherAddress as `0x${string}`,
                     parseEther(farmerCeloAmount.toString()),
                     parseEther(dispatcherCeloAmount.toString()),
-                    parseEther(platformFeeCelo.toString()),
                     PAYMENT_SECURITY.SECRET
                 ],
                 value: parseEther(celoAmount.toString()),
