@@ -1,13 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Truck, MapPin, Clock, Package, Edit, Eye, User, Phone, CheckCircle, Navigation } from 'lucide-react';
+import { Truck, MapPin, Eye, User, Phone, CheckCircle, Navigation } from 'lucide-react';
 import { DispatcherOrder } from '../types';
 import { formatCurrency, formatDate, getOrderStatusText, getStatusColor, getStatusIcon } from '../utils';
 import { useMutation } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import { toast } from 'sonner';
-import { motion } from 'framer-motion';
 import { AwaitingConfirmationMessage } from '../../shared/AwaitingConfirmationMessage';
 
 interface DeliveryCardProps {

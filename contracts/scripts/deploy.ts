@@ -1,3 +1,4 @@
+/* eslint-disable */
 import hre from "hardhat";
 import { stringToBytes, keccak256 } from "viem";
 
@@ -19,6 +20,7 @@ async function main() {
     console.log("Secret hash:", secretHash);
 
     // Deploy the contract with constructor arguments
+    // @ts-ignore
     const vunaletPayments = await hre.viem.deployContract("VunaletPayments", [
         feeRecipient,
         secretHash

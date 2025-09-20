@@ -28,14 +28,22 @@ export default async function handler(
             });
         }
 
-        // Use the shared service to activate payment
-        const result = await stablecoinApiService.activatePayment(userId);
+        // Add null checks and fallback error handling
+        const result = await stablecoinApiService?.activatePayment?.(userId);
 
+        if (!result) {
+            return res.status(503).json({ message: 'Service unavailable' });
+        }
+
+        // Use the shared service to activate payment
         return res.status(200).json(result);
     } catch (error: unknown) {
         console.log('Failed to activate payment:', error);
 
-        const apiError = stablecoinApiService.handleApiError(error);
+        const apiError = stablecoinApiService?.handleApiError?.(error) || {
+            message: 'Internal server error',
+            status: 500
+        };
         return res.status(apiError.status || 500).json(apiError);
     }
 } 

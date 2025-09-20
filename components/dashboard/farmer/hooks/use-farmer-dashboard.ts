@@ -1,17 +1,15 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation } from 'convex/react';
+import { useState } from 'react';
+import { useQuery } from 'convex/react';
 import { useUser } from '@clerk/nextjs';
 import { api } from '../../../../convex/_generated/api';
-import { toast } from 'sonner';
-import { LZC_TOKEN_NAME } from '../../../../constants/tokens';
 import { FarmerUserProfile, ConvexOrder, TransformedOrder, DashboardStats } from '../types/dashboard-types';
-import { Product } from '../types';
 import { useBalanceDisplay } from '../../../../hooks/use-balance-display';
+import { useMutation } from 'convex/react';
 
 export function useFarmerDashboard(userProfile: FarmerUserProfile) {
     const [activeTab, setActiveTab] = useState('overview');
     const [showAddProduct, setShowAddProduct] = useState(false);
-    const { user } = useUser();
+    useUser();
 
     // Use the enhanced balance display hook
     const {
@@ -42,6 +40,8 @@ export function useFarmerDashboard(userProfile: FarmerUserProfile) {
             userId: userProfile.clerkUserId,
         } : "skip"
     );
+
+    const deleteProduct = useMutation(api.products.deleteProduct);
 
     // Debug logging
     console.log('Farmer Dashboard Debug:', {
@@ -95,16 +95,28 @@ export function useFarmerDashboard(userProfile: FarmerUserProfile) {
         pendingOrders: orderStats?.pending ?? 0,
     };
 
+    // Change the onProductDeleted function to not take parameters
+    const onProductDeleted = async () => {
+        // Refresh the page to reload products after deletion
+        window.location.reload();
+    };
+
+    // In the return statement, transform products to handle the status field
     return {
         activeTab,
         setActiveTab,
         showAddProduct,
         setShowAddProduct,
-        products: products || [],
+        products: (products || []).map(product => ({
+            ...product,
+            isOrganic: product.isOrganic ?? false,
+            status: product.status === "out_of_stock" ? "inactive" : product.status as "active" | "inactive"
+        })),
         orders: transformedOrders,
         categories: categories || [],
-        dashboardStats, // FIXED: Return dashboardStats instead of stats
+        dashboardStats,
         isLoading,
+        onProductDeleted,
         walletBalance,
         ledgerBalance,
         balanceLoading,

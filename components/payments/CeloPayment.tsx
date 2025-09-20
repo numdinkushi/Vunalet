@@ -3,18 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther } from 'viem';
-import { celo } from 'wagmi/chains';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Loader2, Wallet, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Loader2, Wallet, AlertTriangle } from 'lucide-react';
 import {
     CELO_CONTRACT_ADDRESS,
     VUNALET_PAYMENTS_ABI,
     CELO_NETWORKS,
     convertZarToCelo,
     calculatePlatformFee,
-    Currency,
     PAYMENT_SECURITY,
     DIVVI_CONFIG
 } from '@/constants';

@@ -21,70 +21,11 @@ import { StatCard, DeliveryCard } from './components';
 import { WalletCard } from '../shared/WalletCard';
 import { useUser } from '@clerk/nextjs';
 import { useEffect } from 'react';
-import { LZC_TOKEN_NAME } from '../../../constants/tokens';
-import { useOrderManagement } from '../../../hooks/use-order-management';
-import { Badge } from '../../ui/badge';
 import { useBalanceDisplay } from '../../../hooks/use-balance-display';
 import { DispatcherOrder } from './types';
 import { Button } from '../../ui/button';
 import { formatCurrency } from './utils';
 
-// Type for Convex order structure with user info
-interface ConvexOrder {
-    _id: string;
-    buyerId: string;
-    farmerId: string;
-    dispatcherId?: string;
-    products: Array<{
-        productId: string;
-        name: string;
-        price: number;
-        quantity: number;
-        unit: string;
-    }>;
-    totalAmount: number;
-    farmerAmount: number;
-    dispatcherAmount: number;
-    deliveryAddress: string;
-    deliveryCoordinates?: {
-        lat: number;
-        lng: number;
-    };
-    pickupLocation?: string;
-    pickupCoordinates?: {
-        lat: number;
-        lng: number;
-    };
-    deliveryDistance: number;
-    deliveryCost: number;
-    totalCost: number;
-    paymentMethod: 'lisk_zar' | 'celo' | 'cash';
-    paymentStatus: 'pending' | 'paid' | 'failed';
-    orderStatus: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'arrived' | 'delivered' | 'cancelled';
-    specialInstructions?: string;
-    estimatedPickupTime?: string;
-    estimatedDeliveryTime?: string;
-    actualDeliveryTime?: string;
-    createdAt: number;
-    updatedAt: number;
-    buyerInfo?: {
-        firstName: string;
-        lastName: string;
-        email: string;
-        phone?: string;
-    } | null;
-    farmerInfo?: {
-        firstName: string;
-        lastName: string;
-        businessName?: string;
-        email: string;
-    } | null;
-    dispatcherInfo?: {
-        firstName: string;
-        lastName: string;
-        email: string;
-    } | null;
-}
 
 // Type for available order structure
 interface AvailableOrder {

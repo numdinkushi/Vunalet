@@ -52,17 +52,21 @@ export default async function handler(
 
         // Enable gas fee for transaction
         try {
-            await stablecoinApiService.activatePayment(userId);
+            await stablecoinApiService?.activatePayment?.(userId);
         } catch (activationError) {
             console.log('Failed to enable gas fee, but continuing with bulk transfer:', activationError);
             // Continue with bulk transfer - gas fee might already be enabled
         }
 
         // Proceed with bulk transfer
-        const result = await stablecoinApiService.bulkTransferStablecoins(userId, {
+        const result = await stablecoinApiService?.bulkTransferStablecoins?.(userId, {
             payments,
             transactionNotes: transactionNotes || ''
         });
+
+        if (!result) {
+            return res.status(503).json({ message: 'Service unavailable' });
+        }
 
         return res.status(200).json(result);
     } catch (error: unknown) {
@@ -77,7 +81,10 @@ export default async function handler(
             });
         }
 
-        const apiError = stablecoinApiService.handleApiError(error);
+        const apiError = stablecoinApiService?.handleApiError?.(error) || {
+            message: 'Internal server error',
+            status: 500
+        };
         return res.status(apiError.status || 500).json(apiError);
     }
 } 

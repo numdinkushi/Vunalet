@@ -8,7 +8,6 @@ import {
     MapPin,
     Clock,
     Truck,
-    CreditCard,
 } from 'lucide-react';
 import { Order } from '../types';
 import { formatCurrency, formatDate, getOrderStatusText, getStatusColor, getStatusIcon } from '../utils';

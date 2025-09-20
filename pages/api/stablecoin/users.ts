@@ -66,17 +66,24 @@ async function handleCreateUser(req: NextApiRequest, res: NextApiResponse) {
             });
         }
 
-        // Use the stablecoin API service to create user
-        const stablecoinUser = await stablecoinApiService.createUser({
+        // Add null checks
+        const stablecoinUser = await stablecoinApiService?.createUser?.({
             email,
             firstName,
             lastName,
         });
 
+        if (!stablecoinUser) {
+            return res.status(503).json({ message: 'Service unavailable' });
+        }
+
         return res.status(201).json(stablecoinUser);
     } catch (error) {
         console.error('Failed to create user:', error);
-        const apiError = stablecoinApiService.handleApiError(error);
+        const apiError = stablecoinApiService?.handleApiError?.(error) || {
+            message: 'Internal server error',
+            status: 500
+        };
         return res.status(apiError.status || 500).json(apiError);
     }
 } 

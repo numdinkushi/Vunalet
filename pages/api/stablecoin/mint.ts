@@ -34,11 +34,19 @@ export default async function handler(
             });
         }
 
-        const result = await stablecoinApiService.mintStablecoins(paymentIdentifier, amount, notes);
+        const result = await stablecoinApiService?.mintStablecoins?.(paymentIdentifier, amount, notes);
+
+        if (!result) {
+            return res.status(503).json({ message: 'Service unavailable' });
+        }
+
         return res.status(200).json(result);
     } catch (error: unknown) {
         console.log('Failed to mint stablecoins:', error);
-        const apiError = stablecoinApiService.handleApiError(error);
+        const apiError = stablecoinApiService?.handleApiError?.(error) || {
+            message: 'Internal server error',
+            status: 500
+        };
         return res.status(apiError.status || 500).json(apiError);
     }
 } 

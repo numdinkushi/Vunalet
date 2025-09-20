@@ -3,7 +3,6 @@
 import { useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { Badge } from '../../ui/badge';
-import { Bell } from 'lucide-react';
 
 interface NotificationBadgeProps {
     userId: string;

@@ -3,10 +3,6 @@
 import { useState, useEffect } from 'react';
 import { DeliveryMap } from './DeliveryMap';
 
-interface Coordinates {
-    lat: number;
-    lng: number;
-}
 
 interface ClientOnlyDeliveryMapProps {
     farmerLocation: string;

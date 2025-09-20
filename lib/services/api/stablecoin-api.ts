@@ -181,7 +181,7 @@ export const stablecoinApiService = (() => {
             mintStablecoins: () => Promise.reject(new Error('Stablecoin API not available')),
             transferStablecoins: () => Promise.reject(new Error('Stablecoin API not available')),
             bulkTransferStablecoins: () => Promise.reject(new Error('Stablecoin API not available')),
-        } as any;
+        } as Partial<StablecoinApiService>;
     }
     return new StablecoinApiService();
 })(); 

@@ -109,7 +109,7 @@ export function FarmerDashboard({ userProfile }: FarmerDashboardProps) {
                 isOpen={showAddProduct}
                 onClose={() => setShowAddProduct(false)}
                 userProfile={userProfile}
-                onProductAdded={onProductDeleted}
+                onProductAdded={() => window.location.reload()} // Refresh to show new product
             />
         </div>
     );

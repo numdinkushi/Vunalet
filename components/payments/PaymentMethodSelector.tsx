@@ -35,8 +35,6 @@ interface PaymentMethodSelectorProps {
 export function PaymentMethodSelector({
     zarAmount,
     orderId,
-    farmerAddress,
-    dispatcherAddress,
     farmerZarAmount,
     dispatcherZarAmount,
     onPaymentSuccess,
@@ -47,11 +45,6 @@ export function PaymentMethodSelector({
 
     // Get wallet balance and profile data
     const {
-        celoBalance,
-        celoBalanceFormatted,
-        celoBalanceLoading,
-        liskZarBalance,
-        liskZarBalanceLoading,
         isWalletConnected,
         walletAddress
     } = useWalletBalance();

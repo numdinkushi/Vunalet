@@ -27,7 +27,13 @@ export default async function handler(
 
         console.log('Fetching balances for userId:', userId);
 
-        const result = await stablecoinApiService.getUserBalances(userId);
+        // Add null checks and fallback handling
+        const result = await stablecoinApiService?.getUserBalances?.(userId);
+
+        if (!result) {
+            return res.status(503).json({ message: 'Service unavailable' });
+        }
+
         console.log('Balance fetch result:', result);
 
         return res.status(200).json(result);
@@ -44,7 +50,10 @@ export default async function handler(
         }
 
         // Reuse the stablecoinApiService error handler
-        const apiError = stablecoinApiService.handleApiError(error);
+        const apiError = stablecoinApiService?.handleApiError?.(error) || {
+            message: 'Internal server error',
+            status: 500
+        };
         return res.status(apiError.status || 500).json(apiError);
     }
 } 

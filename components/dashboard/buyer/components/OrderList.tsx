@@ -22,8 +22,6 @@ interface OrderListProps {
 export function OrderList({
     title,
     orders,
-    searchTerm,
-    onSearchChange,
     onRowClick
 }: OrderListProps) {
     return (
@@ -33,7 +31,7 @@ export function OrderList({
             </div>
 
             <div className="space-y-4">
-                {orders.map((order, index) => {
+                {orders.map((order) => {
                     const StatusIcon = getStatusIcon(order.orderStatus);
                     return (
                         <div

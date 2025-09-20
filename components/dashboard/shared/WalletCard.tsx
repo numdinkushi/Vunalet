@@ -24,9 +24,7 @@ export function WalletCard({ className = '' }: WalletCardProps) {
 
     const {
         isWalletConnected,
-        walletAddress,
-        refreshBalances
-    } = useWalletBalance();
+        walletAddress    } = useWalletBalance();
 
     if (isLoading) {
         return (

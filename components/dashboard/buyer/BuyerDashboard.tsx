@@ -1,15 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { DashboardHeader, StatsGrid, TabNavigation, OrderList } from './components';
 import { OrderModal } from './modals';
 import { filterOrdersByStatus } from './utils';
 import { Order } from './types';
 import { WalletCard } from '../shared/WalletCard';
 import { useUser } from '@clerk/nextjs';
-import { useMutation, useQuery } from 'convex/react';
+import { useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
-import { LZC_TOKEN_NAME } from '../../../constants/tokens';
 import { useOrderManagement } from '../../../hooks/use-order-management';
 import { useMounted } from '@/hooks/use-mounted';
 import { useBalanceDisplay } from '../../../hooks/use-balance-display';
@@ -70,7 +69,6 @@ interface ConvexOrder {
 }
 
 export default function BuyerDashboard() {
-    const mounted = useMounted();
     const [activeTab, setActiveTab] = useState('overview');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -97,13 +95,9 @@ export default function BuyerDashboard() {
         } : "skip"
     );
 
-    const {
-        walletBalance,
-        ledgerBalance,
-        isLoading: balanceLoading
-    } = useBalanceDisplay();
+    useBalanceDisplay();
 
-    const { confirmDelivery, isProcessing } = useOrderManagement();
+    useOrderManagement();
 
     // Now handle conditional returns after all hooks
     if (!isLoaded || !user) {
