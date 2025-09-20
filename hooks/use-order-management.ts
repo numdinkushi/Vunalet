@@ -31,12 +31,16 @@ interface OrderData {
     deliveryDistance: number;
     deliveryCost: number;
     totalCost: number;
-    paymentMethod: 'lisk_zar' | 'cash';
+    paymentMethod: 'lisk_zar' | 'celo' | 'cash';
     paymentStatus: 'pending' | 'paid' | 'failed';
     orderStatus: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'arrived' | 'delivered' | 'cancelled';
     specialInstructions?: string;
     estimatedPickupTime?: string;
     estimatedDeliveryTime?: string;
+    // CELO payment recipient addresses
+    celoFarmerAddress?: string;
+    celoDispatcherAddress?: string;
+    celoPlatformAddress?: string;
 }
 
 interface UserProfile {
@@ -109,6 +113,12 @@ export function useOrderManagement() {
             return;
         }
 
+        // Prevent duplicate orders by checking if already processing
+        if (isProcessing) {
+            toast.error('Order is already being processed. Please wait...');
+            return;
+        }
+
         // Check if userProfile is still loading
         if (userProfile === undefined) {
             toast.error('Loading user profile. Please try again in a moment.');
@@ -133,7 +143,10 @@ export function useOrderManagement() {
             }
 
             // 2. Auto-assign dispatcher
-            const dispatcherAssignment = await autoAssignDispatcher({});
+            const dispatcherAssignment = await autoAssignDispatcher({
+                deliveryAddress: orderData.deliveryAddress,
+                deliveryCoordinates: orderData.deliveryCoordinates,
+            });
             const dispatcherId = dispatcherAssignment.dispatcherId;
 
             if (!dispatcherId) {

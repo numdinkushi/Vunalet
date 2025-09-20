@@ -31,11 +31,19 @@ export default async function handler(
                 });
             }
 
-            const testUser = await stablecoinApiService.createUser({
+            // Add null checks
+            const testUser = await stablecoinApiService?.createUser?.({
                 email,
                 firstName,
                 lastName,
             });
+
+            if (!testUser) {
+                return res.status(503).json({
+                    message: 'Service unavailable',
+                    error: 'Stablecoin API service not available'
+                });
+            }
 
             return res.status(200).json({
                 message: 'Test user created successfully',

@@ -22,8 +22,6 @@ interface OrderListProps {
 export function OrderList({
     title,
     orders,
-    searchTerm,
-    onSearchChange,
     onRowClick
 }: OrderListProps) {
     return (
@@ -33,7 +31,7 @@ export function OrderList({
             </div>
 
             <div className="space-y-4">
-                {orders.map((order, index) => {
+                {orders.map((order) => {
                     const StatusIcon = getStatusIcon(order.orderStatus);
                     return (
                         <div
@@ -79,7 +77,7 @@ export function OrderList({
                                 <div className="flex items-center space-x-2 text-sm">
                                     <DollarSign className="w-4 h-4 text-green-600" />
                                     <span className="font-medium text-gray-700">Total:</span>
-                                    <span className="text-gray-900 font-semibold">{formatCurrency(order.totalCost)}</span>
+                                    <span className="text-gray-900 font-semibold">{formatCurrency(order.totalCost, order.paymentMethod)}</span>
                                 </div>
                                 <div className="flex items-center space-x-2 text-sm">
                                     <MapPin className="w-4 h-4 text-red-600" />

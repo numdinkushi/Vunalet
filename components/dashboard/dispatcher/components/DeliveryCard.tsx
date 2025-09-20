@@ -1,13 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Truck, MapPin, Clock, Package, Edit, Eye, User, Phone, CheckCircle, Navigation } from 'lucide-react';
+import { Truck, MapPin, Eye, User, Phone, CheckCircle, Navigation } from 'lucide-react';
 import { DispatcherOrder } from '../types';
 import { formatCurrency, formatDate, getOrderStatusText, getStatusColor, getStatusIcon } from '../utils';
 import { useMutation } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import { toast } from 'sonner';
-import { motion } from 'framer-motion';
 import { AwaitingConfirmationMessage } from '../../shared/AwaitingConfirmationMessage';
 
 interface DeliveryCardProps {
@@ -54,7 +53,7 @@ export function DeliveryCard({ order, showActions = true }: DeliveryCardProps) {
                     <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                             <span className="font-medium">Total:</span>
-                            <p className="text-lg font-bold text-green-600">{formatCurrency(order.totalCost)}</p>
+                            <p className="text-lg font-bold text-green-600">{formatCurrency(order.totalCost, order.paymentMethod)}</p>
                         </div>
                         <div>
                             <span className="font-medium">Products:</span>
@@ -69,7 +68,7 @@ export function DeliveryCard({ order, showActions = true }: DeliveryCardProps) {
                                 <div key={index} className="flex items-center justify-between text-sm">
                                     <span>{product.name}</span>
                                     <span className="text-gray-600">
-                                        {product.quantity} x {formatCurrency(product.price)}
+                                        {product.quantity} x {formatCurrency(product.price, order.paymentMethod)}
                                     </span>
                                 </div>
                             ))}

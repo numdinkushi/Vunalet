@@ -10,10 +10,7 @@ const isPublicRoute = createRouteMatcher([
     '/farmers(.*)',
     '/about',
     '/dashboard', // Allow dashboard access without auth, let component handle it
-    '/api/webhook(.*)', // allow Clerk webhooks (no auth info)
-    '/api/stablecoin/users', // allow stablecoin user creation
-    '/api/stablecoin/activate-pay(.*)', // allow payment activation
-    '/api/test-stablecoin(.*)', // allow test API routes for development
+    '/api(.*)', // FIXED: Allow all API routes - they handle their own auth if needed
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
@@ -25,7 +22,8 @@ export default clerkMiddleware(async (auth, req) => {
 // Match all pages and API routes, but skip Next.js internals and static assets
 export const config = {
     matcher: [
-        '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest|mp4|webm|ogg|mov|avi|mkv)).*)',
+        // FIXED: Exclude manifest.json and sw.js from middleware by adding json to exclusion list
+        '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest|json|mp4|webm|ogg|mov|avi|mkv)).*)',
         '/(api|trpc)(.*)',
     ],
-}; 
+};

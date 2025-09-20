@@ -12,7 +12,8 @@ import {
     User,
     Truck,
     ShoppingCart,
-    AlertCircle
+    AlertCircle,
+    Loader2
 } from 'lucide-react';
 import { FarmerDashboard } from './farmer/FarmerDashboard';
 import { DispatcherDashboard } from './dispatcher/DispatcherDashboard';
@@ -20,13 +21,30 @@ import BuyerDashboard from './buyer/BuyerDashboard';
 import { FarmerUserProfile } from './farmer/types/dashboard-types';
 
 export function Dashboard() {
-    const { user } = useUser();
-    const userProfile = useQuery(api.users.getUserProfile, {
-        clerkUserId: user?.id || '',
-    });
+    const { user, isLoaded } = useUser();
+    const userProfile = useQuery(
+        api.users.getUserProfile,
+        user?.id ? { clerkUserId: user.id } : "skip"
+    );
 
     console.log('Dashboard - userProfile:', userProfile);
     console.log('Dashboard - user:', user);
+
+    // Show loading state while user is being loaded
+    if (!isLoaded) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <Card className="w-full max-w-md">
+                    <CardContent className="p-6">
+                        <div className="flex items-center justify-center">
+                            <Loader2 className="h-8 w-8 animate-spin" />
+                            <span className="ml-2">Loading...</span>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
 
     // If no user is authenticated, show sign-in prompt
     if (!user) {

@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Leaf, Package, MapPin, Clock, Edit, Eye, Star, Thermometer, Snowflake } from 'lucide-react';
+import { Leaf, Package, MapPin, Clock, Thermometer, Snowflake } from 'lucide-react';
 import { Product } from '../types';
 import { formatCurrency, formatDate } from '../utils';
 import { getExpiryStatus, getDaysUntilExpiry } from '../../../../lib/utils/product-utils';

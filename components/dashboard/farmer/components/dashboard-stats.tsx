@@ -10,31 +10,47 @@ interface DashboardStatsPropsWithLoading extends DashboardStatsProps {
 }
 
 export function DashboardStats({ stats, isLoading = false }: DashboardStatsPropsWithLoading) {
+    // FIXED: Add safety check for undefined stats
+    if (!stats) {
+        return (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[1, 2, 3, 4].map((i) => (
+                    <Card key={i} className="animate-pulse">
+                        <CardContent className="p-6">
+                            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                            <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+        );
+    }
+
     const statCards = [
         {
             title: 'Total Products',
-            value: stats.totalProducts,
+            value: stats.totalProducts || 0, // FIXED: Add fallback
             icon: Package,
             color: 'text-blue-600',
             bgColor: 'bg-blue-50',
         },
         {
             title: 'Active Orders',
-            value: stats.activeOrders,
+            value: stats.activeOrders || 0, // FIXED: Add fallback
             icon: ShoppingCart,
             color: 'text-green-600',
             bgColor: 'bg-green-50',
         },
         {
             title: 'Total Revenue',
-            value: `R${stats.totalRevenue.toFixed(2)}`,
+            value: `R${(stats.totalRevenue || 0).toFixed(2)}`, // FIXED: Add fallback
             icon: DollarSign,
             color: 'text-yellow-600',
             bgColor: 'bg-yellow-50',
         },
         {
             title: 'Pending Orders',
-            value: stats.pendingOrders,
+            value: stats.pendingOrders || 0, // FIXED: Add fallback
             icon: Clock,
             color: 'text-orange-600',
             bgColor: 'bg-orange-50',

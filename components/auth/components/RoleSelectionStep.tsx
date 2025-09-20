@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
-import { ShoppingCart, Info } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 import { roleConfig } from '../constants';
 import { RegistrationStepProps } from '../types';
 

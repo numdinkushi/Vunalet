@@ -1,1 +1,1 @@
-export { DeliveryMap } from './DeliveryMap'; 
+export { ClientOnlyDeliveryMap as DeliveryMap } from './ClientOnlyDeliveryMap'; 

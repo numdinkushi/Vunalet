@@ -8,6 +8,7 @@ import {
     Menu,
     X
 } from 'lucide-react';
+import { WalletConnect } from '@/components/web3/WalletConnect';
 import {
     SignInButton,
     SignUpButton,
@@ -196,13 +197,16 @@ export function Header() {
                         </SignedOut>
 
                         <SignedIn>
-                            <UserButton
-                                appearance={{
-                                    elements: {
-                                        avatarBox: "w-8 h-8"
-                                    }
-                                }}
-                            />
+                            <div className="flex items-center gap-3">
+                                <WalletConnect size="sm" variant="outline" />
+                                <UserButton
+                                    appearance={{
+                                        elements: {
+                                            avatarBox: "w-8 h-8"
+                                        }
+                                    }}
+                                />
+                            </div>
                         </SignedIn>
                     </div>
 

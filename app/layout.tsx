@@ -4,6 +4,7 @@ import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
 import { PWAComponents } from '@/components/PWAComponents';
 import { ConvexClientProvider } from '../providers/ConvexClientProvider';
+import Web3Provider from '../providers/Web3Provider';
 import { Toaster } from '@/components/ui/sonner';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -51,17 +52,18 @@ export default function RootLayout({
       }}
     >
       <ConvexClientProvider>
-        <html lang="en">
-          <head>
-            <link rel="manifest" href="/manifest.json" />
-            <meta name="theme-color" content="#22c55e" />
-            <meta name="apple-mobile-web-app-capable" content="yes" />
-            <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-            <meta name="apple-mobile-web-app-title" content="Vunalet" />
-            <link rel="apple-touch-icon" href="/assets/logo/logo-192x192.png" />
-            <script
-              dangerouslySetInnerHTML={{
-                __html: `
+        <Web3Provider>
+          <html lang="en">
+            <head>
+              <link rel="manifest" href="/manifest.json" />
+              <meta name="theme-color" content="#22c55e" />
+              <meta name="apple-mobile-web-app-capable" content="yes" />
+              <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+              <meta name="apple-mobile-web-app-title" content="Vunalet" />
+              <link rel="apple-touch-icon" href="/assets/logo/logo-192x192.png" />
+              <script
+                dangerouslySetInnerHTML={{
+                  __html: `
                   if ('serviceWorker' in navigator) {
                     window.addEventListener('load', function() {
                       navigator.serviceWorker.register('/sw.js')
@@ -74,15 +76,30 @@ export default function RootLayout({
                     });
                   }
                 `,
+                }}
+              />
+            </head>
+                      <body className={inter.className}>
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `
+                  // Suppress wallet extension errors
+                  const originalError = console.error;
+                  console.error = function(...args) {
+                    if (args[0] && args[0].toString().includes('chrome.runtime.sendMessage')) {
+                      return;
+                    }
+                    originalError.apply(console, args);
+                  };
+                `,
               }}
             />
-          </head>
-          <body className={inter.className}>
             {children}
             <PWAComponents />
             <Toaster />
           </body>
-        </html>
+          </html>
+        </Web3Provider>
       </ConvexClientProvider>
     </ClerkProvider>
   );

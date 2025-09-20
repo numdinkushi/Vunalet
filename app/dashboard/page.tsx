@@ -6,8 +6,10 @@ export default function DashboardPage() {
     return (
         <div className="min-h-screen bg-white">
             <Header />
-            <DashboardContent />
+            <div className="container mx-auto px-4 py-8">
+                <DashboardContent />
+            </div>
             <Footer />
         </div>
     );
-} 
+}

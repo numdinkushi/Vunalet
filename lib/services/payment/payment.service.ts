@@ -22,6 +22,13 @@ export class PaymentService {
     }
 
     /**
+     * Check if the payment service is available
+     */
+    public isAvailable(): boolean {
+        return stablecoinApiService?.isAvailable?.() ?? false;
+    }
+
+    /**
      * Process a payment using stablecoin
      */
     async processPayment(
@@ -32,6 +39,11 @@ export class PaymentService {
         try {
             console.log('Processing payment:', { amount, paymentIdentifier, description });
 
+            // Check if API is available before processing
+            if (!this.isAvailable()) {
+                throw new Error('Stablecoin API not available');
+            }
+
             const paymentData: PaymentRequest = {
                 amount,
                 currency: 'ZAR',
@@ -39,11 +51,17 @@ export class PaymentService {
                 description,
             };
 
-            const mintResponse = await stablecoinApiService.mintStablecoins(
+            // Add null checks and throw errors if undefined
+            const mintResponse = await stablecoinApiService?.mintStablecoins?.(
                 paymentData.paymentIdentifier,
                 paymentData.amount,
                 paymentData.description
             );
+
+            if (!mintResponse) {
+                throw new Error('Failed to process payment - service unavailable');
+            }
+
             console.log('Payment processed successfully:', mintResponse);
 
             // Convert MintTransactionResponse to PaymentResponse
@@ -61,9 +79,16 @@ export class PaymentService {
             return payment;
         } catch (error) {
             console.log('Payment processing failed:', error);
+
+            // Handle specific API errors
+            if (stablecoinApiService.handleApiError) {
+                const apiError = stablecoinApiService.handleApiError(error);
+                throw new Error(`API Error (${apiError.status}): ${apiError.message}`);
+            }
+
             const errorMessage = error instanceof Error ? error.message : 'Payment failed';
             toast.error(`Payment failed: ${errorMessage}`);
-            throw error;
+            throw new Error(errorMessage);
         }
     }
 
@@ -161,7 +186,12 @@ export class PaymentService {
                 transactionNotes: notes || 'Payment transfer'
             };
 
-            const result = await stablecoinApiService.transferStablecoins(senderLiskId, transferData);
+            // Add null checks and throw errors if undefined
+            const result = await stablecoinApiService?.transferStablecoins?.(senderLiskId, transferData);
+            if (!result) {
+                throw new Error('Failed to process transfer - service unavailable');
+            }
+
             console.log('Transfer processed successfully:', result);
 
             toast.success('Transfer completed successfully!');
@@ -186,7 +216,7 @@ export class PaymentService {
 
             // Enable gas fee for transaction
             try {
-                await stablecoinApiService.activatePayment(senderLiskId);
+                await stablecoinApiService?.activatePayment?.(senderLiskId);
                 toast.success('Gas fee enabled');
             } catch (activationError) {
                 console.log('Failed to enable gas fee:', activationError);
@@ -194,7 +224,12 @@ export class PaymentService {
                 // Continue with bulk transfer - gas fee might already be enabled
             }
 
-            const result = await stablecoinApiService.bulkTransferStablecoins(senderLiskId, bulkTransferData);
+            // Add null checks and throw errors if undefined
+            const result = await stablecoinApiService?.bulkTransferStablecoins?.(senderLiskId, bulkTransferData);
+            if (!result) {
+                throw new Error('Failed to process bulk transfer - service unavailable');
+            }
+
             console.log('Bulk transfer processed successfully:', result);
 
             toast.success('Bulk transfer completed successfully!');

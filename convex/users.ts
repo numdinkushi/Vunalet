@@ -22,6 +22,7 @@ interface Dispatcher {
 // Create basic user profile (without role)
 export const createBasicUserProfile = mutation({
     args: {
+        celoAddress: v.optional(v.string()),
         clerkUserId: v.string(),
         email: v.string(),
         firstName: v.string(),
@@ -66,6 +67,7 @@ export const createBasicUserProfile = mutation({
 // Create or update user profile
 export const createUserProfile = mutation({
     args: {
+        celoAddress: v.optional(v.string()),
         clerkUserId: v.string(),
         email: v.string(),
         role: v.optional(v.union(v.literal("farmer"), v.literal("dispatcher"), v.literal("buyer"))),
@@ -118,7 +120,8 @@ export const createUserProfile = mutation({
 
 // Get user profile by Clerk user ID
 export const getUserProfile = query({
-    args: { clerkUserId: v.string() },
+    args: {
+        celoAddress: v.optional(v.string()), clerkUserId: v.string() },
     handler: async (ctx, args) => {
 
         console.log('getUserProfile called with args:', args);
@@ -139,9 +142,21 @@ export const getUserProfile = query({
     },
 });
 
+export const getUserById = query({
+    args: {
+        celoAddress: v.optional(v.string()),
+        userId: v.id("userProfiles"),
+    },
+    handler: async (ctx, args) => {
+        const profile = await ctx.db.get(args.userId);
+        return profile;
+    },
+});
+
 // Get all users by role
 export const getUsersByRole = query({
-    args: { role: v.union(v.literal("farmer"), v.literal("dispatcher"), v.literal("buyer")) },
+    args: {
+        celoAddress: v.optional(v.string()), role: v.union(v.literal("farmer"), v.literal("dispatcher"), v.literal("buyer")) },
     handler: async (ctx, args) => {
         return await ctx.db
             .query("userProfiles")
@@ -153,6 +168,7 @@ export const getUsersByRole = query({
 // Update user profile
 export const updateUserProfile = mutation({
     args: {
+        celoAddress: v.optional(v.string()),
         clerkUserId: v.string(),
         firstName: v.optional(v.string()),
         lastName: v.optional(v.string()),
@@ -193,7 +209,8 @@ export const updateUserProfile = mutation({
 
 // Verify user (admin function)
 export const verifyUser = mutation({
-    args: { clerkUserId: v.string() },
+    args: {
+        celoAddress: v.optional(v.string()), clerkUserId: v.string() },
     handler: async (ctx, args) => {
         const profile = await ctx.db
             .query("userProfiles")
@@ -299,6 +316,7 @@ export const getDispatchers = query({
 // Update Lisk ZAR user data
 export const updateLiskUserData = mutation({
     args: {
+        celoAddress: v.optional(v.string()),
         clerkUserId: v.string(),
         liskId: v.string(),
         publicKey: v.string(),
@@ -326,6 +344,7 @@ export const updateLiskUserData = mutation({
 // Create user with stablecoin integration
 export const createUserWithStablecoinIntegration = mutation({
     args: {
+        celoAddress: v.optional(v.string()),
         clerkUserId: v.string(),
         email: v.string(),
         role: v.optional(v.union(v.literal("farmer"), v.literal("dispatcher"), v.literal("buyer"))),
@@ -400,7 +419,8 @@ export const createUserWithStablecoinIntegration = mutation({
 
 // Get user by Lisk ID
 export const getUserByLiskId = query({
-    args: { liskId: v.string() },
+    args: {
+        celoAddress: v.optional(v.string()), liskId: v.string() },
     handler: async (ctx, args) => {
         return await ctx.db
             .query("userProfiles")
@@ -411,7 +431,8 @@ export const getUserByLiskId = query({
 
 // Debug query to get user profile with all fields
 export const getUserProfileDebug = query({
-    args: { clerkUserId: v.string() },
+    args: {
+        celoAddress: v.optional(v.string()), clerkUserId: v.string() },
     handler: async (ctx, args) => {
         const profile = await ctx.db
             .query("userProfiles")
@@ -500,7 +521,8 @@ export class DispatcherAssignmentService {
 
 // Get dispatcher workload for assignment
 export const getDispatcherWorkload = query({
-    args: { dispatcherIds: v.array(v.string()) },
+    args: {
+        celoAddress: v.optional(v.string()), dispatcherIds: v.array(v.string()) },
     handler: async (ctx, args): Promise<DispatcherWorkload[]> => {
         const workloads: DispatcherWorkload[] = [];
 
@@ -531,8 +553,15 @@ export const getDispatcherWorkload = query({
 
 // Auto-assign dispatcher to order
 export const autoAssignDispatcher = mutation({
-    args: {},
-    handler: async (ctx): Promise<{ dispatcherId: string; pendingOrders: number; reason: string; }> => {
+    args: {
+        celoAddress: v.optional(v.string()),
+        deliveryAddress: v.string(),
+        deliveryCoordinates: v.optional(v.object({
+            lat: v.number(),
+            lng: v.number()
+        })),
+    },
+    handler: async (ctx, args): Promise<{ dispatcherId: string; pendingOrders: number; reason: string; }> => {
         // Get all dispatchers (remove verification check)
         const dispatchers = await ctx.db
             .query("userProfiles")
@@ -563,7 +592,76 @@ export const autoAssignDispatcher = mutation({
         return {
             dispatcherId: bestDispatcher.dispatcherId,
             pendingOrders: bestDispatcher.pendingOrders,
-            reason: `Assigned to dispatcher with ${bestDispatcher.pendingOrders} pending orders`
+            reason: `Assigned to dispatcher with ${bestDispatcher.pendingOrders} pending orders for delivery to ${args.deliveryAddress}`
         };
+    },
+});
+// Wallet Integration Mutations
+
+// Update user's preferred payment method
+export const updatePreferredPaymentMethod = mutation({
+    args: {
+        celoAddress: v.optional(v.string()),
+        clerkUserId: v.string(),
+        preferredPaymentMethod: v.union(v.literal("lisk_zar"), v.literal("celo"), v.literal("cash")),
+    },
+    handler: async (ctx, args) => {
+        const existingProfile = await ctx.db
+            .query("userProfiles")
+            .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", args.clerkUserId))
+            .first();
+
+        if (!existingProfile) {
+            throw new Error("User profile not found");
+        }
+
+        await ctx.db.patch(existingProfile._id, {
+            preferredPaymentMethod: args.preferredPaymentMethod,
+            updatedAt: Date.now(),
+        });
+
+        return { success: true };
+    },
+});
+
+// Update wallet connection data
+export const updateWalletData = mutation({
+    args: {
+        celoAddress: v.optional(v.string()),
+        clerkUserId: v.string(),
+        walletAddress: v.optional(v.string()),
+        walletConnectedAt: v.optional(v.number()),
+        walletProvider: v.optional(v.string()),
+    },
+    handler: async (ctx, args) => {
+        const existingProfile = await ctx.db
+            .query("userProfiles")
+            .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", args.clerkUserId))
+            .first();
+
+        if (!existingProfile) {
+            throw new Error("User profile not found");
+        }
+
+        const updateData: any = {
+            updatedAt: Date.now(),
+        };
+
+        if (args.walletAddress !== undefined) {
+            updateData.walletAddress = args.walletAddress;
+        }
+        if (args.walletConnectedAt !== undefined) {
+            updateData.walletConnectedAt = args.walletConnectedAt;
+        }
+        if (args.walletProvider !== undefined) {
+            updateData.walletProvider = args.walletProvider;
+        }
+        if (args.celoAddress !== undefined) {
+            updateData.celoAddress = args.celoAddress;
+        }
+
+        await ctx.db.patch(existingProfile._id, updateData);
+
+        return { success: true };
     },
 });

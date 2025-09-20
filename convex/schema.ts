@@ -36,6 +36,12 @@ export default defineSchema({
         liskId: v.optional(v.string()),
         publicKey: v.optional(v.string()),
         paymentIdentifier: v.optional(v.string()),
+        // Wallet Integration
+        walletAddress: v.optional(v.string()),
+        celoAddress: v.optional(v.string()), // CELO blockchain address for payments
+        walletConnectedAt: v.optional(v.number()),
+        preferredPaymentMethod: v.optional(v.union(v.literal("lisk_zar"), v.literal("celo"), v.literal("cash"))),
+        walletProvider: v.optional(v.string()), // metamask, coinbase, walletconnect
         isVerified: v.boolean(),
         createdAt: v.number(),
         updatedAt: v.number(),
@@ -48,12 +54,16 @@ export default defineSchema({
     // Balances table
     balances: defineTable({
         clerkUserId: v.string(),
-        token: v.string(), // e.g. "L ZAR Coin"
+        token: v.string(), // e.g. "L ZAR Coin", "CELO"
         walletBalance: v.number(),
         ledgerBalance: v.number(),
         updatedAt: v.number(),
+        // Additional fields for CELO balances
+        blockchainAddress: v.optional(v.string()), // For CELO wallet address
+        chainId: v.optional(v.number()), // For CELO network (42220 for mainnet, 44787 for alfajores)
     })
-        .index("by_user_token", ["clerkUserId", "token"]),
+        .index("by_user_token", ["clerkUserId", "token"])
+        .index("by_user_chain", ["clerkUserId", "chainId"]),
 
     // Products table
     products: defineTable({
@@ -112,9 +122,24 @@ export default defineSchema({
         deliveryDistance: v.number(),
         deliveryCost: v.number(),
         totalCost: v.number(),
-        paymentMethod: v.union(v.literal("lisk_zar"), v.literal("cash")),
+        paymentMethod: v.union(v.literal("lisk_zar"), v.literal("celo"), v.literal("cash")),
         paymentStatus: v.union(v.literal("pending"), v.literal("paid"), v.literal("failed")),
         orderStatus: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("arrived"), v.literal("delivered"), v.literal("cancelled")),
+
+        // Hybrid Assignment System Fields
+        assignmentStatus: v.union(v.literal("available"), v.literal("claimed"), v.literal("auto_assigned")), // New field
+        assignmentExpiryTime: v.optional(v.number()), // When manual claiming window expires
+        assignmentMethod: v.optional(v.union(v.literal("manual"), v.literal("auto"))), // How it was assigned
+
+        // Celo blockchain payment fields
+        celoTxHash: v.optional(v.string()),
+        celoBlockNumber: v.optional(v.number()),
+        celoFromAddress: v.optional(v.string()),
+        celoAmountPaid: v.optional(v.number()), // Amount in CELO
+        // Celo recipient addresses for payment distribution
+        celoFarmerAddress: v.optional(v.string()),
+        celoDispatcherAddress: v.optional(v.string()),
+        celoPlatformAddress: v.optional(v.string()),
         specialInstructions: v.optional(v.string()),
         estimatedPickupTime: v.optional(v.string()), // Add this field
         estimatedDeliveryTime: v.optional(v.string()),
@@ -128,7 +153,9 @@ export default defineSchema({
         .index("by_dispatcher", ["dispatcherId"])
         .index("by_status", ["orderStatus"])
         .index("by_payment_status", ["paymentStatus"])
-        .index("by_created_at", ["createdAt"]),
+        .index("by_created_at", ["createdAt"])
+        .index("by_assignment_status", ["assignmentStatus"]) // New index for hybrid assignment
+        .index("by_assignment_expiry", ["assignmentExpiryTime"]), // New index for timeout queries
 
     // Deliveries table (for dispatcher tracking)
     deliveries: defineTable({
@@ -180,6 +207,7 @@ export default defineSchema({
         title: v.string(),
         message: v.string(),
         isRead: v.boolean(),
+        priority: v.optional(v.union(v.literal("low"), v.literal("medium"), v.literal("high"))),
         metadata: v.optional(v.any()),
         createdAt: v.number(),
     })

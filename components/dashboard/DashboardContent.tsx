@@ -13,49 +13,30 @@ import { useMounted } from '@/hooks/use-mounted';
 export function DashboardContent() {
     const mounted = useMounted();
     const { user, isLoaded } = useUser();
-    const userProfile = useQuery(api.users.getUserProfile, {
-        clerkUserId: user?.id || '',
-    });
-
-    console.log('DashboardContent - mounted:', mounted);
-    console.log('DashboardContent - isLoaded:', isLoaded);
-    console.log('DashboardContent - user:', user);
-    console.log('DashboardContent - userProfile:', userProfile);
+    const userProfile = useQuery(
+        api.users.getUserProfile,
+        user?.id ? { clerkUserId: user.id } : "skip"
+    );
 
     // Don't render anything until mounted to prevent hydration issues
     if (!mounted) {
-        console.log('DashboardContent - Not mounted yet, showing loading...');
-        return (
-            <div className="flex items-center justify-center min-h-[calc(100vh-5rem)]">
-                <Card className="w-full max-w-md">
-                    <CardContent className="p-6 text-center">
-                        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-                        <h2 className="text-xl font-semibold mb-2">Loading...</h2>
-                        <p className="text-gray-600">Please wait while we load your dashboard.</p>
-                    </CardContent>
-                </Card>
-            </div>
-        );
+        return null;
     }
 
+    // Show loading state while user is being loaded
     if (!isLoaded) {
-        console.log('DashboardContent - Clerk not loaded yet, showing loading...');
         return (
-            <div className="flex items-center justify-center min-h-[calc(100vh-5rem)]">
-                <Card className="w-full max-w-md">
-                    <CardContent className="p-6 text-center">
-                        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-                        <h2 className="text-xl font-semibold mb-2">Loading...</h2>
-                        <p className="text-gray-600">Please wait while we load your dashboard.</p>
-                    </CardContent>
-                </Card>
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                    <span className="ml-2">Loading...</span>
+                </div>
             </div>
         );
     }
 
     // If user is not authenticated, show sign-in
     if (!user) {
-        console.log('DashboardContent - No user, showing sign-in...');
         return (
             <div className="flex items-center justify-center min-h-[calc(100vh-5rem)] bg-gradient-to-br from-green-50 to-blue-50">
                 <Card className="w-full max-w-md">
@@ -75,7 +56,6 @@ export function DashboardContent() {
 
     // If user is signed in but profile is still loading, show loading state
     if (userProfile === undefined) {
-        console.log('DashboardContent - User profile loading...');
         return (
             <div className="flex items-center justify-center min-h-[calc(100vh-5rem)]">
                 <Card className="w-full max-w-md">
@@ -91,17 +71,14 @@ export function DashboardContent() {
 
     // If user is signed in but has no profile (null), redirect to user registration
     if (userProfile === null) {
-        console.log('DashboardContent - No user profile, showing registration...');
         return <UserRegistration />;
     }
 
     // If user has a profile but no role assigned, redirect to user registration
     if (!userProfile.role) {
-        console.log('DashboardContent - No role assigned, showing registration...');
         return <UserRegistration />;
     }
 
     // User has a profile with a role, show dashboard
-    console.log('DashboardContent - Showing dashboard for user with role:', userProfile.role);
     return <Dashboard />;
 } 

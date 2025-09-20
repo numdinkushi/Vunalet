@@ -22,6 +22,12 @@ export function OrderActions({
     isConfirming
 }: OrderActionsProps) {
     if (order.orderStatus === 'arrived') {
+        // For CELO orders, don't show any buttons (Pay button and Cancel are handled elsewhere)
+        if (order.paymentMethod === 'celo') {
+            return null; // No buttons needed for CELO orders
+        }
+
+        // For non-CELO orders, show both Cancel and Confirm buttons
         return (
             <>
                 <Button

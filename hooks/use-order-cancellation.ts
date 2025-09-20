@@ -1,17 +1,19 @@
 import { useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { toast } from 'sonner';
+import { useCeloOrderProcessing } from './use-celo-order-processing';
 
 interface CancelOrderParams {
     orderId: string;
     buyerId: string;
     buyerLiskId: string;
-    dispatcherId?: string;
+    dispatcherId: string;
     farmerId: string;
     totalCost: number;
     dispatcherAmount: number;
     farmerAmount: number;
     reason: string;
+    paymentMethod?: 'lisk_zar' | 'celo' | 'cash';
 }
 
 // Helper function to update wallet balance from stablecoin API
@@ -43,6 +45,7 @@ const updateWalletBalanceFromAPI = async (clerkUserId: string, liskId: string) =
 
 export function useOrderCancellation() {
     const updateOrderStatus = useMutation(api.orders.updateOrderStatus);
+    const { processCeloPayment } = useCeloOrderProcessing(); // Add CELO processing
 
     const cancelOrder = async ({
         orderId,
@@ -53,9 +56,38 @@ export function useOrderCancellation() {
         totalCost,
         dispatcherAmount,
         farmerAmount,
-        reason
-    }: CancelOrderParams) => {
+        reason,
+        paymentMethod = 'lisk_zar'
+    }: CancelOrderParams): Promise<{ success: boolean; waitingForConfirmation?: boolean; }> => {
         try {
+            // Handle CELO payments
+            if (paymentMethod === 'celo') {
+                console.log('💰 Processing CELO cancellation for order:', orderId);
+
+                // For CELO cancellations, we need to process a refund through the blockchain
+                // The refund amount is half of the original payment (no platform fees)
+                const refundAmount = (dispatcherAmount + farmerAmount) / 2;
+
+                // Process CELO refund through smart contract
+                const refundResult = await processCeloPayment(orderId, refundAmount);
+
+                if (refundResult.success) {
+                    // Update order status to cancelled
+                    await updateOrderStatus({
+                        orderId,
+                        orderStatus: 'cancelled',
+                        cancellationReason: reason,
+                    });
+
+                    toast.success('CELO cancellation submitted! Waiting for blockchain confirmation...');
+                    return { success: true, waitingForConfirmation: true };
+                } else {
+                    toast.error('CELO cancellation failed. Please try again.');
+                    return { success: false };
+                }
+            }
+
+            // Handle Lisk ZAR cancellations (existing logic)
             // Validate required parameters
             if (!buyerLiskId) {
                 throw new Error('Buyer payment account not found');
@@ -99,7 +131,7 @@ export function useOrderCancellation() {
                 });
 
                 toast.success('Order cancelled successfully');
-                return true;
+                return { success: true };
             }
 
             // Call bulk transfer API using buyer's liskId with longer timeout
@@ -130,7 +162,7 @@ export function useOrderCancellation() {
                 }
 
                 toast.error(errorMessage);
-                return false;
+                return { success: false };
             }
 
             // Step 3: Only update order status to cancelled after successful payment processing
@@ -152,12 +184,12 @@ export function useOrderCancellation() {
             ]);
 
             toast.success('Order cancelled successfully with refunds processed');
-            return true;
+            return { success: true };
         } catch (error) {
             console.log('Failed to cancel order:', error);
             const errorMessage = error instanceof Error ? error.message : 'Failed to cancel order';
             toast.error(errorMessage);
-            return false;
+            return { success: false };
         }
     };
 

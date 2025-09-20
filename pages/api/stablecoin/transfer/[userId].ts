@@ -56,23 +56,30 @@ export default async function handler(
 
         // Activate payment for the user before transfer
         try {
-            await stablecoinApiService.activatePayment(userId);
+            await stablecoinApiService?.activatePayment?.(userId);
             console.log('Gas fee enabled');
         } catch (error) {
             console.log('Failed to enable gas fee:', error);
             // Continue with transfer even if activation fails
         }
 
-        const result = await stablecoinApiService.transferStablecoins(userId, {
+        const result = await stablecoinApiService?.transferStablecoins?.(userId, {
             transactionAmount,
             transactionRecipient,
             transactionNotes
         });
 
+        if (!result) {
+            return res.status(503).json({ message: 'Service unavailable' });
+        }
+
         return res.status(200).json(result);
     } catch (error: unknown) {
         console.log('Failed to transfer stablecoins:', error);
-        const apiError = stablecoinApiService.handleApiError(error);
+        const apiError = stablecoinApiService?.handleApiError?.(error) || {
+            message: 'Internal server error',
+            status: 500
+        };
         return res.status(apiError.status || 500).json(apiError);
     }
 } 

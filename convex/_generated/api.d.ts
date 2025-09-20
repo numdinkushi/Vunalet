@@ -15,6 +15,7 @@ import type {
 } from "convex/server";
 import type * as balances from "../balances.js";
 import type * as categories from "../categories.js";
+import type * as cron from "../cron.js";
 import type * as migrations from "../migrations.js";
 import type * as notifications from "../notifications.js";
 import type * as orders from "../orders.js";
@@ -33,6 +34,7 @@ import type * as users from "../users.js";
 declare const fullApi: ApiFromModules<{
   balances: typeof balances;
   categories: typeof categories;
+  cron: typeof cron;
   migrations: typeof migrations;
   notifications: typeof notifications;
   orders: typeof orders;

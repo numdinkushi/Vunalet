@@ -45,6 +45,7 @@ export interface ConvexOrder {
     totalCost: number;
     orderStatus: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'arrived' | 'delivered' | 'cancelled';
     paymentStatus: 'pending' | 'paid' | 'failed';
+    paymentMethod: 'lisk_zar' | 'celo' | 'cash';
     createdAt: number;
     deliveryAddress: string;
     estimatedDeliveryTime?: string;
@@ -75,6 +76,7 @@ export interface TransformedOrder {
     totalCost: number;
     orderStatus: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'arrived' | 'delivered' | 'cancelled';
     paymentStatus: 'pending' | 'paid' | 'failed';
+    paymentMethod: 'lisk_zar' | 'celo' | 'cash';
     createdAt: string;
     deliveryAddress: string;
     estimatedDeliveryTime?: string;

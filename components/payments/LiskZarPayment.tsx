@@ -54,6 +54,11 @@ export function LiskZarPayment({
         setPaymentStatus('pending');
 
         try {
+            // Check if stablecoin API is available
+            if (!paymentService.isAvailable()) {
+                throw new Error('Lisk ZAR payment service is currently unavailable. Please try CELO payment instead.');
+            }
+
             // Process payment through stablecoin API
             const payment = await paymentService.processPayment(
                 amount,
@@ -73,8 +78,28 @@ export function LiskZarPayment({
         } catch (error) {
             console.error('Payment failed:', error);
             setPaymentStatus('failed');
-            onPaymentError(error instanceof Error ? error.message : 'Payment failed');
-            toast.error('Payment failed. Please try again.');
+
+            // Provide more specific error messages
+            let errorMessage = 'Payment failed. Please try again.';
+
+            if (error instanceof Error) {
+                if (error.message.includes('API not available')) {
+                    errorMessage = 'Lisk ZAR payment service is currently unavailable. Please try CELO payment instead.';
+                } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+                    errorMessage = 'Payment service authentication failed. Please contact support.';
+                } else if (error.message.includes('403') || error.message.includes('Forbidden')) {
+                    errorMessage = 'Payment service access denied. Please contact support.';
+                } else if (error.message.includes('500') || error.message.includes('Internal Server Error')) {
+                    errorMessage = 'Payment service is experiencing issues. Please try again later.';
+                } else if (error.message.includes('timeout') || error.message.includes('Network Error')) {
+                    errorMessage = 'Payment service is not responding. Please check your connection and try again.';
+                } else {
+                    errorMessage = `Payment failed: ${error.message}`;
+                }
+            }
+
+            onPaymentError(errorMessage);
+            toast.error(errorMessage);
         } finally {
             setIsProcessing(false);
         }

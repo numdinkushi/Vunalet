@@ -38,8 +38,15 @@ export function CategoryPage({ categoryId }: CategoryPageProps) {
     const [currentImageIndexes, setCurrentImageIndexes] = useState<{ [key: string]: number; }>({});
 
     const category = categories.find(cat => cat.id === categoryId);
-    const products = useQuery(api.products.getProductsByCategory, { categoryId });
-    const farmers = useQuery(api.users.getAllFarmers);
+    const products = useQuery(
+        api.products.getProductsByCategory,
+        categoryId ? { categoryId } : "skip"
+    );
+    // FIXED: Add skip condition to prevent fetch errors
+    const farmers = useQuery(
+        api.users.getAllFarmers,
+        categoryId ? {} : "skip"
+    );
 
     // Auto-rotate images for products with multiple images
     useEffect(() => {
