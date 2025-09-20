@@ -6,7 +6,6 @@ import { PWAComponents } from '@/components/PWAComponents';
 import { ConvexClientProvider } from '../providers/ConvexClientProvider';
 import Web3Provider from '../providers/Web3Provider';
 import { Toaster } from '@/components/ui/sonner';
-import { WalletConnectionTracker } from '@/components/wallet/WalletConnectionTracker';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -96,7 +95,6 @@ export default function RootLayout({
               }}
             />
             {children}
-            <WalletConnectionTracker />
             <PWAComponents />
             <Toaster />
           </body>

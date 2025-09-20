@@ -127,7 +127,7 @@ export default defineSchema({
         orderStatus: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("preparing"), v.literal("ready"), v.literal("in_transit"), v.literal("arrived"), v.literal("delivered"), v.literal("cancelled")),
 
         // Hybrid Assignment System Fields
-        assignmentStatus: v.union(v.literal("available"), v.literal("claimed"), v.literal("auto_assigned")), // New field
+        assignmentStatus: v.optional(v.union(v.literal("available"), v.literal("claimed"), v.literal("auto_assigned"))), // New field
         assignmentExpiryTime: v.optional(v.number()), // When manual claiming window expires
         assignmentMethod: v.optional(v.union(v.literal("manual"), v.literal("auto"))), // How it was assigned
 
