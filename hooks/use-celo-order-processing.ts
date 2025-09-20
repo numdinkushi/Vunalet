@@ -92,83 +92,43 @@ export function useCeloOrderProcessing() {
         setIsProcessing(true);
 
         try {
-            // 1. Auto-assign dispatcher
-            const dispatcherAssignment = await autoAssignDispatcher({
-                deliveryAddress: orderData.deliveryAddress,
-                deliveryCoordinates: orderData.deliveryCoordinates,
+            // 1. Get farmer CELO address (dispatcher will be assigned later via claim window)
+            console.log('🔍 Fetching CELO addresses for farmer:', { farmerId: orderData.farmerId });
+
+            const farmerProfile = await fetch(`/api/users/celo-address?userId=${orderData.farmerId}`).then(r => {
+                console.log('Farmer API response status:', r.status);
+                return r.json();
+            }).catch((error) => {
+                console.error('Farmer API fetch error:', error);
+                return null;
             });
-
-            const dispatcherId = dispatcherAssignment.dispatcherId;
-
-            if (!dispatcherId) {
-                toast.error('No dispatcher available for your location');
-                return { success: false };
-            }
-
-            // 2. Get farmer and dispatcher CELO addresses
-            console.log('🔍 Fetching CELO addresses for:', { farmerId: orderData.farmerId, dispatcherId });
-
-            const [farmerProfile, dispatcherProfile] = await Promise.all([
-                fetch(`/api/users/celo-address?userId=${orderData.farmerId}`).then(r => {
-                    console.log('Farmer API response status:', r.status);
-                    return r.json();
-                }).catch((error) => {
-                    console.error('Farmer API fetch error:', error);
-                    return null;
-                }),
-                fetch(`/api/users/celo-address?userId=${dispatcherId}`).then(r => {
-                    console.log('Dispatcher API response status:', r.status);
-                    return r.json();
-                }).catch((error) => {
-                    console.error('Dispatcher API fetch error:', error);
-                    return null;
-                })
-            ]);
-
-            console.log('📋 CELO Address API Results:', { farmerProfile, dispatcherProfile });
 
             const celoFarmerAddress = farmerProfile?.celoAddress;
-            const celoDispatcherAddress = dispatcherProfile?.celoAddress;
             const celoPlatformAddress = process.env.NEXT_PUBLIC_PLATFORM_CELO_ADDRESS;
 
-            // Debug logging
-            console.log('CELO Addresses Debug:', {
-                farmerProfile,
-                dispatcherProfile,
-                celoFarmerAddress,
-                celoDispatcherAddress,
-                celoPlatformAddress,
-                buyerAddress: address,
-                farmerProfileRaw: farmerProfile,
-                dispatcherProfileRaw: dispatcherProfile
-            });
-
-            // Check if addresses are "unset" (which should be treated as missing)
-            const missingAddresses = [];
+            // Check for missing CELO addresses
+            const missingAddresses: string[] = [];
             if (!celoFarmerAddress || celoFarmerAddress === 'unset') {
                 missingAddresses.push('Farmer');
-            }
-            if (!celoDispatcherAddress || celoDispatcherAddress === 'unset') {
-                missingAddresses.push('Dispatcher');
             }
 
             if (missingAddresses.length > 0) {
                 const message = `${missingAddresses.join(' and ')} CELO address${missingAddresses.length > 1 ? 'es are' : ' is'} not configured. Please ask them to set up their CELO address or use Lisk ZAR payment instead.`;
-                console.log('❌ Missing CELO addresses:', { missingAddresses, celoFarmerAddress, celoDispatcherAddress });
+                console.log('❌ Missing CELO addresses:', { missingAddresses, celoFarmerAddress });
                 toast.error(message);
                 return { success: false };
             }
 
-            // 3. Create order with CELO addresses (NO PAYMENT YET)
+            // 2. Create order with CELO addresses (NO DISPATCHER ASSIGNMENT YET - will be claimed)
             const orderDataWithCelo = {
                 ...orderData,
-                dispatcherId,
+                dispatcherId: undefined, // Remove auto-assignment - let dispatchers claim
                 paymentMethod: 'celo' as const,
                 paymentStatus: 'pending' as const,
                 orderStatus: 'pending' as const,
                 celoFromAddress: address,
                 celoFarmerAddress,
-                celoDispatcherAddress,
+                celoDispatcherAddress: undefined, // Will be set when dispatcher claims
                 celoPlatformAddress,
             };
 
@@ -180,11 +140,10 @@ export function useCeloOrderProcessing() {
             console.log('CELO addresses that should be saved:', {
                 celoFromAddress: address,
                 celoFarmerAddress,
-                celoDispatcherAddress,
                 celoPlatformAddress
             });
 
-            toast.success('Order created successfully! You can pay when the order arrives.');
+            toast.success('Order created successfully! Dispatchers can now claim it within 10 minutes.');
 
             return { success: true, orderId };
 

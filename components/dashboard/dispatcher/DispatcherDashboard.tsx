@@ -27,6 +27,7 @@ import { Badge } from '../../ui/badge';
 import { useBalanceDisplay } from '../../../hooks/use-balance-display';
 import { DispatcherOrder } from './types';
 import { Button } from '../../ui/button';
+import { formatCurrency } from './utils';
 
 // Type for Convex order structure with user info
 interface ConvexOrder {
@@ -151,6 +152,7 @@ interface DispatcherDashboardProps {
 
 export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
     const [activeTab, setActiveTab] = useState('overview');
+    const [isClaiming, setIsClaiming] = useState(false); // Move this here
     const { user, isLoaded } = useUser();
 
     // Use the enhanced balance display hook instead of direct queries
@@ -236,7 +238,7 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
                         </div>
                         <div className="text-right">
                             <div className="text-lg font-bold text-green-600">
-                                R {order.dispatcherAmount.toFixed(2)}
+                                {formatCurrency(order.dispatcherAmount, order.paymentMethod)}
                             </div>
                             <div className="text-sm text-gray-500">Your Earnings</div>
                         </div>
@@ -247,7 +249,7 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
                         <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
                                 <span className="font-medium">Total Order:</span>
-                                <p className="text-lg font-bold text-green-600">R {order.totalCost.toFixed(2)}</p>
+                                <p className="text-lg font-bold text-green-600">{formatCurrency(order.totalCost, order.paymentMethod)}</p>
                             </div>
                             <div>
                                 <span className="font-medium">Products:</span>
@@ -262,7 +264,7 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
                                     <div key={index} className="flex items-center justify-between text-sm">
                                         <span>{product.name}</span>
                                         <span className="text-gray-600">
-                                            {product.quantity} x R {product.price.toFixed(2)}
+                                            {product.quantity} x {formatCurrency(product.price, order.paymentMethod)}
                                         </span>
                                     </div>
                                 ))}
@@ -282,11 +284,8 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
                                     <User className="w-4 h-4 text-gray-500" />
                                     <span className="font-medium">Customer:</span>
                                 </div>
-                                <span>
-                                    {order.buyerInfo ?
-                                        `${order.buyerInfo.firstName} ${order.buyerInfo.lastName}` :
-                                        'Unknown Customer'
-                                    }
+                                <span className="text-right">
+                                    {order.buyerInfo ? `${order.buyerInfo.firstName} ${order.buyerInfo.lastName}` : 'Unknown'}
                                 </span>
                             </div>
                             <div className="flex items-center justify-between text-sm">
@@ -294,21 +293,27 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
                                     <Truck className="w-4 h-4 text-gray-500" />
                                     <span className="font-medium">From:</span>
                                 </div>
-                                <span>
-                                    {order.farmerInfo?.businessName ||
-                                        `${order.farmerInfo?.firstName} ${order.farmerInfo?.lastName}` ||
-                                        'Unknown Farm'}
+                                <span className="text-right">
+                                    {order.farmerInfo?.businessName || `${order.farmerInfo?.firstName} ${order.farmerInfo?.lastName}` || 'Unknown Farm'}
                                 </span>
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-between pt-3 border-t">
-                            <CountdownTimer expiryTime={order.assignmentExpiryTime || 0} />
+                        <div className="flex items-center justify-between pt-4">
+                            <div className="flex items-center space-x-1 text-orange-600">
+                                <Timer className="w-4 h-4" />
+                                <span className="text-sm font-medium">
+                                    {order.assignmentExpiryTime ?
+                                        Math.max(0, Math.floor((order.assignmentExpiryTime - Date.now()) / 60000)) + ':' +
+                                        Math.max(0, Math.floor(((order.assignmentExpiryTime - Date.now()) % 60000) / 1000)).toString().padStart(2, '0')
+                                        : '0:00'
+                                    }
+                                </span>
+                            </div>
                             <Button
                                 onClick={() => handleClaimOrder(order._id)}
-                                disabled={isExpired}
-                                className="bg-blue-600 hover:bg-blue-700 text-white"
-                                size="sm"
+                                disabled={isExpired || isClaiming}
+                                className="bg-blue-600 hover:bg-blue-700"
                             >
                                 <Hand className="w-4 h-4 mr-2" />
                                 Claim Order
@@ -348,6 +353,7 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
     const handleClaimOrder = async (orderId: string) => {
         if (!userProfile?.clerkUserId) return;
 
+        setIsClaiming(true);
         try {
             await claimOrder({
                 orderId,
@@ -356,6 +362,8 @@ export function DispatcherDashboard({ userProfile }: DispatcherDashboardProps) {
             console.log('Order claimed successfully!');
         } catch (error) {
             console.error('Error claiming order:', error);
+        } finally {
+            setIsClaiming(false);
         }
     };
 
