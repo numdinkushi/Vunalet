@@ -263,7 +263,7 @@ export function WalletConnect({
                                     <Wallet className="h-3 w-3" />
                                 </div>
                                 <span>{connector.name}</span>
-                                {connector.id === 'coinbaseWalletSDK' && (
+                                {connector.id === 'metaMask' && (
                                     <Badge variant="secondary" className="text-xs ml-auto">
                                         Recommended
                                     </Badge>

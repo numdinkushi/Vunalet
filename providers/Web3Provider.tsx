@@ -3,7 +3,7 @@
 import { createConfig, http, WagmiProvider } from "wagmi";
 import { celo, celoAlfajores } from "wagmi/chains";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { coinbaseWallet, metaMask, walletConnect } from "wagmi/connectors";
+import { metaMask, walletConnect } from "wagmi/connectors";
 import React from "react";
 import { CELO_NETWORKS, WALLET_CONNECT_PROJECT_ID, WALLET_APP_METADATA } from "@/constants";
 
@@ -24,11 +24,6 @@ export const wagmiConfig = createConfig({
         [celoAlfajores.id]: http(CELO_NETWORKS.ALFAJORES.rpcUrl),
     },
     connectors: [
-        coinbaseWallet({
-            appName: WALLET_APP_METADATA.name,
-            appLogoUrl: WALLET_APP_METADATA.icons[0],
-            preference: "all",
-        }),
         metaMask({
             dappMetadata: {
                 name: WALLET_APP_METADATA.name,
