@@ -241,7 +241,7 @@ export function OrderModal({ order, isOpen, onClose, buyerLiskId }: OrderModalPr
                     <OrderDetails order={order} />
 
                     {/* Debug: Log order data */}
-                    {order.paymentMethod === 'celo' && order.orderStatus === 'arrived' && (
+                    {/* {order.paymentMethod === 'celo' && order.orderStatus === 'arrived' && (
                         <div className="p-2 bg-gray-100 text-xs">
                             <p>Debug - CELO Addresses:</p>
                             <p>Farmer: {order.celoFarmerAddress || 'NULL/UNDEFINED'}</p>
@@ -252,7 +252,7 @@ export function OrderModal({ order, isOpen, onClose, buyerLiskId }: OrderModalPr
                             <p>Dispatcher ID: {order.dispatcherId}</p>
                             <p>Full Order Object: {JSON.stringify(order, null, 2)}</p>
                         </div>
-                    )}
+                    )} */}
 
                     {/* CELO Payment Component - FIXED: Fetch addresses if missing */}
                     {order.paymentMethod === 'celo' &&

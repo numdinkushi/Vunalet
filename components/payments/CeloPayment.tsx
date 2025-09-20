@@ -59,23 +59,80 @@ export function CeloPayment({
     const updatePaymentStatus = useMutation(api.orders.updatePaymentStatus);
     const updateCeloPayment = useMutation(api.orders.updateCeloPayment);
 
-    // Convert amounts to CELO - Frontend is the single source of truth
-    const baseCeloAmount = convertZarToCelo(zarAmount);
+    // Convert all amounts to CELO for consistent display and calculation
+    const orderTotalCelo = convertZarToCelo(zarAmount);
     const farmerCeloAmount = convertZarToCelo(farmerZarAmount);
     const dispatcherCeloAmount = convertZarToCelo(dispatcherZarAmount);
 
-    // Calculate platform fee and total amount including fee
-    const platformFeeCelo = calculatePlatformFee(baseCeloAmount);
-    const totalCeloAmount = baseCeloAmount + platformFeeCelo;
+    // Calculate platform fee on the sum of farmer + dispatcher amounts (the actual payment amounts)
+    const subtotalCeloAmount = farmerCeloAmount + dispatcherCeloAmount;
+    const platformFeeCelo = calculatePlatformFee(subtotalCeloAmount);
+
+    // Total amount is farmer + dispatcher + platform fee
+    const totalCeloAmount = subtotalCeloAmount + platformFeeCelo;
 
     const isCorrectChain = chain?.id === CELO_NETWORKS.MAINNET.chainId || chain?.id === CELO_NETWORKS.ALFAJORES.chainId;
+
+    // Helper function to handle different types of errors
+    const handleTransactionError = (error: unknown, context: string = 'Transaction') => {
+        console.error(`❌ ${context} error:`, error);
+
+        let errorMessage = 'Transaction failed';
+        let shouldShowToast = true;
+
+        // Handle different error types and structures
+        const errorString = error?.toString() || '';
+        const errorMessage_lower = errorString.toLowerCase();
+
+        // Check for user rejection patterns in various error formats
+        if (errorString.includes('User rejected') ||
+            errorString.includes('User denied') ||
+            errorString.includes('denied transaction signature') ||
+            errorString.includes('User rejected the request') ||
+            errorString.includes('User rejected the transaction') ||
+            errorString.includes('User cancelled') ||
+            errorString.includes('cancelled by user') ||
+            errorMessage_lower.includes('user rejected') ||
+            errorMessage_lower.includes('user denied') ||
+            errorMessage_lower.includes('denied transaction') ||
+            errorMessage_lower.includes('cancelled by user') ||
+            errorMessage_lower.includes('user cancelled') ||
+            (error as { code?: number; })?.code === 4001 || // MetaMask user rejection code
+            (error as { message?: string; })?.message?.includes('User rejected') ||
+            (error as { message?: string; })?.message?.includes('User denied') ||
+            (error as { message?: string; })?.message?.includes('denied transaction signature')) {
+
+            errorMessage = 'Transaction cancelled';
+            toast.info('Transaction declined');
+            shouldShowToast = false; // Don't show additional error toast
+        } else if (errorString.includes('insufficient funds') || errorMessage_lower.includes('insufficient funds')) {
+            errorMessage = 'Insufficient funds';
+            toast.error('Insufficient funds');
+        } else if (errorString.includes('network') || errorMessage_lower.includes('network')) {
+            errorMessage = 'Network error';
+            toast.error('Network error');
+        } else {
+            // Truncate long error messages
+            const truncatedMessage = errorString.length > 50
+                ? errorString.substring(0, 50) + '...'
+                : errorString;
+            errorMessage = truncatedMessage;
+            if (shouldShowToast) {
+                toast.error(`${context} failed: ${truncatedMessage}`);
+            }
+        }
+
+        onPaymentError(errorMessage);
+        setIsProcessing(false);
+    };
 
     const handlePayment = async () => {
         console.log('🚀 Starting CELO payment process...');
         console.log('💰 Payment breakdown:', {
-            baseAmount: baseCeloAmount,
+            orderTotalCelo,
             farmerAmount: farmerCeloAmount,
             dispatcherAmount: dispatcherCeloAmount,
+            subtotal: subtotalCeloAmount,
             platformFee: platformFeeCelo,
             totalAmount: totalCeloAmount
         });
@@ -116,36 +173,7 @@ export function CeloPayment({
 
             console.log('✅ Transaction submitted to blockchain');
         } catch (error) {
-            console.error('❌ Payment failed:', error);
-
-            // Handle different types of errors gracefully
-            let errorMessage = 'Payment failed';
-
-            if (error instanceof Error) {
-                if (error.message.includes('User rejected') ||
-                    error.message.includes('User denied') ||
-                    error.message.includes('denied transaction signature') ||
-                    error.message.includes('User rejected the request')) {
-                    errorMessage = 'Transaction cancelled';
-                    toast.info('Transaction cancelled');
-                } else if (error.message.includes('insufficient funds')) {
-                    errorMessage = 'Insufficient funds';
-                    toast.error('Insufficient funds');
-                } else if (error.message.includes('network')) {
-                    errorMessage = 'Network error';
-                    toast.error('Network error');
-                } else {
-                    // Truncate long error messages
-                    const truncatedMessage = error.message.length > 20
-                        ? error.message.substring(0, 20) + '...'
-                        : error.message;
-                    errorMessage = truncatedMessage;
-                    toast.error(`Payment failed: ${truncatedMessage}`);
-                }
-            }
-
-            onPaymentError(errorMessage);
-            setIsProcessing(false);
+            handleTransactionError(error, 'Payment');
         }
     };
 
@@ -206,16 +234,12 @@ export function CeloPayment({
         }
     }, [isConfirmed, hash, onPaymentSuccess, chain?.id, orderId, address, totalCeloAmount, updateCeloPayment, updateOrderStatus, updatePaymentStatus]);
 
-    // Handle transaction error
+    // Handle transaction error from useWriteContract hook
     useEffect(() => {
         if (error) {
-            console.error('❌ Transaction error:', error);
-            const errorMessage = error.message || 'Transaction failed';
-            onPaymentError(errorMessage);
-            toast.error(`Transaction failed: ${errorMessage}`);
-            setIsProcessing(false);
+            handleTransactionError(error, 'Transaction');
         }
-    }, [error, onPaymentError]);
+    }, [error]);
 
     if (!isConnected) {
         return (
@@ -260,31 +284,34 @@ export function CeloPayment({
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Wallet className="h-5 w-5" />
-                    CELO Payment
+                    Pay with CELO
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                        <span>Base Amount:</span>
-                        <span>{baseCeloAmount.toFixed(6)} CELO</span>
+                        <span>Order Total:</span>
+                        <span className="font-medium">{orderTotalCelo.toFixed(6)} CELO</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                        <span>Farmer:</span>
+                        <span>Farmer Amount:</span>
                         <span>{farmerCeloAmount.toFixed(6)} CELO</span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                        <span>Dispatcher:</span>
-                        <span>{dispatcherCeloAmount.toFixed(6)} CELO</span>
-                    </div>
+                    {dispatcherCeloAmount > 0 && (
+                        <div className="flex justify-between text-sm">
+                            <span>Dispatcher Amount:</span>
+                            <span>{dispatcherCeloAmount.toFixed(6)} CELO</span>
+                        </div>
+                    )}
                     <div className="flex justify-between text-sm">
                         <span>Platform Fee (2.5%):</span>
                         <span>{platformFeeCelo.toFixed(6)} CELO</span>
                     </div>
-                    <hr />
-                    <div className="flex justify-between font-semibold">
-                        <span>Total:</span>
-                        <span>{totalCeloAmount.toFixed(6)} CELO</span>
+                    <div className="border-t pt-2">
+                        <div className="flex justify-between font-medium">
+                            <span>Total CELO:</span>
+                            <span>{totalCeloAmount.toFixed(6)} CELO</span>
+                        </div>
                     </div>
                 </div>
 
@@ -292,34 +319,20 @@ export function CeloPayment({
                     onClick={handlePayment}
                     disabled={isProcessing || isPending || isConfirming}
                     className="w-full"
-                    size="lg"
                 >
                     {isProcessing || isPending || isConfirming ? (
                         <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            {isPending ? 'Confirming...' : isConfirming ? 'Processing...' : 'Submitting...'}
+                            {isPending ? 'Confirming...' : isConfirming ? 'Processing...' : 'Preparing...'}
                         </>
                     ) : (
-                        <>
-                            <Wallet className="mr-2 h-4 w-4" />
-                            Pay {totalCeloAmount.toFixed(6)} CELO
-                        </>
+                        `Pay ${totalCeloAmount.toFixed(6)} CELO`
                     )}
                 </Button>
 
-                {isConfirmed && (
-                    <div className="flex items-center gap-2 text-green-600 text-sm">
-                        <CheckCircle className="h-4 w-4" />
-                        Payment confirmed!
-                    </div>
-                )}
-
-                {error && (
-                    <div className="flex items-center gap-2 text-red-600 text-sm">
-                        <XCircle className="h-4 w-4" />
-                        {error.message}
-                    </div>
-                )}
+                <div className="text-xs text-gray-500 text-center">
+                    Transaction will be processed on Celo blockchain
+                </div>
             </CardContent>
         </Card>
     );
